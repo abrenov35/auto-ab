@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.60</span>
+  <span class="version">v6.3.61</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -892,6 +892,40 @@
 <!-- SUPPRIMÉ - Plus de tabs, seulement la gestion du parc -->
 
 <!-- ===== MANAGEMENT TAB ===== (PAGE UNIQUE) -->
+<!-- PAGE DÉTAIL VÉHICULE -->
+<div id="vehiculeDetailPage" style="display: none; background: white; padding: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #1976d2; padding-bottom: 15px;">
+    <div>
+      <h1 id="vehiculeDetailTitle" style="margin: 0; font-size: 24px; color: #0d3a66;"></h1>
+      <p id="vehiculeDetailSubtitle" style="margin: 4px 0 0 0; color: #666; font-size: 14px;"></p>
+    </div>
+    <button onclick="closeVehiculeDetail()" style="background: #d32f2f; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">← Retour</button>
+  </div>
+  
+  <!-- RÉVISION -->
+  <div style="margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-left: 4px solid #ff9800; border-radius: 4px;">
+    <h3 style="margin: 0 0 12px 0; color: #ff9800;">🔧 Révision</h3>
+    <div id="vehiculeRevisionDetail" style="font-size: 14px; color: #666;">
+      <p>Chargement...</p>
+    </div>
+  </div>
+  
+  <!-- CONTRÔLE TECHNIQUE -->
+  <div style="margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-left: 4px solid #1976d2; border-radius: 4px;">
+    <h3 style="margin: 0 0 12px 0; color: #1976d2;">🔧 Contrôle Technique</h3>
+    <div id="vehiculeCtDetail" style="font-size: 14px; color: #666;">
+      <p>Chargement...</p>
+    </div>
+  </div>
+  
+  <!-- DOCUMENTS -->
+  <div style="margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-left: 4px solid #388e3c; border-radius: 4px;">
+    <h3 style="margin: 0 0 12px 0; color: #388e3c;">📄 Documents</h3>
+    <div id="vehiculeDocumentsDetail" style="font-size: 14px; color: #666;">
+      <p>Chargement...</p>
+    </div>
+  </div>
+</div>
 <div id="management">
   <div class="management-container">
     <!-- SIDEBAR VÉHICULES -->
@@ -1429,21 +1463,15 @@ function renderVehicules() {
 function selectVehiculeFromDropdown() {
   const immatriculation = document.getElementById("vehiculeSelectToolbar").value;
   if (!immatriculation) {
-    console.log("Aucun véhicule sélectionné");
     return;
   }
   
-  console.log("Véhicule sélectionné:", immatriculation);
-  selectedVehicule = immatriculation;
-  document.querySelectorAll(".vehicule-item").forEach(el => el.classList.remove("active"));
+  // Ouvrir la page détail du véhicule
+  openVehiculeDetail(immatriculation);
   
-  // Highlight dans la sidebar aussi
-  const sidebarItem = Array.from(document.querySelectorAll(".vehicule-item")).find(
-    el => el.textContent.includes(immatriculation)
-  );
-  if (sidebarItem) {
-    sidebarItem.classList.add("active");
-  }
+  // Réinitialiser le dropdown
+  document.getElementById("vehiculeSelectToolbar").value = "";
+}
   
   document.getElementById("vehiculeTitle").textContent = immatriculation;
   document.getElementById("addDocBtn").style.display = "block";
@@ -2728,6 +2756,51 @@ function showMsg(text, type) {
 }
 
 // Initialiser l'app au chargement
+// ===== PAGE DÉTAIL VÉHICULE =====
+
+function openVehiculeDetail(immatriculation) {
+  document.getElementById("management").style.display = "none";
+  document.getElementById("vehiclesPage").style.display = "none";
+  document.getElementById("revisionPage").style.display = "none";
+  document.getElementById("ctPage").style.display = "none";
+  document.getElementById("vehiculeDetailPage").style.display = "block";
+  renderVehiculeDetail(immatriculation);
+  window.scrollTo(0, 0);
+}
+
+function closeVehiculeDetail() {
+  document.getElementById("vehiculeDetailPage").style.display = "none";
+  document.getElementById("management").style.display = "block";
+}
+
+function renderVehiculeDetail(immatriculation) {
+  const vehicule = data.vehicules.find(v => v.immatriculation === immatriculation);
+  const revision = data.revisions && data.revisions.find(r => r.immatriculation === immatriculation);
+  const ct = data.controlsTk && data.controlsTk.find(c => c.immatriculation === immatriculation);
+  const docs = data.documents && data.documents.filter(d => d.immatriculation === immatriculation) || [];
+  if (!vehicule) return;
+  document.getElementById("vehiculeDetailTitle").textContent = vehicule.marque + " " + vehicule.modele;
+  document.getElementById("vehiculeDetailSubtitle").textContent = vehicule.immatriculation + " • Conducteur: " + (vehicule.conducteur || "-");
+  if (revision) {
+    document.getElementById("vehiculeRevisionDetail").innerHTML = "<div><p><strong>Dernière révision:</strong> " + (revision.dernierDate ? new Date(revision.dernierDate).toLocaleDateString("fr-FR") : "-") + "</p><p><strong>Prochaine révision:</strong> " + (revision.prochainDate ? new Date(revision.prochainDate).toLocaleDateString("fr-FR") : "-") + "</p><p><strong>Conducteur:</strong> " + (revision.conducteur || "-") + "</p><div style="margin-top: 12px; display: flex; gap: 8px;"><button class="btn" style="background: #1976d2; color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="openEditRevisionModal('" + immatriculation + "')">Modifier</button></div></div>";
+  } else {
+    document.getElementById("vehiculeRevisionDetail").innerHTML = "<p style="color: #999;">Aucune révision enregistrée</p>";
+  }
+  if (ct) {
+    var daysLeft = calculateDaysUntilCT(ct.prochainDate);
+    var statusColor = "#4caf50";
+    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) { statusColor = "#ff9800"; }
+    else if (daysLeft !== null && daysLeft <= 0) { statusColor = "#d32f2f"; }
+    document.getElementById("vehiculeCtDetail").innerHTML = "<div><p><strong>Dernier CT:</strong> " + (ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "-") + "</p><p style="color: " + statusColor + "; font-weight: 600;"><strong>Prochain CT:</strong> " + (ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "-") + " " + (daysLeft !== null ? "(" + daysLeft + "j)" : "") + "</p><p><strong>Conducteur:</strong> " + (ct.conducteur || "-") + "</p><div style="margin-top: 12px; display: flex; gap: 8px;"><button class="btn" style="background: #1976d2; color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="openCtEditModal('" + immatriculation + "')">Modifier</button></div></div>";
+  } else {
+    document.getElementById("vehiculeCtDetail").innerHTML = "<p style="color: #999;">Aucun contrôle technique enregistré</p>";
+  }
+  if (docs.length > 0) {
+    document.getElementById("vehiculeDocumentsDetail").innerHTML = docs.map(doc => "<div style="padding: 12px; background: white; border-radius: 4px; margin-bottom: 8px;"><p style="margin: 0 0 6px 0;"><strong>" + doc.categorie + "</strong> • " + doc.nom + "</p><p style="margin: 0 0 8px 0; color: #999; font-size: 12px;">" + (doc.date ? new Date(doc.date).toLocaleDateString("fr-FR") : "") + " " + (doc.description ? "| " + doc.description : "") + "</p><div style="display: flex; gap: 6px;"><button class="btn" style="background: #388e3c; color: white; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openDocLink('" + doc.lienDrive + "')">Ouvrir</button><button class="btn" style="background: #d32f2f; color: white; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="deleteDocument(" + doc.id + ")">Supprimer</button></div></div>").join("");
+  } else {
+    document.getElementById("vehiculeDocumentsDetail").innerHTML = "<p style="color: #999;">Aucun document enregistré</p>";
+  }
+}
 init();
 </script>
 
