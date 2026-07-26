@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.59</span>
+  <span class="version">v6.3.60</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1821,8 +1821,9 @@ async function submitVehicule() {
 function openVehicleManagementModal() {
   renderVehiclesPage();
   document.getElementById("management").style.display = "none";
-  document.getElementById("ctPage").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "block";
+  document.getElementById("revisionPage").style.display = "none";
+  document.getElementById("ctPage").style.display = "none";
   document.getElementById("btnVehicleManagement").classList.add("active");
   window.scrollTo(0, 0);
 }
@@ -2314,6 +2315,7 @@ function openControleTkModal() {
   renderCtPage();
   document.getElementById("management").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "none";
+  document.getElementById("revisionPage").style.display = "none";
   document.getElementById("ctPage").style.display = "block";
   // Scroll vers le haut
   window.scrollTo(0, 0);
