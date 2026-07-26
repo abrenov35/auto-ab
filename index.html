@@ -874,11 +874,12 @@
 <div class="toolbar">
   <h1>🚗 AB PARC AUTO</h1>
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
+  <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
+  <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.44</span>
+  <span class="version">v6.3.45</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1133,6 +1134,17 @@
   <div id="ctPageList" style="display: grid; gap: 16px;"></div>
 </div>
 
+<!-- PAGE RÉVISIONS -->
+<div id="revisionPage" style="display: none; background: white; padding: 20px;">
+  <div style="margin-bottom: 20px; border-bottom: 2px solid #ff9800; padding-bottom: 15px;">
+    <h1 style="margin: 0; font-size: 24px; color: #e65100;">🔧 Révisions</h1>
+  </div>
+  <div style="margin-bottom: 16px;">
+    <button class="btn btn-success" onclick="openAddRevisionModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter une Révision</button>
+  </div>
+  <div id="revisionPageList" style="display: grid; gap: 16px;"></div>
+</div>
+
 <!-- MODAL AJOUTER CONTRÔLE TECHNIQUE -->
 <div class="modal" id="addCtModal">
   <div class="modal-content" style="max-width: 500px;">
@@ -1163,6 +1175,40 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeAddCtModal()">Annuler</button>
       <button id="submitAddCtBtn" class="btn btn-success" onclick="submitAddCt()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AJOUTER RÉVISION -->
+<div class="modal" id="addRevisionModal">
+  <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-header">Ajouter une Révision</div>
+    
+    <div class="form-group">
+      <label>Véhicule *</label>
+      <select id="addRevisionVehicule" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">-- Sélectionner un véhicule --</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>Conducteur</label>
+      <input type="text" id="addRevisionConducteur" placeholder="Ex: Jean Dupont">
+    </div>
+    
+    <div class="form-group">
+      <label>Dernière Révision</label>
+      <input type="date" id="addRevisionDernierDate">
+    </div>
+    
+    <div class="form-group">
+      <label>Prochaine Révision *</label>
+      <input type="date" id="addRevisionProchainDate" required>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
+      <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -1281,6 +1327,15 @@ async function loadData() {
         { immatriculation: "GD-344-XC", conducteur: "Solenn et Mathieu", dernierDate: "2025-12-01", prochainDate: "2026-12-12" },
         { immatriculation: "HG-631-YY", conducteur: "Pascale", dernierDate: "2025-12-09", prochainDate: "2026-12-09" }
       ];
+      
+      // Enrichir avec marque et modèle
+      data.revisions.forEach(r => {
+        const v = data.vehicules.find(v => v.immatriculation === r.immatriculation);
+        if (v) {
+          r.marque = v.marque;
+          r.modele = v.modele;
+        }
+      });
     }
 
     // Initialiser les contrôles techniques si non présents
@@ -2107,6 +2162,157 @@ function renderControleTk() {
       </tr>
     `;
   }).join("");
+}
+
+// ========== RÉVISIONS ==========
+
+function openRevisionModal() {
+  renderRevisionPage();
+  document.getElementById("management").style.display = "none";
+  document.getElementById("vehiclesPage").style.display = "none";
+  document.getElementById("ctPage").style.display = "none";
+  document.getElementById("revisionPage").style.display = "block";
+  window.scrollTo(0, 0);
+}
+
+function closeRevisionModal() {
+  document.getElementById("revisionPage").style.display = "none";
+  document.getElementById("management").style.display = "block";
+}
+
+function renderRevisionPage() {
+  const revisionList = document.getElementById("revisionPageList");
+  
+  // Trier par Marque Modèle
+  const sortedRevisions = [...data.revisions].sort((a, b) => {
+    const nameA = (a.marque + " " + a.modele).toUpperCase();
+    const nameB = (b.marque + " " + b.modele).toUpperCase();
+    return nameA.localeCompare(nameB);
+  });
+  
+  revisionList.innerHTML = sortedRevisions.map(r => {
+    const nextDate = new Date(r.prochainDate);
+    const today = new Date();
+    const daysLeft = Math.floor((nextDate - today) / (1000 * 60 * 60 * 24));
+    
+    let statusColor = "#4caf50";
+    let statusLabel = "✅ Valide";
+    if (daysLeft < 30 && daysLeft >= 0) {
+      statusColor = "#ff9800";
+      statusLabel = "⚠️ Bientôt";
+    } else if (daysLeft < 0) {
+      statusColor = "#d32f2f";
+      statusLabel = "🔴 Dépassée";
+    }
+    
+    return `
+      <div style="background: white; border: 1px solid #ddd; border-left: 4px solid ${statusColor}; padding: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex: 1;">
+          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">${r.marque} ${r.modele}</div>
+          <div style="font-size: 12px; color: #666;">
+            <div>Immatriculation: ${r.immatriculation}</div>
+            <div>Conducteur: ${r.conducteur || "—"}</div>
+            <div>Dernière révision: ${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
+            <div>Prochaine révision: ${new Date(r.prochainDate).toLocaleDateString('fr-FR')} (${daysLeft} jours)</div>
+            <div style="color: ${statusColor}; font-weight: 600; margin-top: 4px;">${statusLabel}</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn" style="background: #1976d2; color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="openEditRevisionModal('${r.immatriculation}')">Modifier</button>
+          <button class="btn" style="background: #d32f2f; color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="deleteRevision('${r.immatriculation}')">Supprimer</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function openAddRevisionModal() {
+  const vehiculeSelect = document.getElementById("addRevisionVehicule");
+  const vehiculesAvailables = data.vehicules.filter(v => 
+    v.statut === "Actif" && !data.revisions.find(r => r.immatriculation === v.immatriculation)
+  );
+  
+  vehiculeSelect.innerHTML = '<option value="">-- Sélectionner un véhicule --</option>';
+  vehiculesAvailables.forEach(v => {
+    const option = document.createElement("option");
+    option.value = v.immatriculation;
+    option.textContent = `${v.marque} ${v.modele} - ${v.immatriculation}`;
+    vehiculeSelect.appendChild(option);
+  });
+  
+  if (vehiculesAvailables.length === 0) {
+    vehiculeSelect.innerHTML = '<option value="">Aucun véhicule disponible</option>';
+    vehiculeSelect.disabled = true;
+  } else {
+    vehiculeSelect.disabled = false;
+  }
+  
+  document.getElementById("addRevisionConducteur").value = "";
+  document.getElementById("addRevisionDernierDate").value = "";
+  document.getElementById("addRevisionProchainDate").value = "";
+  
+  document.getElementById("addRevisionModal").classList.add("active");
+}
+
+function closeAddRevisionModal() {
+  document.getElementById("addRevisionModal").classList.remove("active");
+  const submitBtn = document.getElementById("submitAddRevisionBtn");
+  if (submitBtn) submitBtn.disabled = false;
+}
+
+async function submitAddRevision() {
+  const immatriculation = document.getElementById("addRevisionVehicule").value;
+  const conducteur = document.getElementById("addRevisionConducteur").value;
+  const dernierDate = document.getElementById("addRevisionDernierDate").value;
+  const prochainDate = document.getElementById("addRevisionProchainDate").value;
+  
+  if (!immatriculation) {
+    showMsg("Sélectionne un véhicule", "err");
+    return;
+  }
+  
+  if (!prochainDate) {
+    showMsg("Remplis la date de la prochaine révision", "err");
+    return;
+  }
+  
+  const submitBtn = document.getElementById("submitAddRevisionBtn");
+  if (submitBtn) submitBtn.disabled = true;
+  
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "createRevision",
+        immatriculation: immatriculation,
+        conducteur: conducteur,
+        dernierDate: dernierDate,
+        prochainDate: prochainDate
+      })
+    });
+    
+    closeAddRevisionModal();
+    await loadData();
+    renderRevisionPage();
+    showMsg("Révision ajoutée ✅", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+function openEditRevisionModal(immatriculation) {
+  // À implémenter si nécessaire
+  showMsg("Fonctionnalité en cours de développement", "err");
+}
+
+function deleteRevision(immatriculation) {
+  if (!confirm(`Supprimer la révision pour ${immatriculation} ?`)) return;
+  
+  data.revisions = data.revisions.filter(r => r.immatriculation !== immatriculation);
+  renderRevisionPage();
+  showMsg("Révision supprimée ✅", "ok");
 }
 
 function openControleTkModal() {
