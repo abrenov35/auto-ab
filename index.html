@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.55</span>
+  <span class="version">v6.3.56</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1142,7 +1142,7 @@
   <div style="margin-bottom: 16px;">
     <button class="btn btn-success" onclick="openAddRevisionModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter une Révision</button>
   </div>
-  <div id="revisionPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1.2fr; gap: 8px; font-size: 12px;"></div>
+  <div id="revisionPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px;"></div>
 </div>
 
 <!-- MODAL AJOUTER CONTRÔLE TECHNIQUE -->
@@ -2211,7 +2211,6 @@ function renderRevisionPage() {
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Conducteur</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Dernière Révision</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Prochaine Révision</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Statut</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Actions</div>
   `;
   
@@ -2222,13 +2221,10 @@ function renderRevisionPage() {
     const daysLeft = Math.floor((nextDate - today) / (1000 * 60 * 60 * 24));
     
     let statusColor = "#4caf50";
-    let statusLabel = "✅ Valide";
     if (daysLeft < 30 && daysLeft >= 0) {
       statusColor = "#ff9800";
-      statusLabel = "⚠️ Bientôt";
     } else if (daysLeft < 0) {
       statusColor = "#d32f2f";
-      statusLabel = "🔴 Dépassée";
     }
     
     return `
@@ -2237,7 +2233,6 @@ function renderRevisionPage() {
       <div style="padding: 4px; color: #666;">${r.conducteur || "—"}</div>
       <div style="padding: 4px; color: #666;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
       <div style="padding: 4px; color: #666;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')}<br><span style="font-size: 11px; color: ${statusColor};">${daysLeft} j</span></div>
-      <div style="padding: 4px; color: ${statusColor}; font-weight: 600; font-size: 11px;">${statusLabel}</div>
       <div style="padding: 4px; display: flex; gap: 4px;">
         <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openEditRevisionModal('${r.immatriculation}')">✏️</button>
         <button class="btn" style="background: #d32f2f; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="deleteRevision('${r.immatriculation}')">🗑️</button>
