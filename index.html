@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.39</span>
+  <span class="version">v6.3.40</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1161,10 +1161,6 @@
     <div style="margin-bottom: 20px;">
       <div id="ctCompleteList" style="display: grid; gap: 10px;"></div>
     </div>
-    
-    <div class="form-actions">
-      <button class="btn btn-secondary" onclick="closeControleTkModal()">Fermer</button>
-    </div>
   </div>
 </div>
 
@@ -1172,7 +1168,6 @@
 <div id="vehiclesPage" style="display: none; background: white; padding: 10px;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #185fa5; padding-bottom: 8px;">
     <h1 style="margin: 0; font-size: 18px; color: #0d3a66;">📋 Gestion des Véhicules</h1>
-    <button onclick="closeVehiclesPage()" style="background: #999; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Fermer</button>
   </div>
   
   <div style="margin-bottom: 10px;">
@@ -1191,7 +1186,6 @@
   
   <div style="display: flex; gap: 8px; margin-top: 8px;">
     <button class="btn btn-success" onclick="openAddVehiculeModal()" style="padding: 6px 12px; font-size: 12px;">+ Ajouter</button>
-    <button class="btn btn-secondary" onclick="closeVehiclesPage()" style="padding: 6px 12px; font-size: 12px;">Fermer</button>
   </div>
 </div>
 
@@ -1743,7 +1737,9 @@ function closeVehicleManagementModal() {
 }
 
 function closeVehiclesPage() {
-  closeVehicleManagementModal();
+  document.getElementById("vehiclesPage").style.display = "none";
+  document.getElementById("management").style.display = "block";
+  document.getElementById("btnVehicleManagement").classList.remove("active");
 }
 
 function renderVehicleManagement() {
