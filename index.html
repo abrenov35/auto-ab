@@ -202,7 +202,7 @@
     /* ===== BLOCS HORIZONTAUX ===== */
     .maintenance-blocks {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 16px;
       margin-top: 20px;
     }
@@ -211,8 +211,12 @@
       background: white;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
-      padding: 16px;
+      padding: 12px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
     
     .maintenance-block.revision {
@@ -239,6 +243,15 @@
     
     .block-icon {
       font-size: 20px;
+    }
+    
+    #revisionContent,
+    #ctContent,
+    #documentsContent {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 12px;
+      max-height: 280px;
     }
     
     .block-content {
@@ -744,6 +757,20 @@
         font-size: 13px;
       }
       
+      .maintenance-blocks {
+        grid-template-columns: 1fr;
+      }
+      
+      .maintenance-block {
+        max-height: 100%;
+      }
+      
+      #revisionContent,
+      #ctContent,
+      #documentsContent {
+        max-height: 200px;
+      }
+      
       .hero {
         padding: 40px 20px;
       }
@@ -785,7 +812,7 @@
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.4</span>
+  <span class="version">v6.3.5</span>
 </div>
 
 <!-- ALERTE CT -->
