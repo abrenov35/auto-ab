@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.37</span>
+  <span class="version">v6.3.38</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1060,6 +1060,7 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
       <button class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
+      <button id="btnSupprimer" class="btn" style="background: #d32f2f; color: white; display: none;" onclick="deleteVehiculeFromModal()">Supprimer</button>
       <button id="btnExitModal" class="btn" style="background: #f57c00; color: white; display: none;" onclick="exitVehicleFromModal()">Sortie du parc</button>
     </div>
   </div>
@@ -1660,6 +1661,23 @@ function openAddVehiculeModal() {
 
 function closeVehiculeModal() {
   document.getElementById("vehiculeModal").classList.remove("active");
+  document.getElementById("btnSupprimer").style.display = "none";
+  document.getElementById("btnExitModal").style.display = "none";
+}
+
+function deleteVehiculeFromModal() {
+  const immat = window.currentVehiculeImmatriculation;
+  if (!immat) return;
+  
+  if (!confirm(`Supprimer le véhicule ${immat} ?`)) return;
+  
+  data.vehicules = data.vehicules.filter(v => v.immatriculation !== immat);
+  renderVehicleManagement();
+  renderVehicles();
+  renderInviteVehiculeSelect();
+  closeVehiculeModal();
+  showMsg("Véhicule supprimé ✅", "ok");
+  renderVehiclesPage();
 }
 
 async function submitVehicule() {
@@ -1779,7 +1797,6 @@ function renderVehiclesPage() {
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
         <button class="block-btn-edit" onclick="openEditVehiculeModal('${v.immatriculation}')" style="padding: 4px 8px; font-size: 11px;">Modifier</button>
-        <button class="block-btn-delete" onclick="deleteVehicule('${v.immatriculation}')" style="padding: 4px 8px; font-size: 11px;">Supprimer</button>
       </div>
     </div>
   `).join("");
@@ -1794,7 +1811,6 @@ function renderVehiclesPage() {
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
         <button style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; cursor: pointer;" onclick="markVehicleAsActive('${v.immatriculation}')">Réintégrer</button>
-        <button class="block-btn-delete" onclick="deleteVehicule('${v.immatriculation}')" style="padding: 4px 8px; font-size: 11px;">Supprimer</button>
       </div>
     </div>
   `).join("") : '<div style="color: #999; padding: 8px; text-align: center; font-size: 11px;">Aucun véhicule en sortie</div>';
@@ -1859,7 +1875,8 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("vehiculeStatut").value = v.statut;
   document.getElementById("vehiculeModal").classList.add("active");
   
-  // Afficher le bouton "Sortie" et stocker l'immat
+  // Afficher les boutons "Supprimer" et "Sortie" et stocker l'immat
+  document.getElementById("btnSupprimer").style.display = "block";
   document.getElementById("btnExitModal").style.display = "block";
   window.currentVehiculeImmatriculation = immatriculation;
   
