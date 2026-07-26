@@ -819,7 +819,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
-  <span class="version">v6.3.10</span>
+  <span class="version">v6.3.11</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1675,8 +1675,13 @@ function renderControleTk() {
 }
 
 function openControleTkModal() {
-  renderControleTk();
-  document.getElementById("ctModal").classList.add("active");
+  if (!selectedVehicule) {
+    showMsg("⚠️ Sélectionne un véhicule d'abord", "warning");
+    return;
+  }
+  
+  // Ouvrir la modal d'édition du CT du véhicule sélectionné
+  openCtEditModal(selectedVehicule);
 }
 
 function closeControleTkModal() {
