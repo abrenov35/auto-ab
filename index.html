@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.36</span>
+  <span class="version">v6.3.37</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1041,6 +1041,11 @@
     <div class="form-group">
       <label>Année *</label>
       <input type="number" id="vehiculeAnnee" required placeholder="Ex: 2020" min="2000" max="2099">
+    </div>
+    
+    <div class="form-group">
+      <label>Conducteur</label>
+      <input type="text" id="vehiculeConducteur" placeholder="Ex: Jean Dupont">
     </div>
     
     <div class="form-group">
@@ -1648,6 +1653,7 @@ function openAddVehiculeModal() {
   document.getElementById("vehiculeImmat").value = "";
   document.getElementById("vehiculeVehicule").value = "";
   document.getElementById("vehiculeAnnee").value = "";
+  document.getElementById("vehiculeConducteur").value = "";
   document.getElementById("vehiculeStatut").value = "Actif";
   document.getElementById("vehiculeModal").classList.add("active");
 }
@@ -1660,6 +1666,7 @@ async function submitVehicule() {
   const immat = document.getElementById("vehiculeImmat").value;
   const vehicule = document.getElementById("vehiculeVehicule").value;
   const annee = document.getElementById("vehiculeAnnee").value;
+  const conducteur = document.getElementById("vehiculeConducteur").value;
   const statut = document.getElementById("vehiculeStatut").value;
   
   if (!immat || !vehicule || !annee) {
@@ -1686,6 +1693,7 @@ async function submitVehicule() {
         marque: marque,
         modele: modele,
         annee: annee,
+        conducteur: conducteur,
         statut: statut
       })
     });
@@ -1731,7 +1739,8 @@ function renderVehicleManagement() {
   activeList.innerHTML = active.map(v => `
     <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; border-left: 4px solid #4caf50;">
       <div style="font-weight: 600; margin-bottom: 6px;">${v.immatriculation} - ${v.marque} ${v.modele}</div>
-      <div style="font-size: 12px; color: #666; margin-bottom: 8px;">${v.annee ? 'Année: ' + v.annee : ''}</div>
+      <div style="font-size: 12px; color: #666; margin-bottom: 4px;">${v.annee ? 'Année: ' + v.annee : ''}</div>
+      <div style="font-size: 12px; color: #666; margin-bottom: 8px;">${v.conducteur ? 'Conducteur: ' + v.conducteur : ''}</div>
       <div style="display: flex; gap: 8px;">
         <button class="block-btn-edit" onclick="openEditVehiculeModal('${v.immatriculation}')">Modifier</button>
         <button class="block-btn-delete" onclick="deleteVehicule('${v.immatriculation}')">Supprimer</button>
@@ -1765,7 +1774,8 @@ function renderVehiclesPage() {
     <div style="background: #f9fafb; padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
       <div>
         <div style="font-weight: 600; font-size: 13px; color: #0d3a66; margin-bottom: 4px;">${v.marque} ${v.modele} - ${v.immatriculation}</div>
-        <div style="font-size: 11px; color: #999;">${v.annee ? v.annee : '-'}</div>
+        <div style="font-size: 11px; color: #999; margin-bottom: 2px;">${v.annee ? v.annee : '-'}</div>
+        <div style="font-size: 11px; color: #999;">${v.conducteur ? 'Conducteur: ' + v.conducteur : ''}</div>
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
         <button class="block-btn-edit" onclick="openEditVehiculeModal('${v.immatriculation}')" style="padding: 4px 8px; font-size: 11px;">Modifier</button>
@@ -1779,7 +1789,8 @@ function renderVehiclesPage() {
     <div style="background: #fff9e6; padding: 8px; border-radius: 4px; border-left: 3px solid #ff9800; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
       <div>
         <div style="font-weight: 600; font-size: 13px; color: #666; margin-bottom: 4px;">${v.marque} ${v.modele} - ${v.immatriculation}</div>
-        <div style="font-size: 11px; color: #999;">Statut: ${v.statut}</div>
+        <div style="font-size: 11px; color: #999; margin-bottom: 2px;">Statut: ${v.statut}</div>
+        <div style="font-size: 11px; color: #999;">${v.conducteur ? 'Conducteur: ' + v.conducteur : ''}</div>
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
         <button style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; cursor: pointer;" onclick="markVehicleAsActive('${v.immatriculation}')">Réintégrer</button>
@@ -1844,6 +1855,7 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("vehiculeImmat").value = v.immatriculation;
   document.getElementById("vehiculeVehicule").value = v.marque + " " + v.modele;
   document.getElementById("vehiculeAnnee").value = v.annee || "";
+  document.getElementById("vehiculeConducteur").value = v.conducteur || "";
   document.getElementById("vehiculeStatut").value = v.statut;
   document.getElementById("vehiculeModal").classList.add("active");
   
