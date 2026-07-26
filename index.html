@@ -776,7 +776,7 @@
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3</span>
+  <span class="version">v6.3.1</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1118,9 +1118,11 @@ function selectVehicule(immatriculation, element) {
 // ========== AFFICHAGE DOCUMENTS ==========
 // ========== AFFICHAGE BLOCS MAINTENANCE ==========
 function renderMaintenanceBlocks() {
-  const revision = data.revisions.find(r => r.immatriculation === selectedVehicule);
-  const ct = data.controlsTk.find(c => c.immatriculation === selectedVehicule);
-  const docs = data.documents.filter(d => d.immatriculation === selectedVehicule);
+  if (!data || !selectedVehicule) return;
+  
+  const revision = data.revisions && data.revisions.find(r => r.immatriculation === selectedVehicule);
+  const ct = data.controlsTk && data.controlsTk.find(c => c.immatriculation === selectedVehicule);
+  const docs = data.documents && data.documents.filter(d => d.immatriculation === selectedVehicule) || [];
   
   const blocksContainer = document.getElementById("maintenanceBlocks");
   const revContent = document.getElementById("revisionContent");
@@ -1506,6 +1508,12 @@ function checkCtAlerts() {
   const alertBanner = document.getElementById("alertBanner");
   const alertItems = document.getElementById("alertItems");
   const alerts = [];
+  
+  // Vérification de sécurité
+  if (!data || !data.controlsTk || data.controlsTk.length === 0) {
+    alertBanner.classList.remove("active");
+    return;
+  }
   
   data.controlsTk.forEach(ct => {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
