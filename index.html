@@ -854,7 +854,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.22</span>
+  <span class="version">v6.3.23</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1132,7 +1132,34 @@
   </div>
 </div>
 
-<!-- MODAL GESTION DES VÉHICULES -->
+<!-- PAGE COMPLÈTE GESTION DES VÉHICULES -->
+<div id="vehiclesPage" style="display: none; background: white; padding: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #185fa5; padding-bottom: 15px;">
+    <h1 style="margin: 0; font-size: 24px; color: #0d3a66;">📋 Gestion des Véhicules</h1>
+    <button onclick="closeVehiclesPage()" style="background: #999; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">Fermer</button>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <!-- VÉHICULES ACTIFS -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="font-size: 16px; font-weight: 600; color: #0d3a66; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #4caf50;">✅ Véhicules Actifs</h2>
+      <div id="activeVehiculesPageList" style="display: grid; gap: 12px;"></div>
+    </div>
+    
+    <!-- VÉHICULES EN SORTIE -->
+    <div>
+      <h2 style="font-size: 16px; font-weight: 600; color: #999; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #ff9800;">⚠️ En Sortie du Parc</h2>
+      <div id="inactiveVehiculesPageList" style="display: grid; gap: 12px;"></div>
+    </div>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 20px;">
+    <button class="btn btn-success" onclick="openAddVehiculeModal()">+ Ajouter un véhicule</button>
+    <button class="btn btn-secondary" onclick="closeVehiclesPage()">Fermer</button>
+  </div>
+</div>
+
+<!-- MODAL GESTION DES VÉHICULES (legacy) -->
 <div class="modal" id="vehicleManagementModal">
   <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
     <div class="modal-header">📋 Gestion des Véhicules</div>
@@ -1645,12 +1672,19 @@ async function submitVehicule() {
 
 // ========== GESTION VÉHICULES ==========
 function openVehicleManagementModal() {
-  renderVehicleManagement();
-  document.getElementById("vehicleManagementModal").classList.add("active");
+  renderVehiclesPage();
+  document.getElementById("management").style.display = "none";
+  document.getElementById("vehiclesPage").style.display = "block";
+  window.scrollTo(0, 0);
 }
 
 function closeVehicleManagementModal() {
-  document.getElementById("vehicleManagementModal").classList.remove("active");
+  document.getElementById("vehiclesPage").style.display = "none";
+  document.getElementById("management").style.display = "block";
+}
+
+function closeVehiclesPage() {
+  closeVehicleManagementModal();
 }
 
 function renderVehicleManagement() {
@@ -1684,6 +1718,39 @@ function renderVehicleManagement() {
       </div>
     </div>
   `).join("") : '<div style="color: #999; padding: 12px;">Aucun véhicule en sortie</div>';
+}
+
+function renderVehiclesPage() {
+  const activeList = document.getElementById("activeVehiculesPageList");
+  const inactiveList = document.getElementById("inactiveVehiculesPageList");
+  
+  const active = data.vehicules.filter(v => v.statut === "Actif").sort((a, b) => (a.marque + a.modele).localeCompare(b.marque + b.modele));
+  const inactive = data.vehicules.filter(v => v.statut !== "Actif").sort((a, b) => (a.marque + a.modele).localeCompare(b.marque + b.modele));
+  
+  // Afficher véhicules actifs
+  activeList.innerHTML = active.map(v => `
+    <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #4caf50; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <div style="font-weight: 600; font-size: 16px; color: #0d3a66; margin-bottom: 8px;">${v.immatriculation} - ${v.marque} ${v.modele}</div>
+      <div style="font-size: 14px; color: #666; margin-bottom: 12px;">${v.annee ? 'Année: ' + v.annee : '-'}</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="block-btn-edit" onclick="openEditVehiculeModal('${v.immatriculation}')">Modifier</button>
+        <button class="block-btn-delete" onclick="deleteVehicule('${v.immatriculation}')">Supprimer</button>
+        <button style="background: #f57c00; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="openExitVehicleModal('${v.immatriculation}')">Sortie Parc</button>
+      </div>
+    </div>
+  `).join("");
+  
+  // Afficher véhicules en sortie
+  inactiveList.innerHTML = inactive.length > 0 ? inactive.map(v => `
+    <div style="background: #fff9e6; padding: 16px; border-radius: 8px; border-left: 4px solid #ff9800; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <div style="font-weight: 600; font-size: 16px; color: #666; margin-bottom: 8px;">${v.immatriculation} - ${v.marque} ${v.modele}</div>
+      <div style="font-size: 14px; color: #999; margin-bottom: 12px;">Statut: ${v.statut}</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button style="background: #4caf50; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="markVehicleAsActive('${v.immatriculation}')">Réintégrer</button>
+        <button class="block-btn-delete" onclick="deleteVehicule('${v.immatriculation}')">Supprimer</button>
+      </div>
+    </div>
+  `).join("") : '<div style="color: #999; padding: 16px; text-align: center;">Aucun véhicule en sortie du parc</div>';
 }
 
 function markVehicleAsOut(immatriculation) {
