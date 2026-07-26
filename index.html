@@ -776,7 +776,7 @@
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.2</span>
+  <span class="version">v6.3</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -932,13 +932,8 @@
     </div>
     
     <div class="form-group">
-      <label>Marque *</label>
-      <input type="text" id="vehiculeMarque" required placeholder="Ex: Renault">
-    </div>
-    
-    <div class="form-group">
-      <label>Modèle *</label>
-      <input type="text" id="vehiculeModele" required placeholder="Ex: Clio">
+      <label>Véhicule (Marque Modèle) *</label>
+      <input type="text" id="vehiculeVehicule" required placeholder="Ex: Renault Clio">
     </div>
     
     <div class="form-group">
@@ -1385,8 +1380,7 @@ function openDocLink(url) {
 function openAddVehiculeModal() {
   document.getElementById("vehiculeModalTitle").textContent = "Ajouter un véhicule";
   document.getElementById("vehiculeImmat").value = "";
-  document.getElementById("vehiculeMarque").value = "";
-  document.getElementById("vehiculeModele").value = "";
+  document.getElementById("vehiculeVehicule").value = "";
   document.getElementById("vehiculeAnnee").value = "";
   document.getElementById("vehiculeStatut").value = "Actif";
   document.getElementById("vehiculeModal").classList.add("active");
@@ -1398,13 +1392,22 @@ function closeVehiculeModal() {
 
 async function submitVehicule() {
   const immat = document.getElementById("vehiculeImmat").value;
-  const marque = document.getElementById("vehiculeMarque").value;
-  const modele = document.getElementById("vehiculeModele").value;
+  const vehicule = document.getElementById("vehiculeVehicule").value;
   const annee = document.getElementById("vehiculeAnnee").value;
   const statut = document.getElementById("vehiculeStatut").value;
   
-  if (!immat || !marque || !modele || !annee) {
+  if (!immat || !vehicule || !annee) {
     showMsg("Remplis tous les champs requis", "err");
+    return;
+  }
+  
+  // Parser "Renault Clio" en marque et modèle
+  const parts = vehicule.trim().split(/\s+/);
+  const marque = parts[0];
+  const modele = parts.slice(1).join(" ");
+  
+  if (!modele) {
+    showMsg("Entre marque ET modèle (ex: Renault Clio)", "err");
     return;
   }
   
@@ -1425,7 +1428,7 @@ async function submitVehicule() {
     await loadData();
     renderVehicules();
     renderInviteVehiculeSelect();
-    showMsg("Véhicule ajouté avec succès!", "ok");
+    showMsg("Véhicule ajouté ✅", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
   }
