@@ -1,0 +1,200 @@
+<!-- AB PARC AUTO v1 -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AB PARC AUTO - Gestion Documentaire Véhicules</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .toolbar {
+      background: #0d3a66;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .toolbar h1 {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .toolbar .version {
+      font-size: 12px;
+      opacity: 0.8;
+      background: rgba(255,255,255,0.15);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    
+    .section h2 {
+      color: #185fa5;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #185fa5;
+      padding-bottom: 12px;
+    }
+    
+    .features-list, .storage-list {
+      list-style: none;
+    }
+    
+    .features-list li, .storage-list li {
+      margin-bottom: 16px;
+      padding-left: 28px;
+      position: relative;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    
+    .features-list li:before, .storage-list li:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #185fa5;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    .feature-name {
+      font-weight: 600;
+      color: #222;
+    }
+    
+    .storage-name {
+      font-weight: 600;
+      color: #222;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .toolbar {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      
+      .toolbar h1 {
+        font-size: 20px;
+      }
+      
+      .toolbar .version {
+        font-size: 11px;
+      }
+      
+      .section {
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+      
+      .section h2 {
+        font-size: 18px;
+        margin-bottom: 18px;
+      }
+      
+      .features-list li, .storage-list li {
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .toolbar {
+        padding: 10px 12px;
+      }
+      
+      .toolbar h1 {
+        font-size: 18px;
+      }
+      
+      .container {
+        margin: 20px auto;
+        padding: 0 12px;
+      }
+      
+      .section {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      
+      .section h2 {
+        font-size: 16px;
+        margin-bottom: 14px;
+      }
+      
+      .features-list li, .storage-list li {
+        font-size: 13px;
+        margin-bottom: 10px;
+        padding-left: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>📋 AB PARC AUTO</h1>
+  <span class="version">v1</span>
+</div>
+
+<div class="container">
+  
+  <!-- SECTION FONCTIONNALITÉS -->
+  <div class="section">
+    <h2>Fonctionnalités</h2>
+    <ul class="features-list">
+      <li><span class="feature-name">Ajout de documents</span> — importer un fichier avec son nom, sa catégorie et sa description.</li>
+      <li><span class="feature-name">Liste dynamique</span> — afficher immédiatement les documents ajoutés, sans rechargement de la page.</li>
+      <li><span class="feature-name">Recherche et filtres</span> — retrouver rapidement un document par véhicule, catégorie, nom ou date.</li>
+      <li><span class="feature-name">Visualisation</span> — ouvrir directement les documents stockés dans Google Drive.</li>
+      <li><span class="feature-name">Modification</span> — remplacer un fichier existant ou modifier son nom, sa catégorie et sa description.</li>
+      <li><span class="feature-name">Suppression</span> — supprimer le fichier dans Google Drive ainsi que son enregistrement dans Google Sheets, après confirmation.</li>
+    </ul>
+  </div>
+  
+  <!-- SECTION STOCKAGE -->
+  <div class="section">
+    <h2>Stockage</h2>
+    <ul class="storage-list">
+      <li><span class="storage-name">Google Drive</span> — stockage des fichiers originaux.</li>
+      <li><span class="storage-name">Google Sheets</span> — stockage des métadonnées, des identifiants et des liens Drive.</li>
+      <li><span class="storage-name">Synchronisation automatique</span> — mise à jour des données entre l'application, Google Drive et Google Sheets.</li>
+      <li><span class="storage-name">Stockage centralisé</span> — tous les documents sont rattachés à la fiche du véhicule concerné.</li>
+    </ul>
+  </div>
+
+</div>
+
+</body>
+</html>
