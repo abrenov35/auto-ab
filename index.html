@@ -78,15 +78,23 @@
       cursor: pointer;
       transition: all 0.2s;
       white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
     .btn-toolbar:hover {
       background: #206334;
-      transform: scale(1.05);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     }
     
     .btn-toolbar:active {
-      transform: scale(0.98);
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    .btn-toolbar.active {
+      background: #0d5aa8;
+      box-shadow: 0 4px 8px rgba(13, 90, 168, 0.4);
     }
     
     .btn-toolbar:disabled {
@@ -869,8 +877,8 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.29</span>
+  <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
+  <span class="version">v6.3.30</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1690,12 +1698,14 @@ function openVehicleManagementModal() {
   renderVehiclesPage();
   document.getElementById("management").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "block";
+  document.getElementById("btnVehicleManagement").classList.add("active");
   window.scrollTo(0, 0);
 }
 
 function closeVehicleManagementModal() {
   document.getElementById("vehiclesPage").style.display = "none";
   document.getElementById("management").style.display = "block";
+  document.getElementById("btnVehicleManagement").classList.remove("active");
 }
 
 function closeVehiclesPage() {
