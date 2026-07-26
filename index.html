@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.34</span>
+  <span class="version">v6.3.35</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1107,9 +1107,15 @@
       <input type="date" id="ctProchainDate" required>
     </div>
     
+    <div id="ctDocumentsSection" style="border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; display: none;">
+      <h3 style="margin-top: 0; font-size: 14px; color: #0d3a66;">📋 Pièces jointes</h3>
+      <div id="ctDocumentsList" style="font-size: 12px; color: #666;"></div>
+    </div>
+    
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
+      <button id="btnViewDocsModal" class="btn" style="background: #1976d2; color: white; display: none;" onclick="viewCtDocumentsInModal()">👁️ Voir pièces</button>
     </div>
   </div>
 </div>
@@ -2066,16 +2072,17 @@ function renderCtPage() {
     return `
       <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="font-weight: 600; font-size: 16px; color: #0d3a66; margin-bottom: 12px;">${v ? v.marque + " " + v.modele : "Inconnu"} - ${ct.immatriculation}</div>
-        <div style="font-size: 14px; color: #666; margin-bottom: 12px;">
-          <div style="margin-bottom: 8px;"><strong>Conducteur:</strong> ${ct.conducteur || "-"}</div>
-          <div style="margin-bottom: 8px;"><strong>Dernier CT:</strong> ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "-"}</div>
-          <div style="margin-bottom: 8px; font-weight: 600; color: ${statusClass === 'danger' ? '#d32f2f' : statusClass === 'warning' ? '#f57c00' : '#388e3c'};"><strong>Prochain CT:</strong> ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "-"} ${statusText}</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+          <div style="font-size: 14px; color: #666; flex: 1;">
+            <div style="margin-bottom: 8px;"><strong>Conducteur:</strong> ${ct.conducteur || "-"}</div>
+            <div style="margin-bottom: 8px;"><strong>Dernier CT:</strong> ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "-"}</div>
+            <div style="margin-bottom: 8px; font-weight: 600; color: ${statusClass === 'danger' ? '#d32f2f' : statusClass === 'warning' ? '#f57c00' : '#388e3c'};"><strong>Prochain CT:</strong> ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "-"} ${statusText}</div>
+          </div>
+          <div style="display: flex; gap: 12px; flex-shrink: 0;">
+            <button class="block-btn-edit" onclick="openCtEditModal('${ct.immatriculation}')">Modifier</button>
+            <button style="background: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">👁️ Voir</button>
+          </div>
         </div>
-        <div style="display: flex; gap: 12px;">
-          <button class="block-btn-edit" onclick="openCtEditModal('${ct.immatriculation}')">Modifier</button>
-          <button style="background: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer;" onclick="downloadCtDocs('${ct.immatriculation}')">📥 Télécharger pièces</button>
-        </div>
-      </div>
     `;
   }).join("");
 }
@@ -2145,11 +2152,31 @@ function openCtEditModal(immatriculation) {
   document.getElementById("ctDernierDate").value = ct.dernierDate || "";
   document.getElementById("ctProchainDate").value = ct.prochainDate || "";
   document.getElementById("ctEditModal").classList.add("active");
+  
+  // Afficher le bouton "Voir pièces"
+  document.getElementById("btnViewDocsModal").style.display = "block";
+  document.getElementById("ctDocumentsSection").style.display = "none";
+  window.currentCtImmatriculation = immatriculation;
 }
 
 function closeCtEditModal() {
   document.getElementById("ctEditModal").classList.remove("active");
   editingCtImmat = null;
+  document.getElementById("ctDocumentsSection").style.display = "none";
+}
+
+function viewCtDocumentsInModal() {
+  const immat = window.currentCtImmatriculation;
+  if (!immat) return;
+  
+  // Afficher la section documents
+  document.getElementById("ctDocumentsSection").style.display = "block";
+  
+  // Simuler le chargement des documents (à intégrer avec votre backend GAS)
+  const docsList = document.getElementById("ctDocumentsList");
+  docsList.innerHTML = `<div style="padding: 10px; background: #f0f0f0; border-radius: 4px; text-align: center;">Aucun document trouvé</div>`;
+  
+  // TODO: Appeler downloadCtDocs() pour récupérer les vrais documents du GAS
 }
 
 async function submitControleTk() {
