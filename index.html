@@ -819,7 +819,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.17</span>
+  <span class="version">v6.3.18</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1050,6 +1050,25 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SORTIE DU PARC -->
+<div class="modal" id="exitVehicleModal">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-header">⚠️ Sortie du Parc</div>
+    
+    <div style="padding: 20px; text-align: center;">
+      <div style="font-size: 16px; font-weight: 600; margin-bottom: 12px;" id="exitVehicleText"></div>
+      <div style="font-size: 14px; color: #666; margin-bottom: 20px;">
+        Ce véhicule passera en section "En Sortie du Parc"
+      </div>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeExitVehicleModal()">Annuler</button>
+      <button class="btn" style="background: #f57c00;" onclick="confirmExitVehicle()">Confirmer Sortie</button>
     </div>
   </div>
 </div>
@@ -1605,7 +1624,7 @@ function renderVehicleManagement() {
       <div style="display: flex; gap: 8px;">
         <button class="block-btn-edit" onclick="openEditVehiculeModal('${v.immatriculation}')">Modifier</button>
         <button class="block-btn-delete" onclick="deleteVehicule('${v.immatriculation}')">Supprimer</button>
-        <button style="background: #f57c00; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="markVehicleAsOut('${v.immatriculation}')">Sortie Parc</button>
+        <button style="background: #f57c00; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="openExitVehicleModal('${v.immatriculation}')">Sortie Parc</button>
       </div>
     </div>
   `).join("");
@@ -1631,6 +1650,30 @@ function markVehicleAsOut(immatriculation) {
     renderVehicleManagement();
     renderVehicules();
     renderInviteVehiculeSelect();
+  }
+}
+
+let exitVehicleImmat = null;
+
+function openExitVehicleModal(immatriculation) {
+  exitVehicleImmat = immatriculation;
+  const v = data.vehicules.find(veh => veh.immatriculation === immatriculation);
+  if (!v) return;
+  
+  document.getElementById("exitVehicleText").textContent = `${v.marque} ${v.modele}\n${immatriculation}`;
+  document.getElementById("exitVehicleModal").classList.add("active");
+}
+
+function closeExitVehicleModal() {
+  document.getElementById("exitVehicleModal").classList.remove("active");
+  exitVehicleImmat = null;
+}
+
+function confirmExitVehicle() {
+  if (exitVehicleImmat) {
+    markVehicleAsOut(exitVehicleImmat);
+    closeExitVehicleModal();
+    showMsg("Véhicule passé en Sortie du Parc ✅", "ok");
   }
 }
 
