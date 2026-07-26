@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.43</span>
+  <span class="version">v6.3.44</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1758,7 +1758,9 @@ async function submitVehicule() {
     await loadData();
     renderVehicules();
     renderInviteVehiculeSelect();
-    showMsg("Véhicule ajouté ✅", "ok");
+    renderVehicleManagement();  // ✅ Rafraîchir la page Gestion!
+    renderVehiclesPage();  // ✅ Rafraîchir l'affichage des véhicules!
+    showMsg("Véhicule " + (window.editingImmat ? "modifié" : "ajouté") + " ✅", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
   } finally {
@@ -1927,19 +1929,32 @@ function openEditVehiculeModal(immatriculation) {
   closeVehicleManagementModal();
 }
 
-function exitVehicleFromModal() {
+async function exitVehicleFromModal() {
   const immat = window.currentVehiculeImmatriculation;
   if (!immat) return;
   
-  const v = data.vehicules.find(veh => veh.immatriculation === immat);
-  if (v) {
-    v.statut = "Sortie du parc";
-    renderVehicleManagement();
+  if (!confirm(`Marquer ${immat} comme sortie du parc ?`)) return;
+  
+  try {
+    // Envoyer au GAS pour mettre à jour le statut
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "updateVehicule",
+        immatriculation: immat,
+        statut: "Sortie du parc"
+      })
+    });
+    
+    closeVehiculeModal();
+    await loadData();
+    renderVehiculeManagement();
     renderVehicles();
     renderInviteVehiculeSelect();
-    closeVehiculeModal();
-    showMsg("Véhicule marqué comme sortie du parc ✅", "ok");
     renderVehiclesPage();
+    showMsg("Véhicule marqué comme sortie du parc ✅", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
   }
 }
 
