@@ -119,8 +119,8 @@
     }
     
     .alert-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: 8px;
     }
     
@@ -129,22 +129,34 @@
       padding: 6px;
       border-radius: 6px;
       border-left: 3px solid #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      overflow-x: auto;
     }
     
     .alert-item-vehicle {
       font-weight: 600;
       font-size: 12px;
-      margin-bottom: 2px;
+      flex-shrink: 0;
     }
     
     .alert-item-info {
-      font-size: 13px;
+      font-size: 12px;
       opacity: 0.95;
+      flex-shrink: 0;
     }
     
     .alert-item-days {
       color: #ffeb3b;
       font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .alert-item-separator {
+      opacity: 0.7;
+      flex-shrink: 0;
     }
     
     /* ===== CONTRÔLES TECHNIQUES ===== */
@@ -819,7 +831,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.18</span>
+  <span class="version">v6.3.19</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1809,11 +1821,11 @@ function checkCtAlerts() {
     alertBanner.classList.add("active");
     alertItems.innerHTML = alerts.map(a => `
       <div class="alert-item">
-        <div class="alert-item-vehicle">${a.immatriculation} - ${a.vehicule}</div>
-        <div class="alert-item-info">
-          CT avant le ${new Date(a.prochainDate).toLocaleDateString('fr-FR')}
-          <br><span class="alert-item-days">⏱️ ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}</span>
-        </div>
+        <span class="alert-item-vehicle">${a.immatriculation} - ${a.vehicule}</span>
+        <span class="alert-item-separator">|</span>
+        <span class="alert-item-info">CT avant le ${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
+        <span class="alert-item-separator">|</span>
+        <span class="alert-item-days">⏱️ ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}</span>
       </div>
     `).join("");
   } else {
