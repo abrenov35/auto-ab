@@ -34,6 +34,29 @@
       font-weight: 600;
     }
     
+    #vehiculeSelectToolbar {
+      padding: 10px 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      font-size: 14px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      cursor: pointer;
+      min-width: 250px;
+    }
+    
+    #vehiculeSelectToolbar option {
+      background: white;
+      color: #333;
+      padding: 10px;
+      margin: 4px 0;
+    }
+    
+    #vehiculeSelectToolbar option:checked {
+      background: #185fa5;
+      color: white;
+    }
+    
     .toolbar .version {
       font-size: 12px;
       opacity: 0.8;
@@ -503,8 +526,8 @@
 
 <div class="toolbar">
   <h1>🚗 AB PARC AUTO</h1>
-  <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()" style="padding: 10px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; font-size: 14px; background: rgba(255,255,255,0.1); color: white; cursor: pointer; min-width: 250px;">
-    <option value="" style="background: #0d3a66; color: white;">-- Sélectionne un véhicule --</option>
+  <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
+    <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <span class="version">v4</span>
 </div>
