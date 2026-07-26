@@ -819,7 +819,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.16</span>
+  <span class="version">v6.3.17</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1050,6 +1050,21 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTRÔLES TECHNIQUES COMPLET -->
+<div class="modal" id="ctCompleteModal">
+  <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+    <div class="modal-header">🔧 Contrôles Techniques - Tous les Véhicules</div>
+    
+    <div style="margin-bottom: 20px;">
+      <div id="ctCompleteList" style="display: grid; gap: 10px;"></div>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeControleTkModal()">Fermer</button>
     </div>
   </div>
 </div>
@@ -1797,17 +1812,65 @@ function renderControleTk() {
 }
 
 function openControleTkModal() {
-  if (!selectedVehicule) {
-    showMsg("⚠️ Sélectionne un véhicule d'abord", "warning");
-    return;
-  }
-  
-  // Ouvrir la modal d'édition du CT du véhicule sélectionné
-  openCtEditModal(selectedVehicule);
+  renderCtComplete();
+  document.getElementById("ctCompleteModal").classList.add("active");
 }
 
 function closeControleTkModal() {
-  document.getElementById("ctModal").classList.remove("active");
+  document.getElementById("ctCompleteModal").classList.remove("active");
+}
+
+function renderCtComplete() {
+  const ctList = document.getElementById("ctCompleteList");
+  
+  // Trier par Marque + Modèle (alphabétiquement)
+  const sorted = [...data.controlsTk].sort((a, b) => {
+    const vA = data.vehicules.find(v => v.immatriculation === a.immatriculation);
+    const vB = data.vehicules.find(v => v.immatriculation === b.immatriculation);
+    const fullA = (vA ? vA.marque + " " + vA.modele : "").toLowerCase();
+    const fullB = (vB ? vB.marque + " " + vB.modele : "").toLowerCase();
+    return fullA.localeCompare(fullB);
+  });
+  
+  ctList.innerHTML = sorted.map(ct => {
+    const v = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
+    const daysLeft = calculateDaysUntilCT(ct.prochainDate);
+    let statusClass = "";
+    let statusText = "";
+    
+    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
+      statusClass = "warning";
+      statusText = `⚠️ ${daysLeft}j`;
+    } else if (daysLeft !== null && daysLeft <= 0) {
+      statusClass = "danger";
+      statusText = "🔴 DÉPASSÉ";
+    } else if (daysLeft !== null && daysLeft > 30) {
+      statusClass = "ok";
+      statusText = `✅ ${daysLeft}j`;
+    }
+    
+    return `
+      <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; border-left: 4px solid #2196f3; margin-bottom: 10px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">${v ? v.marque + " " + v.modele : "Inconnu"} - ${ct.immatriculation}</div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+          <div>Conducteur: ${ct.conducteur || "-"}</div>
+          <div>Dernier CT: ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "-"}</div>
+          <div class="${statusClass}" style="font-weight: 600; color: ${statusClass === 'danger' ? '#d32f2f' : statusClass === 'warning' ? '#f57c00' : '#388e3c'};">
+            Prochain CT: ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "-"} ${statusText}
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="block-btn-edit" onclick="openCtEditModal('${ct.immatriculation}')">Modifier</button>
+          <button style="background: #1976d2; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="downloadCtDocs('${ct.immatriculation}')">📥 Pièces</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function downloadCtDocs(immatriculation) {
+  showMsg("📥 Téléchargement des pièces du CT - " + immatriculation, "info");
+  // À implémenter: télécharger les pièces
 }
 
 function openCtEditModal(immatriculation) {
