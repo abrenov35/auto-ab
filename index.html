@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.42</span>
+  <span class="version">v6.3.43</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1127,7 +1127,44 @@
   <div style="margin-bottom: 20px; border-bottom: 2px solid #185fa5; padding-bottom: 15px;">
     <h1 style="margin: 0; font-size: 24px; color: #0d3a66;">🔧 Contrôles Techniques</h1>
   </div>
+  <div style="margin-bottom: 16px;">
+    <button class="btn btn-success" onclick="openAddCtModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter un Contrôle Technique</button>
+  </div>
   <div id="ctPageList" style="display: grid; gap: 16px;"></div>
+</div>
+
+<!-- MODAL AJOUTER CONTRÔLE TECHNIQUE -->
+<div class="modal" id="addCtModal">
+  <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-header">Ajouter un Contrôle Technique</div>
+    
+    <div class="form-group">
+      <label>Véhicule *</label>
+      <select id="addCtVehicule" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">-- Sélectionner un véhicule --</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>Conducteur</label>
+      <input type="text" id="addCtConducteur" placeholder="Ex: Jean Dupont">
+    </div>
+    
+    <div class="form-group">
+      <label>Dernier Contrôle Technique</label>
+      <input type="date" id="addCtDernierDate">
+    </div>
+    
+    <div class="form-group">
+      <label>Prochain Contrôle Technique *</label>
+      <input type="date" id="addCtProchainDate" required>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeAddCtModal()">Annuler</button>
+      <button id="submitAddCtBtn" class="btn btn-success" onclick="submitAddCt()">Enregistrer</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL SORTIE DU PARC -->
@@ -2217,6 +2254,91 @@ function viewCtDocumentsInModal() {
   docsList.innerHTML = `<div style="padding: 10px; background: #f0f0f0; border-radius: 4px; text-align: center;">Aucun document trouvé</div>`;
   
   // TODO: Appeler downloadCtDocs() pour récupérer les vrais documents du GAS
+}
+
+function openAddCtModal() {
+  // Remplir le dropdown avec les véhicules du parc
+  const vehiculeSelect = document.getElementById("addCtVehicule");
+  
+  // Filtrer les véhicules qui n'ont pas déjà de CT
+  const vehiculesAvailables = data.vehicules.filter(v => 
+    v.statut === "Actif" && !data.controlsTk.find(ct => ct.immatriculation === v.immatriculation)
+  );
+  
+  vehiculeSelect.innerHTML = '<option value="">-- Sélectionner un véhicule --</option>';
+  vehiculesAvailables.forEach(v => {
+    const option = document.createElement("option");
+    option.value = v.immatriculation;
+    option.textContent = `${v.marque} ${v.modele} - ${v.immatriculation}`;
+    vehiculeSelect.appendChild(option);
+  });
+  
+  // Si aucun véhicule disponible
+  if (vehiculesAvailables.length === 0) {
+    vehiculeSelect.innerHTML = '<option value="">Aucun véhicule disponible</option>';
+    vehiculeSelect.disabled = true;
+  } else {
+    vehiculeSelect.disabled = false;
+  }
+  
+  // Vider les champs
+  document.getElementById("addCtConducteur").value = "";
+  document.getElementById("addCtDernierDate").value = "";
+  document.getElementById("addCtProchainDate").value = "";
+  
+  // Ouvrir la modal
+  document.getElementById("addCtModal").classList.add("active");
+}
+
+function closeAddCtModal() {
+  document.getElementById("addCtModal").classList.remove("active");
+  const submitBtn = document.getElementById("submitAddCtBtn");
+  if (submitBtn) submitBtn.disabled = false;
+}
+
+async function submitAddCt() {
+  const immatriculation = document.getElementById("addCtVehicule").value;
+  const conducteur = document.getElementById("addCtConducteur").value;
+  const dernierDate = document.getElementById("addCtDernierDate").value;
+  const prochainDate = document.getElementById("addCtProchainDate").value;
+  
+  if (!immatriculation) {
+    showMsg("Sélectionne un véhicule", "err");
+    return;
+  }
+  
+  if (!prochainDate) {
+    showMsg("Remplis la date du prochain CT", "err");
+    return;
+  }
+  
+  // Désactiver le bouton
+  const submitBtn = document.getElementById("submitAddCtBtn");
+  if (submitBtn) submitBtn.disabled = true;
+  
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "createControleTk",
+        immatriculation: immatriculation,
+        conducteur: conducteur,
+        dernierDate: dernierDate,
+        prochainDate: prochainDate
+      })
+    });
+    
+    closeAddCtModal();
+    await loadData();
+    checkCtAlerts();
+    renderMaintenanceBlocks();
+    renderCtPage();
+    showMsg("Contrôle Technique ajouté ✅", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
 }
 
 async function submitControleTk() {
