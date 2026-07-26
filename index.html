@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.61</span>
+  <span class="version">v6.3.63</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -924,6 +924,13 @@
     <div id="vehiculeDocumentsDetail" style="font-size: 14px; color: #666;">
       <p>Chargement...</p>
     </div>
+  </div>
+  
+  <!-- BOUTONS D'ACTION EN BAS -->
+  <div style="display: flex; gap: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+    <button class="btn btn-success" id="vehiculeAddRevisionBtn" onclick="openAddRevisionModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter une Révision</button>
+    <button class="btn btn-success" id="vehiculeAddCtBtn" onclick="openAddCtModal()" style="background: #1976d2; padding: 8px 16px; font-size: 14px;">+ Ajouter un CT</button>
+    <button class="btn btn-success" id="vehiculeAddDocBtn" onclick="openAddDocumentModal()" style="background: #388e3c; padding: 8px 16px; font-size: 14px;">+ Ajouter un Document</button>
   </div>
 </div>
 <div id="management">
@@ -1355,6 +1362,7 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3sASfX24W2PWK
 let data = { vehicules: [], documents: [], categories: [], controlsTk: [], revisions: [] };
 let selectedVehicule = null;
 let editingDocId = null;
+let currentVehiculeDetail = null;
 let editingCtImmat = null;
 
 // ========== INIT ==========
@@ -2271,6 +2279,11 @@ function openAddRevisionModal() {
     vehiculeSelect.disabled = false;
   }
   
+  // Pré-sélectionner le véhicule si on vient de la page détail
+  if (currentVehiculeDetail) {
+    vehiculeSelect.value = currentVehiculeDetail;
+  }
+  
   document.getElementById("addRevisionConducteur").value = "";
   document.getElementById("addRevisionDernierDate").value = "";
   document.getElementById("addRevisionProchainDate").value = "";
@@ -2759,6 +2772,7 @@ function showMsg(text, type) {
 // ===== PAGE DÉTAIL VÉHICULE =====
 
 function openVehiculeDetail(immatriculation) {
+  currentVehiculeDetail = immatriculation;
   document.getElementById("management").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "none";
   document.getElementById("revisionPage").style.display = "none";
