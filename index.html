@@ -818,7 +818,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
-  <span class="version">v6.3.7</span>
+  <span class="version">v6.3.8</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1226,26 +1226,42 @@ function renderMaintenanceBlocks() {
   if (ct) {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
     let dateClass = "";
-    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) dateClass = "warning";
-    else if (daysLeft !== null && daysLeft <= 0) dateClass = "danger";
+    let alertText = "";
+    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
+      dateClass = "warning";
+      alertText = ` ⚠️ BIENTÔT!`;
+    } else if (daysLeft !== null && daysLeft <= 0) {
+      dateClass = "danger";
+      alertText = ` 🔴 DÉPASSÉ!`;
+    }
     
     ctContent.innerHTML = `
       <div class="block-content">
         <div class="block-info">
-          <span class="block-info-label">Dernier:</span> ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : '-'} | 
-          <span class="block-info-label ct-date ${dateClass}">Prochain:</span> ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : '-'} ${daysLeft !== null && daysLeft > 0 ? `(${daysLeft}j)` : ''}
-          <br>
-          <span class="block-info-label">Conducteur:</span> ${ct.conducteur || '-'}
+          <div style="font-size: 13px; margin-bottom: 8px; line-height: 1.6;">
+            <div><strong>Immatriculation:</strong> ${selectedVehicule}</div>
+            <div><strong>Conducteur:</strong> ${ct.conducteur || '-'}</div>
+            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e0e0e0;">
+              <div><strong>Dernier CT:</strong> ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : '-'}</div>
+              <div class="${dateClass}" style="font-weight: 600; color: ${dateClass === 'danger' ? '#d32f2f' : dateClass === 'warning' ? '#f57c00' : '#388e3c'};"><strong>Prochain CT:</strong> ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : '-'}${daysLeft !== null && daysLeft > 0 ? ` (${daysLeft}j)${alertText}` : ''}${daysLeft !== null && daysLeft <= 0 ? alertText : ''}</div>
+            </div>
+          </div>
         </div>
         <div class="block-actions">
-          <button class="block-btn-see" onclick="alert('Voir CT')">Voir</button>
           <button class="block-btn-edit" onclick="openCtEditModal('${selectedVehicule}')">Modifier</button>
           <button class="block-btn-delete" onclick="deleteCt('${selectedVehicule}')">Supprimer</button>
         </div>
       </div>
     `;
   } else {
-    ctContent.innerHTML = '<div class="block-content" style="background: #f5f5f5;">Aucun contrôle technique enregistré</div>';
+    ctContent.innerHTML = `
+      <div class="block-content" style="background: #f5f5f5;">
+        <div style="font-size: 13px; color: #666;">
+          <strong>Immatriculation:</strong> ${selectedVehicule}<br>
+          <span style="color: #999;">Aucun contrôle technique enregistré</span>
+        </div>
+      </div>
+    `;
   }
   
   // DOCUMENTS
