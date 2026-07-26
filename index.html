@@ -190,6 +190,120 @@
       font-size: 12px;
     }
     
+    /* ===== BLOCS HORIZONTAUX ===== */
+    .maintenance-blocks {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    
+    .maintenance-block {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    
+    .maintenance-block.revision {
+      border-left: 4px solid #ff9800;
+    }
+    
+    .maintenance-block.ct {
+      border-left: 4px solid #2196f3;
+    }
+    
+    .maintenance-block.documents {
+      border-left: 4px solid #4caf50;
+    }
+    
+    .block-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0d3a66;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .block-icon {
+      font-size: 20px;
+    }
+    
+    .block-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .block-info {
+      color: #333;
+    }
+    
+    .block-info-label {
+      font-weight: 600;
+      color: #0d3a66;
+    }
+    
+    .block-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    
+    .block-actions button {
+      padding: 6px 10px;
+      font-size: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .block-btn-see {
+      background: #2196f3;
+      color: white;
+    }
+    
+    .block-btn-see:hover {
+      background: #1976d2;
+    }
+    
+    .block-btn-edit {
+      background: #ff9800;
+      color: white;
+    }
+    
+    .block-btn-edit:hover {
+      background: #f57c00;
+    }
+    
+    .block-btn-delete {
+      background: #f44336;
+      color: white;
+    }
+    
+    .block-btn-delete:hover {
+      background: #d32f2f;
+    }
+    
+    .block-btn-add {
+      background: #4caf50;
+      color: white;
+    }
+    
+    .block-btn-add:hover {
+      background: #388e3c;
+    }
+    
     .tabs {
       background: white;
       border-bottom: 2px solid #e0e0e0;
@@ -630,7 +744,7 @@
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6</span>
+  <span class="version">v6.1</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -692,7 +806,40 @@
       </div>
       
       <div id="documentsContainer">
-        <div class="empty">Sélectionne un véhicule pour voir ses documents</div>
+        <div class="empty">Sélectionne un véhicule pour voir ses maintenances</div>
+      </div>
+      
+      <!-- BLOCS MAINTENANCE -->
+      <div class="maintenance-blocks" id="maintenanceBlocks" style="display: none;">
+        <!-- RÉVISION -->
+        <div class="maintenance-block revision">
+          <div class="block-title">
+            <span class="block-icon">🔧</span>
+            MAINTENANCE - RÉVISION
+          </div>
+          <div id="revisionContent"></div>
+          <button class="btn btn-success" onclick="openAddRevisionModal()">+ Ajouter une révision</button>
+        </div>
+        
+        <!-- CONTRÔLE TECHNIQUE -->
+        <div class="maintenance-block ct">
+          <div class="block-title">
+            <span class="block-icon">✅</span>
+            CONTRÔLE TECHNIQUE
+          </div>
+          <div id="ctContent"></div>
+          <button class="btn btn-success" onclick="openAddCtModal()">+ Ajouter un CT</button>
+        </div>
+        
+        <!-- DOCUMENTS DIVERS -->
+        <div class="maintenance-block documents">
+          <div class="block-title">
+            <span class="block-icon">📋</span>
+            DOCUMENTS DIVERS
+          </div>
+          <div id="documentsContent"></div>
+          <button class="btn btn-success" onclick="openAddDocumentModal()">+ Ajouter un document</button>
+        </div>
       </div>
     </div>
   </div>
@@ -833,7 +980,7 @@
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G2j4z5BxaxKe99QDCpHJm3Dl94Qgksk0i6RBRlGP2RXSCOCwsWg/exec";
 
-let data = { vehicules: [], documents: [], categories: [], controlsTk: [] };
+let data = { vehicules: [], documents: [], categories: [], controlsTk: [], revisions: [] };
 let selectedVehicule = null;
 let editingDocId = null;
 let editingCtImmat = null;
@@ -850,6 +997,21 @@ async function loadData() {
     const response = await fetch(APPS_SCRIPT_URL + "?action=getAll");
     data = await response.json();
     renderCategories();
+    
+    // Initialiser les révisions si non présentes
+    if (!data.revisions || data.revisions.length === 0) {
+      data.revisions = [
+        { immatriculation: "CD 799 PT", conducteur: "Dépôt", dernierDate: "2026-04-26", prochainDate: "2026-12-08" },
+        { immatriculation: "HG-877-TV", conducteur: "Kevin", dernierDate: "2026-03-30", prochainDate: "2026-11-08" },
+        { immatriculation: "HD 453 ND", conducteur: "Morvan", dernierDate: "2026-05-31", prochainDate: "2027-02-08" },
+        { immatriculation: "FS 552 SF", conducteur: "Alexis", dernierDate: "2026-05-31", prochainDate: "2027-02-08" },
+        { immatriculation: "GN 478 AP", conducteur: "Younès", dernierDate: "2025-12-05", prochainDate: "2026-12-05" },
+        { immatriculation: "FG 758 GJ", conducteur: "Mohammed", dernierDate: "2025-11-18", prochainDate: "2026-08-18" },
+        { immatriculation: "HJ 896 AW", conducteur: "Jimmy", dernierDate: "2026-06-14", prochainDate: "2027-01-15" },
+        { immatriculation: "GD-344-XC", conducteur: "Solenn et Mathieu", dernierDate: "2025-12-01", prochainDate: "2026-12-12" },
+        { immatriculation: "HG-631-YY", conducteur: "Pascale", dernierDate: "2025-12-09", prochainDate: "2026-12-09" }
+      ];
+    }
   } catch (err) {
     console.error("Erreur:", err);
     showMsg("Erreur de chargement", "err");
@@ -920,36 +1082,89 @@ function selectVehicule(immatriculation, element) {
 }
 
 // ========== AFFICHAGE DOCUMENTS ==========
-function renderDocuments() {
+// ========== AFFICHAGE BLOCS MAINTENANCE ==========
+function renderMaintenanceBlocks() {
+  const revision = data.revisions.find(r => r.immatriculation === selectedVehicule);
+  const ct = data.controlsTk.find(c => c.immatriculation === selectedVehicule);
   const docs = data.documents.filter(d => d.immatriculation === selectedVehicule);
-  const container = document.getElementById("documentsContainer");
   
-  if (docs.length === 0) {
-    container.innerHTML = '<div class="empty">Aucun document pour ce véhicule</div>';
-    return;
-  }
+  const blocksContainer = document.getElementById("maintenanceBlocks");
+  const revContent = document.getElementById("revisionContent");
+  const ctContent = document.getElementById("ctContent");
+  const docsContent = document.getElementById("documentsContent");
   
-  container.innerHTML = '<div class="documents-grid" id="docsGrid"></div>';
-  const grid = document.getElementById("docsGrid");
-  
-  docs.forEach(doc => {
-    const card = document.createElement("div");
-    card.className = "doc-card";
-    card.innerHTML = `
-      <div class="doc-card-title">${doc.nom}</div>
-      <div class="doc-card-meta">
-        <strong>${doc.categorie}</strong><br>
-        ${doc.date ? `📅 ${doc.date}` : ""}<br>
-        ${doc.description ? `📝 ${doc.description}` : ""}
-      </div>
-      <div class="doc-card-actions">
-        <button class="btn" onclick="openDocLink('${doc.lienDrive}')">Voir</button>
-        <button class="btn btn-secondary" onclick="editDocument(${doc.id})">Modifier</button>
-        <button class="btn btn-danger" onclick="deleteDocument(${doc.id})">Supprimer</button>
+  // RÉVISION
+  if (revision) {
+    revContent.innerHTML = `
+      <div class="block-content">
+        <div class="block-info">
+          <span class="block-info-label">Dernière:</span> ${revision.dernierDate ? new Date(revision.dernierDate).toLocaleDateString('fr-FR') : '-'} | 
+          <span class="block-info-label">Prochaine:</span> ${revision.prochainDate ? new Date(revision.prochainDate).toLocaleDateString('fr-FR') : '-'}
+          <br>
+          <span class="block-info-label">Conducteur:</span> ${revision.conducteur || '-'}
+        </div>
+        <div class="block-actions">
+          <button class="block-btn-see" onclick="alert('Voir révision')">Voir</button>
+          <button class="block-btn-edit" onclick="openEditRevisionModal('${selectedVehicule}')">Modifier</button>
+          <button class="block-btn-delete" onclick="deleteRevision('${selectedVehicule}')">Supprimer</button>
+        </div>
       </div>
     `;
-    grid.appendChild(card);
-  });
+  } else {
+    revContent.innerHTML = '<div class="block-content" style="background: #f5f5f5;">Aucune révision enregistrée</div>';
+  }
+  
+  // CONTRÔLE TECHNIQUE
+  if (ct) {
+    const daysLeft = calculateDaysUntilCT(ct.prochainDate);
+    let dateClass = "";
+    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) dateClass = "warning";
+    else if (daysLeft !== null && daysLeft <= 0) dateClass = "danger";
+    
+    ctContent.innerHTML = `
+      <div class="block-content">
+        <div class="block-info">
+          <span class="block-info-label">Dernier:</span> ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : '-'} | 
+          <span class="block-info-label ct-date ${dateClass}">Prochain:</span> ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : '-'} ${daysLeft !== null && daysLeft > 0 ? `(${daysLeft}j)` : ''}
+          <br>
+          <span class="block-info-label">Conducteur:</span> ${ct.conducteur || '-'}
+        </div>
+        <div class="block-actions">
+          <button class="block-btn-see" onclick="alert('Voir CT')">Voir</button>
+          <button class="block-btn-edit" onclick="openCtEditModal('${selectedVehicule}')">Modifier</button>
+          <button class="block-btn-delete" onclick="deleteCt('${selectedVehicule}')">Supprimer</button>
+        </div>
+      </div>
+    `;
+  } else {
+    ctContent.innerHTML = '<div class="block-content" style="background: #f5f5f5;">Aucun contrôle technique enregistré</div>';
+  }
+  
+  // DOCUMENTS
+  if (docs.length > 0) {
+    docsContent.innerHTML = docs.map(doc => `
+      <div class="block-content">
+        <div class="block-info">
+          <span class="block-info-label">${doc.categorie}</span> - ${doc.nom}
+          <br>
+          ${doc.date ? `📅 ${new Date(doc.date).toLocaleDateString('fr-FR')}` : ''} ${doc.description ? `| ${doc.description}` : ''}
+        </div>
+        <div class="block-actions">
+          <button class="block-btn-see" onclick="openDocLink('${doc.lienDrive}')">Voir</button>
+          <button class="block-btn-edit" onclick="editDocument(${doc.id})">Modifier</button>
+          <button class="block-btn-delete" onclick="deleteDocument(${doc.id})">Supprimer</button>
+        </div>
+      </div>
+    `).join("");
+  } else {
+    docsContent.innerHTML = '<div class="block-content" style="background: #f5f5f5;">Aucun document enregistré</div>';
+  }
+  
+  blocksContainer.style.display = "block";
+}
+
+function renderDocuments() {
+  renderMaintenanceBlocks();
 }
 
 // ========== CATÉGORIES ==========
@@ -1288,11 +1503,37 @@ async function submitControleTk() {
     closeCtEditModal();
     await loadData();
     checkCtAlerts();
-    renderControleTk();
+    renderMaintenanceBlocks();
     showMsg("Contrôle technique mis à jour", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
   }
+}
+
+// ========== RÉVISIONS ==========
+function openEditRevisionModal(immatriculation) {
+  // À implémenter
+  showMsg("Fonctionnalité en cours de développement", "err");
+}
+
+function deleteRevision(immatriculation) {
+  if (!confirm("Supprimer cette révision?")) return;
+  // À implémenter
+  showMsg("Suppression en cours de développement", "err");
+}
+
+function openAddRevisionModal() {
+  showMsg("Ajouter révision en cours de développement", "err");
+}
+
+function deleteCt(immatriculation) {
+  if (!confirm("Supprimer ce CT?")) return;
+  // À implémenter
+  showMsg("Suppression CT en cours de développement", "err");
+}
+
+function openAddCtModal() {
+  showMsg("Ajouter CT en cours de développement", "err");
 }
 
 // ========== UTILITAIRES ==========
