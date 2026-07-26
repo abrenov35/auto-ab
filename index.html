@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.35</span>
+  <span class="version">v6.3.36</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1539,7 +1539,7 @@ async function uploadFileToGoogleDrive(file) {
     const fileBase64 = await fileToBase64(file);
     const response = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      payload: JSON.stringify({
+      body: JSON.stringify({
         action: 'uploadFile',
         fileName: file.name,
         vehicule: selectedVehicule,
@@ -1609,7 +1609,7 @@ async function submitDocument() {
     
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      payload: JSON.stringify(payload)
+      body: JSON.stringify(payload)
     });
     
     closeDocModal();
@@ -1627,7 +1627,7 @@ async function deleteDocument(docId) {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      payload: JSON.stringify({ action: "deleteDocument", id: docId })
+      body: JSON.stringify({ action: "deleteDocument", id: docId })
     });
     
     await loadData();
@@ -1680,7 +1680,7 @@ async function submitVehicule() {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      payload: JSON.stringify({
+      body: JSON.stringify({
         action: "createVehicule",
         immatriculation: immat,
         marque: marque,
@@ -1917,7 +1917,7 @@ async function submitInvite() {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      payload: JSON.stringify({
+      body: JSON.stringify({
         action: "createInvite",
         immatriculation: vehicule,
         nom: nom,
@@ -2190,9 +2190,9 @@ async function submitControleTk() {
   }
   
   try {
-    await fetch(APPS_SCRIPT_URL, {
+    const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      payload: JSON.stringify({
+      body: JSON.stringify({
         action: "updateControleTk",
         immatriculation: editingCtImmat,
         conducteur: conducteur,
@@ -2205,7 +2205,7 @@ async function submitControleTk() {
     await loadData();
     checkCtAlerts();
     renderMaintenanceBlocks();
-    showMsg("Contrôle technique mis à jour", "ok");
+    showMsg("Contrôle technique mis à jour ✅", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
   }
