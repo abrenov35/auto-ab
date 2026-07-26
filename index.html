@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.45</span>
+  <span class="version">v6.3.46</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1118,7 +1118,7 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button id="submitCtBtn" class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
-      <button id="btnViewDocsModal" class="btn" style="background: #1976d2; color: white; display: none;" onclick="viewCtDocumentsInModal()">👁️ Voir pièces</button>
+      <button id="btnViewDocsModal" class="btn" style="background: #1976d2; color: white; display: none;" onclick="openDocumentsModal()">📥 Télécharger</button>
     </div>
   </div>
 </div>
@@ -1209,6 +1209,34 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
       <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DOCUMENTS CT -->
+<div class="modal" id="documentsModal">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">📋 Documents CT - <span id="docModalImmat"></span></div>
+    
+    <div style="padding: 20px;">
+      <!-- Zone upload -->
+      <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 20px; border: 2px dashed #1976d2;">
+        <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce</div>
+        <input type="file" id="documentFileInput" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+        <button class="btn" style="background: #1976d2; color: white; width: 100%; padding: 10px;" onclick="uploadDocument()">Uploader le fichier</button>
+      </div>
+      
+      <!-- Liste des documents -->
+      <div style="margin-bottom: 20px;">
+        <div style="font-weight: 600; margin-bottom: 12px;">📂 Pièces existantes</div>
+        <div id="documentsList" style="max-height: 300px; overflow-y: auto;">
+          <div style="color: #999; text-align: center; padding: 20px;">Aucun document pour ce CT</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeDocumentsModal()">Fermer</button>
     </div>
   </div>
 </div>
@@ -2463,18 +2491,111 @@ function closeCtEditModal() {
   if (submitBtn) submitBtn.disabled = false;
 }
 
-function viewCtDocumentsInModal() {
+// ========== DOCUMENTS CT ==========
+
+function openDocumentsModal() {
   const immat = window.currentCtImmatriculation;
-  if (!immat) return;
+  if (!immat) {
+    showMsg("Aucun CT sélectionné", "err");
+    return;
+  }
   
-  // Afficher la section documents
-  document.getElementById("ctDocumentsSection").style.display = "block";
+  // Afficher l'immatriculation dans le header
+  document.getElementById("docModalImmat").textContent = immat;
   
-  // Simuler le chargement des documents (à intégrer avec votre backend GAS)
-  const docsList = document.getElementById("ctDocumentsList");
-  docsList.innerHTML = `<div style="padding: 10px; background: #f0f0f0; border-radius: 4px; text-align: center;">Aucun document trouvé</div>`;
+  // Réinitialiser l'input file
+  document.getElementById("documentFileInput").value = "";
   
-  // TODO: Appeler downloadCtDocs() pour récupérer les vrais documents du GAS
+  // Charger la liste des documents
+  loadDocumentsList(immat);
+  
+  // Ouvrir le modal
+  document.getElementById("documentsModal").classList.add("active");
+}
+
+function closeDocumentsModal() {
+  document.getElementById("documentsModal").classList.remove("active");
+}
+
+function loadDocumentsList(immat) {
+  // Récupérer les documents pour ce CT
+  const ctDocs = data.documents.filter(d => d.immatriculation === immat) || [];
+  
+  const docsList = document.getElementById("documentsList");
+  
+  if (ctDocs.length === 0) {
+    docsList.innerHTML = `<div style="color: #999; text-align: center; padding: 20px;">Aucun document pour ce CT</div>`;
+  } else {
+    docsList.innerHTML = ctDocs.map((doc, idx) => `
+      <div style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 600; font-size: 14px;">📄 ${doc.nom || "Document " + (idx + 1)}</div>
+          <div style="font-size: 12px; color: #666; margin-top: 4px;">
+            ${doc.date ? new Date(doc.date).toLocaleDateString('fr-FR') : ""}
+          </div>
+        </div>
+        <button class="btn" style="background: #d32f2f; color: white; padding: 6px 12px; font-size: 12px;" onclick="deleteDocument('${immat}', ${idx})">Supprimer</button>
+      </div>
+    `).join("");
+  }
+}
+
+function uploadDocument() {
+  const immat = window.currentCtImmatriculation;
+  const fileInput = document.getElementById("documentFileInput");
+  
+  if (!immat) {
+    showMsg("Aucun CT sélectionné", "err");
+    return;
+  }
+  
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showMsg("Sélectionne un fichier", "err");
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    try {
+      // Ajouter le document aux données locales (simulé)
+      if (!data.documents) data.documents = [];
+      
+      data.documents.push({
+        immatriculation: immat,
+        nom: file.name,
+        type: file.type,
+        size: file.size,
+        date: new Date(),
+        data: e.target.result // Base64
+      });
+      
+      // Rafraîchir la liste
+      loadDocumentsList(immat);
+      fileInput.value = "";
+      showMsg("Document uploadé ✅", "ok");
+      
+      // TODO: Envoyer au GAS pour stocker dans Google Drive/Sheet
+    } catch (err) {
+      showMsg("Erreur: " + err.message, "err");
+    }
+  };
+  
+  reader.readAsDataURL(file);
+}
+
+function deleteDocument(immat, idx) {
+  if (!confirm("Supprimer ce document ?")) return;
+  
+  data.documents = data.documents.filter((d, i) => !(d.immatriculation === immat && data.documents.indexOf(d) === idx));
+  loadDocumentsList(immat);
+  showMsg("Document supprimé ✅", "ok");
+}
+
+function viewCtDocumentsInModal() {
+  // Ancienne fonction - remplacée par openDocumentsModal()
+  openDocumentsModal();
 }
 
 function openAddCtModal() {
