@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.63</span>
+  <span class="version">v6.3.64</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1166,18 +1166,18 @@
 
 <!-- PAGE COMPLÈTE CONTRÔLES TECHNIQUES -->
 <div id="ctPage" style="display: none; background: white; padding: 20px;">
-  <div style="margin-bottom: 16px;">
+  <div id="ctPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px;"></div>
+  <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
     <button class="btn btn-success" onclick="openAddCtModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter un Contrôle Technique</button>
   </div>
-  <div id="ctPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px;"></div>
 </div>
 
 <!-- PAGE RÉVISIONS -->
 <div id="revisionPage" style="display: none; background: white; padding: 20px;">
-  <div style="margin-bottom: 16px;">
+  <div id="revisionPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px;"></div>
+  <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
     <button class="btn btn-success" onclick="openAddRevisionModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter une Révision</button>
   </div>
-  <div id="revisionPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px;"></div>
 </div>
 
 <!-- MODAL AJOUTER CONTRÔLE TECHNIQUE -->
