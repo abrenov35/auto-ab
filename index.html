@@ -819,7 +819,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.15</span>
+  <span class="version">v6.3.16</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1158,7 +1158,14 @@ function renderVehicules() {
   list.innerHTML = "";
   toolbar_select.innerHTML = '<option value="">-- Sélectionne un véhicule --</option>';
   
-  data.vehicules.forEach(v => {
+  // Trier les véhicules par Marque + Modèle (alphabétiquement)
+  const sortedVehicules = [...data.vehicules].sort((a, b) => {
+    const fullA = (a.marque + " " + a.modele).toLowerCase();
+    const fullB = (b.marque + " " + b.modele).toLowerCase();
+    return fullA.localeCompare(fullB);
+  });
+  
+  sortedVehicules.forEach(v => {
     // Sidebar item
     const li = document.createElement("li");
     li.className = "vehicule-item";
@@ -1169,10 +1176,10 @@ function renderVehicules() {
     li.onclick = () => selectVehicule(v.immatriculation, li);
     list.appendChild(li);
     
-    // Toolbar dropdown option
+    // Toolbar dropdown option - FORMAT: Marque Modèle - Immatriculation
     const option = document.createElement("option");
     option.value = v.immatriculation;
-    option.textContent = `${v.immatriculation} - ${v.marque} ${v.modele}`;
+    option.textContent = `${v.marque} ${v.modele} - ${v.immatriculation}`;
     toolbar_select.appendChild(option);
   });
 }
