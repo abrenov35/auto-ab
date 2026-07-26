@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.52</span>
+  <span class="version">v6.3.53</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1337,7 +1337,7 @@ async function init() {
 
 async function loadData() {
   try {
-    const response = await fetch(APPS_SCRIPT_URL + "?action=getAll");
+    const response = await fetch(APPS_SCRIPT_URL + "?action=loadData");
     data = await response.json();
     
     // Initialiser les révisions si non présentes
