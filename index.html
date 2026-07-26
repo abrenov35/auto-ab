@@ -75,6 +75,15 @@
       transform: scale(1.05);
     }
     
+    .btn-toolbar:active {
+      transform: scale(0.98);
+    }
+    
+    .btn-toolbar:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
     .toolbar .version {
       font-size: 12px;
       opacity: 0.8;
@@ -1546,7 +1555,7 @@ function checkCtAlerts() {
 
 function renderControleTk() {
   const tbody = document.getElementById("ctTableBody");
-  if (!tbody) return;
+  if (!tbody || !data || !data.controlsTk) return;
   
   tbody.innerHTML = data.controlsTk.map(ct => {
     const vehicule = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
