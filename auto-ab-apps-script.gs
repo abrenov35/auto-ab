@@ -172,6 +172,50 @@ function updateControleTk(immatriculation, conducteur, dernierDate, prochainDate
   }
 }
 
+// ========== UPLOAD FICHIERS ==========
+function uploadFile(fileName, vehicule, fileBase64, fileType) {
+  try {
+    // Créer un dossier pour les uploads si n'existe pas
+    const rootFolder = DriveApp.getRootFoldersByName("AB-PARC-AUTO-FILES");
+    let folder;
+    
+    if (rootFolder.hasNext()) {
+      folder = rootFolder.next();
+    } else {
+      folder = DriveApp.createFolder("AB-PARC-AUTO-FILES");
+    }
+    
+    // Créer un sous-dossier pour le véhicule
+    const vehiculeFolder = folder.getFoldersByName(vehicule);
+    let vFolder;
+    
+    if (vehiculeFolder.hasNext()) {
+      vFolder = vehiculeFolder.next();
+    } else {
+      vFolder = folder.createFolder(vehicule);
+    }
+    
+    // Décoder base64 et créer le fichier
+    const binaryData = Utilities.newBlob(Utilities.base64Decode(fileBase64), fileType, fileName);
+    const file = vFolder.createFile(binaryData);
+    
+    // Rendre accessible
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    return {
+      success: true,
+      fileUrl: file.getUrl(),
+      fileName: fileName,
+      fileId: file.getId()
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: "Erreur upload: " + err.toString()
+    };
+  }
+}
+
 // ========== HELPER: Add CORS headers ==========
 function setCorsHeaders_(output) {
   return output
@@ -250,6 +294,10 @@ function doPost(e) {
     } else if (action === "updateControleTk") {
       response = ContentService.createTextOutput(JSON.stringify(
         updateControleTk(data.immatriculation, data.conducteur, data.dernierDate, data.prochainDate)
+      )).setMimeType(ContentService.MimeType.JSON);
+    } else if (action === "uploadFile") {
+      response = ContentService.createTextOutput(JSON.stringify(
+        uploadFile(data.fileName, data.vehicule, data.fileBase64, data.fileType)
       )).setMimeType(ContentService.MimeType.JSON);
     } else {
       response = ContentService.createTextOutput(JSON.stringify({ error: "Action inconnue" }))
