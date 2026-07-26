@@ -27,6 +27,7 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      gap: 20px;
     }
     
     .toolbar h1 {
@@ -55,6 +56,23 @@
     #vehiculeSelectToolbar option:checked {
       background: #185fa5;
       color: white;
+    }
+    
+    .btn-toolbar {
+      background: #2e7d46;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-toolbar:hover {
+      background: #206334;
+      transform: scale(1.05);
     }
     
     .toolbar .version {
@@ -529,6 +547,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
+  <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
   <span class="version">v4</span>
 </div>
 
