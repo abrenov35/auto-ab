@@ -854,7 +854,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.21</span>
+  <span class="version">v6.3.22</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1090,14 +1090,12 @@
 </div>
 
 <!-- PAGE COMPLÈTE CONTRÔLES TECHNIQUES -->
-<div id="ctPage" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 1000; overflow-y: auto;">
-  <div style="padding: 20px; max-width: 1000px; margin: 0 auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #185fa5; padding-bottom: 15px;">
-      <h1 style="margin: 0; font-size: 28px; color: #0d3a66;">🔧 Contrôles Techniques</h1>
-      <button onclick="closeCtPage()" style="background: #999; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">Fermer</button>
-    </div>
-    <div id="ctPageList" style="display: grid; gap: 16px;"></div>
+<div id="ctPage" style="display: none; background: white; padding: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #185fa5; padding-bottom: 15px;">
+    <h1 style="margin: 0; font-size: 24px; color: #0d3a66;">🔧 Contrôles Techniques</h1>
+    <button onclick="closeCtPage()" style="background: #999; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">Fermer</button>
   </div>
+  <div id="ctPageList" style="display: grid; gap: 16px;"></div>
 </div>
 
 <!-- MODAL SORTIE DU PARC -->
@@ -1902,11 +1900,15 @@ function renderControleTk() {
 
 function openControleTkModal() {
   renderCtPage();
+  document.getElementById("management").style.display = "none";
   document.getElementById("ctPage").style.display = "block";
+  // Scroll vers le haut
+  window.scrollTo(0, 0);
 }
 
 function closeControleTkModal() {
   document.getElementById("ctPage").style.display = "none";
+  document.getElementById("management").style.display = "block";
 }
 
 function closeCtPage() {
