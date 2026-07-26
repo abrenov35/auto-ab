@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.56</span>
+  <span class="version">v6.3.57</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1131,7 +1131,7 @@
   <div style="margin-bottom: 16px;">
     <button class="btn btn-success" onclick="openAddCtModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter un Contrôle Technique</button>
   </div>
-  <div id="ctPageList" style="display: grid; gap: 16px;"></div>
+  <div id="ctPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px;"></div>
 </div>
 
 <!-- PAGE RÉVISIONS -->
@@ -2353,7 +2353,7 @@ function closeCtPage() {
 function renderCtPage() {
   const ctList = document.getElementById("ctPageList");
   
-  // Trier par Marque + Modèle (alphabétiquement)
+  // Trier par Marque + Modèle
   const sorted = [...data.controlsTk].sort((a, b) => {
     const vA = data.vehicules.find(v => v.immatriculation === a.immatriculation);
     const vB = data.vehicules.find(v => v.immatriculation === b.immatriculation);
@@ -2362,40 +2362,42 @@ function renderCtPage() {
     return fullA.localeCompare(fullB);
   });
   
-  ctList.innerHTML = sorted.map(ct => {
+  // En-têtes
+  let html = `
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque Modèle</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Immatriculation</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Conducteur</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Dernier CT</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Prochain CT</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Actions</div>
+  `;
+  
+  // Lignes
+  html += sorted.map(ct => {
     const v = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
-    let statusClass = "";
-    let statusText = "";
     
+    let statusColor = "#4caf50";
     if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
-      statusClass = "warning";
-      statusText = `⚠️ ${daysLeft}j`;
+      statusColor = "#ff9800";
     } else if (daysLeft !== null && daysLeft <= 0) {
-      statusClass = "danger";
-      statusText = "🔴 DÉPASSÉ";
-    } else if (daysLeft !== null && daysLeft > 30) {
-      statusClass = "ok";
-      statusText = `✅ ${daysLeft}j`;
+      statusColor = "#d32f2f";
     }
     
     return `
-      <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="font-weight: 600; font-size: 16px; color: #0d3a66; margin-bottom: 12px;">${v ? v.marque + " " + v.modele : "Inconnu"} - ${ct.immatriculation}</div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
-          <div style="font-size: 14px; color: #666; flex: 1;">
-            <div style="margin-bottom: 8px;"><strong>Conducteur:</strong> ${ct.conducteur || "-"}</div>
-            <div style="margin-bottom: 8px;"><strong>Dernier CT:</strong> ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "-"}</div>
-            <div style="margin-bottom: 8px; font-weight: 600; color: ${statusClass === 'danger' ? '#d32f2f' : statusClass === 'warning' ? '#f57c00' : '#388e3c'};"><strong>Prochain CT:</strong> ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "-"} ${statusText}</div>
-          </div>
-          <div style="display: flex; gap: 12px; flex-shrink: 0;">
-            <button class="block-btn-edit" onclick="openCtEditModal('${ct.immatriculation}')">Modifier</button>
-            <button style="background: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">👁️ Voir</button>
-          </div>
-        </div>
+      <div style="padding: 4px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v ? v.marque + " " + v.modele : "Inconnu"}</div>
+      <div style="padding: 4px; color: #666;">${ct.immatriculation}</div>
+      <div style="padding: 4px; color: #666;">${ct.conducteur || "—"}</div>
+      <div style="padding: 4px; color: #666;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
+      <div style="padding: 4px; color: #666;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"}<br><span style="font-size: 11px; color: ${statusColor};">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
+      <div style="padding: 4px; display: flex; gap: 4px;">
+        <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">✏️</button>
+        <button class="btn" style="background: #0d5aa8; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">👁️</button>
       </div>
     `;
   }).join("");
+  
+  ctList.innerHTML = html;
 }
 
 function renderCtComplete() {
