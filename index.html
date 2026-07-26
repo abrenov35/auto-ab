@@ -503,7 +503,10 @@
 
 <div class="toolbar">
   <h1>🚗 AB PARC AUTO</h1>
-  <span class="version">v3</span>
+  <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()" style="padding: 10px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; font-size: 14px; background: rgba(255,255,255,0.1); color: white; cursor: pointer; min-width: 250px;">
+    <option value="" style="background: #0d3a66; color: white;">-- Sélectionne un véhicule --</option>
+  </select>
+  <span class="version">v4</span>
 </div>
 
 <!-- TABS NAVIGATION -->
@@ -673,9 +676,13 @@ async function loadData() {
 // ========== AFFICHAGE VÉHICULES ==========
 function renderVehicules() {
   const list = document.getElementById("vehiculeList");
+  const toolbar_select = document.getElementById("vehiculeSelectToolbar");
+  
   list.innerHTML = "";
+  toolbar_select.innerHTML = '<option value="">-- Sélectionne un véhicule --</option>';
   
   data.vehicules.forEach(v => {
+    // Sidebar item
     const li = document.createElement("li");
     li.className = "vehicule-item";
     li.innerHTML = `
@@ -684,7 +691,36 @@ function renderVehicules() {
     `;
     li.onclick = () => selectVehicule(v.immatriculation, li);
     list.appendChild(li);
+    
+    // Toolbar dropdown option
+    const option = document.createElement("option");
+    option.value = v.immatriculation;
+    option.textContent = `${v.immatriculation} - ${v.marque} ${v.modele}`;
+    toolbar_select.appendChild(option);
   });
+}
+
+function selectVehiculeFromDropdown() {
+  const immatriculation = document.getElementById("vehiculeSelectToolbar").value;
+  if (!immatriculation) return;
+  
+  selectedVehicule = immatriculation;
+  document.querySelectorAll(".vehicule-item").forEach(el => el.classList.remove("active"));
+  
+  // Highlight dans la sidebar aussi
+  const sidebarItem = Array.from(document.querySelectorAll(".vehicule-item")).find(
+    el => el.textContent.includes(immatriculation)
+  );
+  if (sidebarItem) {
+    sidebarItem.classList.add("active");
+  }
+  
+  document.getElementById("vehiculeTitle").textContent = immatriculation;
+  document.getElementById("addDocBtn").style.display = "block";
+  document.getElementById("inviteBtn").style.display = "block";
+  document.getElementById("inviteVehiculeSelect").style.display = "block";
+  
+  renderDocuments();
 }
 
 function selectVehicule(immatriculation, element) {
