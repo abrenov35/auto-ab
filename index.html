@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v1 -->
+<!-- AB PARC AUTO v2 -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -43,95 +43,298 @@
     }
     
     .container {
-      max-width: 1000px;
-      margin: 40px auto;
+      max-width: 1200px;
+      margin: 20px auto;
       padding: 0 20px;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
     }
     
-    .section {
+    .sidebar {
       background: white;
       border-radius: 8px;
-      padding: 40px;
-      margin-bottom: 30px;
+      padding: 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      height: fit-content;
     }
     
-    .section h2 {
-      color: #185fa5;
-      font-size: 20px;
+    .sidebar h2 {
+      font-size: 16px;
       font-weight: 600;
-      margin-bottom: 24px;
+      color: #0d3a66;
+      margin-bottom: 16px;
       border-bottom: 2px solid #185fa5;
-      padding-bottom: 12px;
+      padding-bottom: 8px;
     }
     
-    .features-list, .storage-list {
+    .vehicule-list {
       list-style: none;
     }
     
-    .features-list li, .storage-list li {
-      margin-bottom: 16px;
-      padding-left: 28px;
-      position: relative;
-      font-size: 15px;
-      line-height: 1.7;
+    .vehicule-item {
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #f5f7fa;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid #185fa5;
     }
     
-    .features-list li:before, .storage-list li:before {
-      content: "•";
-      position: absolute;
+    .vehicule-item:hover {
+      background: #e8f1f7;
+    }
+    
+    .vehicule-item.active {
+      background: #185fa5;
+      color: white;
+    }
+    
+    .vehicule-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .vehicule-meta {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+    
+    .main {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      gap: 12px;
+    }
+    
+    .header-actions h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #0d3a66;
+      margin: 0;
+    }
+    
+    .btn {
+      background: #185fa5;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .btn:hover {
+      background: #0d3a66;
+    }
+    
+    .btn-secondary {
+      background: #999;
+    }
+    
+    .btn-secondary:hover {
+      background: #777;
+    }
+    
+    .btn-success {
+      background: #2e7d46;
+    }
+    
+    .btn-success:hover {
+      background: #206334;
+    }
+    
+    .btn-danger {
+      background: #b3352c;
+    }
+    
+    .btn-danger:hover {
+      background: #8a2620;
+    }
+    
+    .documents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    
+    .doc-card {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 16px;
+      background: #fafbfc;
+      transition: all 0.2s;
+    }
+    
+    .doc-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+    
+    .doc-card-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: #0d3a66;
+      margin-bottom: 8px;
+    }
+    
+    .doc-card-meta {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    
+    .doc-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .doc-card-actions button {
+      flex: 1;
+      padding: 8px;
+      font-size: 12px;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
       left: 0;
-      color: #185fa5;
-      font-weight: bold;
-      font-size: 18px;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
     }
     
-    .feature-name {
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      font-size: 20px;
       font-weight: 600;
-      color: #222;
+      color: #0d3a66;
+      margin-bottom: 20px;
     }
     
-    .storage-name {
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
       font-weight: 600;
-      color: #222;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #333;
     }
     
-    /* Responsive */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+    
+    .empty {
+      text-align: center;
+      color: #999;
+      padding: 40px 20px;
+      font-size: 16px;
+    }
+    
+    .msg {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 6px;
+      color: white;
+      z-index: 2000;
+      animation: slide 0.3s;
+    }
+    
+    .msg.ok {
+      background: #2e7d46;
+    }
+    
+    .msg.err {
+      background: #b3352c;
+    }
+    
+    @keyframes slide {
+      from { transform: translateX(400px); }
+      to { transform: translateX(0); }
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    
+    @media (max-width: 1024px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      
+      .sidebar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+      }
+      
+      .vehicule-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px;
+      }
+    }
+    
     @media (max-width: 768px) {
       .toolbar {
         padding: 12px 16px;
-        flex-direction: column;
-        gap: 12px;
-        align-items: flex-start;
-      }
-      
-      .toolbar h1 {
-        font-size: 20px;
-      }
-      
-      .toolbar .version {
-        font-size: 11px;
-      }
-      
-      .section {
-        padding: 24px;
-        margin-bottom: 20px;
-      }
-      
-      .section h2 {
-        font-size: 18px;
-        margin-bottom: 18px;
-      }
-      
-      .features-list li, .storage-list li {
-        font-size: 14px;
-        margin-bottom: 12px;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .toolbar {
-        padding: 10px 12px;
       }
       
       .toolbar h1 {
@@ -139,24 +342,21 @@
       }
       
       .container {
-        margin: 20px auto;
+        margin: 10px auto;
         padding: 0 12px;
       }
       
-      .section {
+      .main {
         padding: 16px;
-        margin-bottom: 16px;
       }
       
-      .section h2 {
-        font-size: 16px;
-        margin-bottom: 14px;
+      .documents-grid {
+        grid-template-columns: 1fr;
       }
       
-      .features-list li, .storage-list li {
-        font-size: 13px;
-        margin-bottom: 10px;
-        padding-left: 24px;
+      .header-actions {
+        flex-direction: column;
+        align-items: flex-start;
       }
     }
   </style>
@@ -164,37 +364,262 @@
 <body>
 
 <div class="toolbar">
-  <h1>📋 AB PARC AUTO</h1>
-  <span class="version">v1</span>
+  <h1>🚗 AB PARC AUTO</h1>
+  <span class="version">v2</span>
 </div>
 
 <div class="container">
-  
-  <!-- SECTION FONCTIONNALITÉS -->
-  <div class="section">
-    <h2>Fonctionnalités</h2>
-    <ul class="features-list">
-      <li><span class="feature-name">Ajout de documents</span> — importer un fichier avec son nom, sa catégorie et sa description.</li>
-      <li><span class="feature-name">Liste dynamique</span> — afficher immédiatement les documents ajoutés, sans rechargement de la page.</li>
-      <li><span class="feature-name">Recherche et filtres</span> — retrouver rapidement un document par véhicule, catégorie, nom ou date.</li>
-      <li><span class="feature-name">Visualisation</span> — ouvrir directement les documents stockés dans Google Drive.</li>
-      <li><span class="feature-name">Modification</span> — remplacer un fichier existant ou modifier son nom, sa catégorie et sa description.</li>
-      <li><span class="feature-name">Suppression</span> — supprimer le fichier dans Google Drive ainsi que son enregistrement dans Google Sheets, après confirmation.</li>
-    </ul>
+  <!-- SIDEBAR VÉHICULES -->
+  <div class="sidebar">
+    <h2>Véhicules</h2>
+    <ul class="vehicule-list" id="vehiculeList"></ul>
   </div>
   
-  <!-- SECTION STOCKAGE -->
-  <div class="section">
-    <h2>Stockage</h2>
-    <ul class="storage-list">
-      <li><span class="storage-name">Google Drive</span> — stockage des fichiers originaux.</li>
-      <li><span class="storage-name">Google Sheets</span> — stockage des métadonnées, des identifiants et des liens Drive.</li>
-      <li><span class="storage-name">Synchronisation automatique</span> — mise à jour des données entre l'application, Google Drive et Google Sheets.</li>
-      <li><span class="storage-name">Stockage centralisé</span> — tous les documents sont rattachés à la fiche du véhicule concerné.</li>
-    </ul>
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="header-actions">
+      <h2 id="vehiculeTitle">Sélectionne un véhicule</h2>
+      <button class="btn btn-success" onclick="openAddDocumentModal()" id="addDocBtn" style="display:none;">+ Ajouter document</button>
+    </div>
+    
+    <div id="documentsContainer">
+      <div class="empty">Sélectionne un véhicule pour voir ses documents</div>
+    </div>
   </div>
-
 </div>
+
+<!-- MODAL AJOUTER/MODIFIER DOCUMENT -->
+<div class="modal" id="docModal">
+  <div class="modal-content">
+    <div class="modal-header" id="docModalTitle">Ajouter un document</div>
+    
+    <div class="form-group">
+      <label>Catégorie *</label>
+      <select id="docCategorie" required></select>
+    </div>
+    
+    <div class="form-group">
+      <label>Nom du fichier *</label>
+      <input type="text" id="docNom" required placeholder="Ex: Assurance_2026.pdf">
+    </div>
+    
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="docDate">
+    </div>
+    
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="docDescription" placeholder="Détails supplémentaires..."></textarea>
+    </div>
+    
+    <div class="form-group">
+      <label>Lien Google Drive *</label>
+      <input type="url" id="docLienDrive" required placeholder="https://drive.google.com/file/d/...">
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeDocModal()">Annuler</button>
+      <button class="btn btn-success" onclick="submitDocument()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = "REMPLACER_PAR_URL_APPS_SCRIPT";
+
+let data = { vehicules: [], documents: [], categories: [] };
+let selectedVehicule = null;
+let editingDocId = null;
+
+// ========== INIT ==========
+async function init() {
+  await loadData();
+  renderVehicules();
+}
+
+async function loadData() {
+  try {
+    const response = await fetch(APPS_SCRIPT_URL + "?action=getAll");
+    data = await response.json();
+    renderCategories();
+  } catch (err) {
+    console.error("Erreur:", err);
+    showMsg("Erreur de chargement", "err");
+  }
+}
+
+// ========== AFFICHAGE VÉHICULES ==========
+function renderVehicules() {
+  const list = document.getElementById("vehiculeList");
+  list.innerHTML = "";
+  
+  data.vehicules.forEach(v => {
+    const li = document.createElement("li");
+    li.className = "vehicule-item";
+    li.innerHTML = `
+      <div class="vehicule-name">${v.immatriculation}</div>
+      <div class="vehicule-meta">${v.marque} ${v.modele}</div>
+    `;
+    li.onclick = () => selectVehicule(v.immatriculation);
+    list.appendChild(li);
+  });
+}
+
+function selectVehicule(immatriculation) {
+  selectedVehicule = immatriculation;
+  document.querySelectorAll(".vehicule-item").forEach(el => el.classList.remove("active"));
+  event.target.closest(".vehicule-item").classList.add("active");
+  
+  document.getElementById("vehiculeTitle").textContent = immatriculation;
+  document.getElementById("addDocBtn").style.display = "block";
+  
+  renderDocuments();
+}
+
+// ========== AFFICHAGE DOCUMENTS ==========
+function renderDocuments() {
+  const docs = data.documents.filter(d => d.immatriculation === selectedVehicule);
+  const container = document.getElementById("documentsContainer");
+  
+  if (docs.length === 0) {
+    container.innerHTML = '<div class="empty">Aucun document pour ce véhicule</div>';
+    return;
+  }
+  
+  container.innerHTML = '<div class="documents-grid" id="docsGrid"></div>';
+  const grid = document.getElementById("docsGrid");
+  
+  docs.forEach(doc => {
+    const card = document.createElement("div");
+    card.className = "doc-card";
+    card.innerHTML = `
+      <div class="doc-card-title">${doc.nom}</div>
+      <div class="doc-card-meta">
+        <strong>${doc.categorie}</strong><br>
+        ${doc.date ? `📅 ${doc.date}` : ""}<br>
+        ${doc.description ? `📝 ${doc.description}` : ""}
+      </div>
+      <div class="doc-card-actions">
+        <button class="btn" onclick="openDocLink('${doc.lienDrive}')">Voir</button>
+        <button class="btn btn-secondary" onclick="editDocument(${doc.id})">Modifier</button>
+        <button class="btn btn-danger" onclick="deleteDocument(${doc.id})">Supprimer</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ========== CATÉGORIES ==========
+function renderCategories() {
+  const select = document.getElementById("docCategorie");
+  select.innerHTML = "";
+  data.categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat.nom;
+    option.textContent = cat.nom;
+    select.appendChild(option);
+  });
+}
+
+// ========== MODAL DOCUMENT ==========
+function openAddDocumentModal() {
+  editingDocId = null;
+  document.getElementById("docModalTitle").textContent = "Ajouter un document";
+  document.getElementById("docNom").value = "";
+  document.getElementById("docDate").value = "";
+  document.getElementById("docDescription").value = "";
+  document.getElementById("docLienDrive").value = "";
+  document.getElementById("docModal").classList.add("active");
+}
+
+function editDocument(docId) {
+  const doc = data.documents.find(d => d.id == docId);
+  if (!doc) return;
+  
+  editingDocId = docId;
+  document.getElementById("docModalTitle").textContent = "Modifier le document";
+  document.getElementById("docCategorie").value = doc.categorie;
+  document.getElementById("docNom").value = doc.nom;
+  document.getElementById("docDate").value = doc.date;
+  document.getElementById("docDescription").value = doc.description;
+  document.getElementById("docLienDrive").value = doc.lienDrive;
+  document.getElementById("docModal").classList.add("active");
+}
+
+function closeDocModal() {
+  document.getElementById("docModal").classList.remove("active");
+}
+
+async function submitDocument() {
+  const categorie = document.getElementById("docCategorie").value;
+  const nom = document.getElementById("docNom").value;
+  const date = document.getElementById("docDate").value;
+  const description = document.getElementById("docDescription").value;
+  const lienDrive = document.getElementById("docLienDrive").value;
+  
+  if (!categorie || !nom || !lienDrive) {
+    showMsg("Remplis les champs requis", "err");
+    return;
+  }
+  
+  try {
+    const action = editingDocId ? "updateDocument" : "createDocument";
+    const payload = { action, categorie, nom, date, description, lienDrive };
+    
+    if (editingDocId) {
+      payload.id = editingDocId;
+    } else {
+      payload.immatriculation = selectedVehicule;
+    }
+    
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      payload: JSON.stringify(payload)
+    });
+    
+    closeDocModal();
+    await loadData();
+    renderDocuments();
+    showMsg(editingDocId ? "Document modifié" : "Document ajouté", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+  }
+}
+
+async function deleteDocument(docId) {
+  if (!confirm("Supprimer ce document?")) return;
+  
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      payload: JSON.stringify({ action: "deleteDocument", id: docId })
+    });
+    
+    await loadData();
+    renderDocuments();
+    showMsg("Document supprimé", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+  }
+}
+
+function openDocLink(url) {
+  window.open(url, "_blank");
+}
+
+// ========== UTILITAIRES ==========
+function showMsg(text, type) {
+  const msg = document.createElement("div");
+  msg.className = `msg ${type}`;
+  msg.textContent = text;
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 3000);
+}
+
+init();
+</script>
 
 </body>
 </html>
+
