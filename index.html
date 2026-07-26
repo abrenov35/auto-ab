@@ -222,17 +222,17 @@
     .maintenance-blocks {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
       margin-top: 20px;
     }
     
     .maintenance-block {
       background: white;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      max-height: 400px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      max-height: 280px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -251,17 +251,19 @@
     }
     
     .block-title {
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 600;
       color: #0d3a66;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e8e8e8;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
     
     .block-icon {
-      font-size: 20px;
+      font-size: 16px;
     }
     
     #revisionContent,
@@ -269,29 +271,33 @@
     #documentsContent {
       flex: 1;
       overflow-y: auto;
-      margin-bottom: 12px;
-      max-height: 280px;
+      margin-bottom: 8px;
+      max-height: 200px;
+      font-size: 12px;
     }
     
     .block-content {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr;
-      gap: 12px;
+      gap: 8px;
       align-items: center;
-      margin-bottom: 12px;
-      padding: 12px;
+      margin-bottom: 8px;
+      padding: 8px;
       background: #f9fafb;
-      border-radius: 6px;
-      font-size: 14px;
+      border-radius: 4px;
+      font-size: 12px;
     }
     
     .block-info {
       color: #333;
+      font-size: 11px;
+      line-height: 1.4;
     }
     
     .block-info-label {
       font-weight: 600;
       color: #0d3a66;
+      font-size: 11px;
     }
     
     .block-actions {
@@ -596,6 +602,23 @@
       background: #206334;
     }
     
+    .btn-block-add {
+      background: #2e7d46;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      width: 100%;
+      margin-top: auto;
+    }
+    
+    .btn-block-add:hover {
+      background: #206334;
+    }
+    
     .btn-danger {
       background: #b3352c;
     }
@@ -831,7 +854,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.19</span>
+  <span class="version">v6.3.20</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -905,7 +928,7 @@
             MAINTENANCE - RÉVISION
           </div>
           <div id="revisionContent"></div>
-          <button class="btn btn-success" onclick="openAddRevisionModal()">+ Ajouter une révision</button>
+          <button class="btn-block-add" onclick="openAddRevisionModal()">+ Ajouter une révision</button>
         </div>
         
         <!-- CONTRÔLE TECHNIQUE -->
@@ -915,7 +938,7 @@
             CONTRÔLE TECHNIQUE
           </div>
           <div id="ctContent"></div>
-          <button class="btn btn-success" onclick="openAddCtModal()">+ Ajouter un CT</button>
+          <button class="btn-block-add" onclick="openAddCtModal()">+ Ajouter un CT</button>
         </div>
         
         <!-- DOCUMENTS DIVERS -->
@@ -925,7 +948,7 @@
             DOCUMENTS DIVERS
           </div>
           <div id="documentsContent"></div>
-          <button class="btn btn-success" onclick="openAddDocumentModal()">+ Ajouter un document</button>
+          <button class="btn-block-add" onclick="openAddDocumentModal()">+ Ajouter un document</button>
         </div>
       </div>
     </div>
