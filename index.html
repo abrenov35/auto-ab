@@ -103,7 +103,7 @@
     .alert-banner {
       background: #ffcdd2;
       color: #c62828;
-      padding: 4px 12px;
+      padding: 2px 8px;
       border-bottom: 3px solid #e57373;
       display: none;
     }
@@ -113,40 +113,44 @@
     }
     
     .alert-banner h3 {
-      margin: 0 0 2px 0;
-      font-size: 12px;
+      margin: 0;
+      font-size: 11px;
       font-weight: 600;
       color: #c62828;
+      display: inline;
+      margin-right: 12px;
     }
     
     .alert-items {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      display: inline-flex;
+      flex-direction: row;
+      gap: 12px;
+      align-items: center;
     }
     
     .alert-item {
-      background: rgba(200, 40, 40, 0.08);
-      padding: 6px;
-      border-radius: 6px;
-      border-left: 3px solid #c62828;
-      display: flex;
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      border-left: none;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       white-space: nowrap;
-      overflow-x: auto;
+      overflow-x: visible;
       color: #c62828;
+      font-size: 11px;
     }
     
     .alert-item-vehicle {
       font-weight: 600;
-      font-size: 12px;
+      font-size: 11px;
       flex-shrink: 0;
       color: #c62828;
     }
     
     .alert-item-info {
-      font-size: 12px;
+      font-size: 11px;
       opacity: 0.95;
       flex-shrink: 0;
       color: #c62828;
@@ -156,6 +160,7 @@
       color: #d32f2f;
       font-weight: 600;
       flex-shrink: 0;
+      font-size: 11px;
     }
     
     .alert-item-separator {
@@ -859,7 +864,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.24</span>
+  <span class="version">v6.3.25</span>
 </div>
 
 <!-- ALERTE CT -->
