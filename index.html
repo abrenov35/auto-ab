@@ -507,50 +507,10 @@
 </div>
 
 <!-- TABS NAVIGATION -->
-<div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('home')">Accueil</button>
-  <button class="tab-btn" onclick="switchTab('management')">Gestion du parc</button>
-</div>
+<!-- SUPPRIMÉ - Plus de tabs, seulement la gestion du parc -->
 
-<!-- ===== HOME TAB ===== -->
-<div class="tab-content active" id="home">
-  <div class="home-container">
-    <div class="hero">
-      <h2>Bienvenue dans AB PARC AUTO</h2>
-      <p>Gestion centralisée et documentaire de votre parc automobile</p>
-      <button class="hero-btn" onclick="switchTab('management')">Accéder à la gestion →</button>
-    </div>
-    
-    <div class="sections">
-      <!-- FONCTIONNALITÉS -->
-      <div class="section">
-        <h3>Fonctionnalités</h3>
-        <ul>
-          <li><span class="feature-name">Ajout de documents</span> — importer un fichier avec son nom, sa catégorie et sa description.</li>
-          <li><span class="feature-name">Liste dynamique</span> — afficher immédiatement les documents ajoutés, sans rechargement de la page.</li>
-          <li><span class="feature-name">Recherche et filtres</span> — retrouver rapidement un document par véhicule, catégorie, nom ou date.</li>
-          <li><span class="feature-name">Visualisation</span> — ouvrir directement les documents stockés dans Google Drive.</li>
-          <li><span class="feature-name">Modification</span> — remplacer un fichier existant ou modifier son nom, sa catégorie et sa description.</li>
-          <li><span class="feature-name">Suppression</span> — supprimer le fichier dans Google Drive ainsi que son enregistrement dans Google Sheets, après confirmation.</li>
-        </ul>
-      </div>
-      
-      <!-- STOCKAGE -->
-      <div class="section">
-        <h3>Stockage</h3>
-        <ul>
-          <li><span class="storage-name">Google Drive</span> — stockage des fichiers originaux.</li>
-          <li><span class="storage-name">Google Sheets</span> — stockage des métadonnées, des identifiants et des liens Drive.</li>
-          <li><span class="storage-name">Synchronisation automatique</span> — mise à jour des données entre l'application, Google Drive et Google Sheets.</li>
-          <li><span class="storage-name">Stockage centralisé</span> — tous les documents sont rattachés à la fiche du véhicule concerné.</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== MANAGEMENT TAB ===== -->
-<div class="tab-content" id="management">
+<!-- ===== MANAGEMENT TAB ===== (PAGE UNIQUE) -->
+<div id="management">
   <div class="management-container">
     <!-- SIDEBAR VÉHICULES -->
     <div class="sidebar">
@@ -692,19 +652,6 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD9
 let data = { vehicules: [], documents: [], categories: [] };
 let selectedVehicule = null;
 let editingDocId = null;
-
-// ========== TABS ==========
-function switchTab(tabName) {
-  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
-  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
-  
-  document.getElementById(tabName).classList.add("active");
-  event.target.classList.add("active");
-  
-  if (tabName === "management" && data.vehicules.length === 0) {
-    init();
-  }
-}
 
 // ========== INIT ==========
 async function init() {
@@ -998,6 +945,9 @@ function showMsg(text, type) {
   document.body.appendChild(msg);
   setTimeout(() => msg.remove(), 3000);
 }
+
+// Initialiser l'app au chargement
+init();
 </script>
 
 </body>
