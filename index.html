@@ -83,6 +83,113 @@
       border-radius: 4px;
     }
     
+    /* ===== ALERTE CT ===== */
+    .alert-banner {
+      background: #dc3545;
+      color: white;
+      padding: 16px 24px;
+      border-bottom: 3px solid #a02834;
+      display: none;
+    }
+    
+    .alert-banner.active {
+      display: block;
+    }
+    
+    .alert-banner h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .alert-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 12px;
+    }
+    
+    .alert-item {
+      background: rgba(255,255,255,0.1);
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid #fff;
+    }
+    
+    .alert-item-vehicle {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    
+    .alert-item-info {
+      font-size: 13px;
+      opacity: 0.95;
+    }
+    
+    .alert-item-days {
+      color: #ffeb3b;
+      font-weight: 600;
+    }
+    
+    /* ===== CONTRÔLES TECHNIQUES ===== */
+    .ct-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    .ct-table thead {
+      background: #f5f7fa;
+      border-bottom: 2px solid #185fa5;
+    }
+    
+    .ct-table th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #0d3a66;
+      font-size: 14px;
+    }
+    
+    .ct-table tbody tr {
+      border-bottom: 1px solid #eee;
+      transition: all 0.2s;
+    }
+    
+    .ct-table tbody tr:hover {
+      background: #f9fafb;
+    }
+    
+    .ct-table td {
+      padding: 12px;
+      font-size: 14px;
+      color: #333;
+    }
+    
+    .ct-date {
+      font-weight: 500;
+    }
+    
+    .ct-date.warning {
+      color: #d97706;
+      font-weight: 600;
+    }
+    
+    .ct-date.danger {
+      color: #dc3545;
+      font-weight: 600;
+    }
+    
+    .ct-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .ct-actions button {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    
     .tabs {
       background: white;
       border-bottom: 2px solid #e0e0e0;
@@ -522,7 +629,14 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
-  <span class="version">v5</span>
+  <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
+  <span class="version">v5.1</span>
+</div>
+
+<!-- ALERTE CT -->
+<div class="alert-banner" id="alertBanner">
+  <h3>⚠️ CONTRÔLES TECHNIQUES À VÉRIFIER</h3>
+  <div class="alert-items" id="alertItems"></div>
 </div>
 
 <!-- TABS NAVIGATION -->
@@ -662,17 +776,73 @@
   </div>
 </div>
 
+<!-- MODAL CONTRÔLES TECHNIQUES -->
+<div class="modal" id="ctModal">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">Gestion des Contrôles Techniques</div>
+    
+    <div style="max-height: 60vh; overflow-y: auto; margin-bottom: 20px;">
+      <table class="ct-table">
+        <thead>
+          <tr>
+            <th>Immatriculation</th>
+            <th>Marque/Modèle</th>
+            <th>Conducteur</th>
+            <th>Prochain CT</th>
+            <th style="text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="ctTableBody">
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeControleTkModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MODIFIER CT -->
+<div class="modal" id="ctEditModal">
+  <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-header" id="ctEditTitle">Modifier Contrôle Technique</div>
+    
+    <div class="form-group">
+      <label>Conducteur</label>
+      <input type="text" id="ctConducteur" placeholder="Ex: Jean Dupont">
+    </div>
+    
+    <div class="form-group">
+      <label>Dernier Contrôle Technique</label>
+      <input type="date" id="ctDernierDate">
+    </div>
+    
+    <div class="form-group">
+      <label>Prochain Contrôle Technique *</label>
+      <input type="date" id="ctProchainDate" required>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
+      <button class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G2j4z5BxaxKe99QDCpHJm3Dl94Qgksk0i6RBRlGP2RXSCOCwsWg/exec";
 
-let data = { vehicules: [], documents: [], categories: [] };
+let data = { vehicules: [], documents: [], categories: [], controlsTk: [] };
 let selectedVehicule = null;
 let editingDocId = null;
+let editingCtImmat = null;
 
 // ========== INIT ==========
 async function init() {
   await loadData();
   renderVehicules();
+  checkCtAlerts();
 }
 
 async function loadData() {
@@ -981,6 +1151,145 @@ async function submitInvite() {
     toggleInviteForm();
     
     showMsg("Invité ajouté avec succès!", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+  }
+}
+
+// ========== CONTRÔLES TECHNIQUES ==========
+function calculateDaysUntilCT(dateString) {
+  if (!dateString) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const ctDate = new Date(dateString);
+  ctDate.setHours(0, 0, 0, 0);
+  const diffTime = ctDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+function checkCtAlerts() {
+  const alertBanner = document.getElementById("alertBanner");
+  const alertItems = document.getElementById("alertItems");
+  const alerts = [];
+  
+  data.controlsTk.forEach(ct => {
+    const daysLeft = calculateDaysUntilCT(ct.prochainDate);
+    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
+      const vehicule = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
+      alerts.push({
+        immatriculation: ct.immatriculation,
+        vehicule: vehicule ? `${vehicule.marque} ${vehicule.modele}` : "Véhicule inconnu",
+        daysLeft: daysLeft,
+        prochainDate: ct.prochainDate
+      });
+    }
+  });
+  
+  if (alerts.length > 0) {
+    alertBanner.classList.add("active");
+    alertItems.innerHTML = alerts.map(a => `
+      <div class="alert-item">
+        <div class="alert-item-vehicle">${a.immatriculation} - ${a.vehicule}</div>
+        <div class="alert-item-info">
+          CT avant le ${new Date(a.prochainDate).toLocaleDateString('fr-FR')}
+          <br><span class="alert-item-days">⏱️ ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    `).join("");
+  } else {
+    alertBanner.classList.remove("active");
+  }
+}
+
+function renderControleTk() {
+  const tbody = document.getElementById("ctTableBody");
+  if (!tbody) return;
+  
+  tbody.innerHTML = data.controlsTk.map(ct => {
+    const vehicule = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
+    const marqueModele = vehicule ? `${vehicule.marque} ${vehicule.modele}` : "-";
+    const daysLeft = calculateDaysUntilCT(ct.prochainDate);
+    
+    let dateClass = "";
+    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
+      dateClass = "warning";
+    } else if (daysLeft !== null && daysLeft <= 0) {
+      dateClass = "danger";
+    }
+    
+    return `
+      <tr>
+        <td>${ct.immatriculation}</td>
+        <td>${marqueModele}</td>
+        <td>${ct.conducteur || "-"}</td>
+        <td class="ct-date ${dateClass}">
+          ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "-"}
+          ${daysLeft !== null && daysLeft > 0 ? ` (${daysLeft}j)` : ""}
+        </td>
+        <td class="ct-actions" style="text-align: center;">
+          <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openCtEditModal('${ct.immatriculation}')">✎</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function openControleTkModal() {
+  renderControleTk();
+  document.getElementById("ctModal").classList.add("active");
+}
+
+function closeControleTkModal() {
+  document.getElementById("ctModal").classList.remove("active");
+}
+
+function openCtEditModal(immatriculation) {
+  editingCtImmat = immatriculation;
+  const ct = data.controlsTk.find(c => c.immatriculation === immatriculation);
+  const vehicule = data.vehicules.find(v => v.immatriculation === immatriculation);
+  
+  if (!ct) return;
+  
+  document.getElementById("ctEditTitle").textContent = `Modifier CT - ${immatriculation} ${vehicule ? vehicule.marque + " " + vehicule.modele : ""}`;
+  document.getElementById("ctConducteur").value = ct.conducteur || "";
+  document.getElementById("ctDernierDate").value = ct.dernierDate || "";
+  document.getElementById("ctProchainDate").value = ct.prochainDate || "";
+  document.getElementById("ctEditModal").classList.add("active");
+}
+
+function closeCtEditModal() {
+  document.getElementById("ctEditModal").classList.remove("active");
+  editingCtImmat = null;
+}
+
+async function submitControleTk() {
+  const conducteur = document.getElementById("ctConducteur").value;
+  const dernierDate = document.getElementById("ctDernierDate").value;
+  const prochainDate = document.getElementById("ctProchainDate").value;
+  
+  if (!prochainDate) {
+    showMsg("Remplis la date du prochain CT", "err");
+    return;
+  }
+  
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      payload: JSON.stringify({
+        action: "updateControleTk",
+        immatriculation: editingCtImmat,
+        conducteur: conducteur,
+        dernierDate: dernierDate,
+        prochainDate: prochainDate
+      })
+    });
+    
+    closeCtEditModal();
+    await loadData();
+    checkCtAlerts();
+    renderControleTk();
+    showMsg("Contrôle technique mis à jour", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
   }

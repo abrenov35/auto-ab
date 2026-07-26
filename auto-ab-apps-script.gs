@@ -38,6 +38,34 @@ function getCategories() {
   return result;
 }
 
+function getControlsTk() {
+  try {
+    const sheet = SHEET.getSheetByName("Contrôles Tk");
+    const data = sheet.getDataRange().getValues();
+    const result = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      if (!data[i][0]) break;
+      result.push({
+        immatriculation: data[i][0],
+        conducteur: data[i][1] || "",
+        dernierDate: data[i][2] ? formatDateForJS(data[i][2]) : "",
+        prochainDate: data[i][3] ? formatDateForJS(data[i][3]) : ""
+      });
+    }
+    return result;
+  } catch (err) {
+    return [];
+  }
+}
+
+function formatDateForJS(date) {
+  if (!date) return "";
+  if (typeof date === 'string') return date;
+  const d = new Date(date);
+  return d.toISOString().split('T')[0];
+}
+
 function getDocuments() {
   const sheet = SHEET.getSheetByName("Documents");
   const data = sheet.getDataRange().getValues();
@@ -123,6 +151,27 @@ function createInvite(immatriculation, nom, email, phone) {
   }
 }
 
+// ========== CONTRÔLES TECHNIQUES ==========
+function updateControleTk(immatriculation, conducteur, dernierDate, prochainDate) {
+  try {
+    const sheet = SHEET.getSheetByName("Contrôles Tk");
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] == immatriculation) {
+        sheet.getRange(i + 1, 2, 1, 3).setValues([[conducteur, dernierDate || "", prochainDate || ""]]);
+        return { success: true };
+      }
+    }
+    
+    // Si n'existe pas, créer une nouvelle ligne
+    sheet.appendRow([immatriculation, conducteur, dernierDate || "", prochainDate || ""]);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: "Erreur: " + err.toString() };
+  }
+}
+
 // ========== HELPER: Add CORS headers ==========
 function setCorsHeaders_(output) {
   return output
@@ -150,7 +199,8 @@ function doGet(e) {
       response = ContentService.createTextOutput(JSON.stringify({
         vehicules: getVehicules(),
         documents: getDocuments(),
-        categories: getCategories()
+        categories: getCategories(),
+        controlsTk: getControlsTk()
       })).setMimeType(ContentService.MimeType.JSON);
     } else if (action === "getVehiculeDocuments") {
       const immatriculation = e.parameter.immatriculation;
@@ -196,6 +246,10 @@ function doPost(e) {
     } else if (action === "createInvite") {
       response = ContentService.createTextOutput(JSON.stringify(
         createInvite(data.immatriculation, data.nom, data.email, data.phone)
+      )).setMimeType(ContentService.MimeType.JSON);
+    } else if (action === "updateControleTk") {
+      response = ContentService.createTextOutput(JSON.stringify(
+        updateControleTk(data.immatriculation, data.conducteur, data.dernierDate, data.prochainDate)
       )).setMimeType(ContentService.MimeType.JSON);
     } else {
       response = ContentService.createTextOutput(JSON.stringify({ error: "Action inconnue" }))
