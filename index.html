@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.53</span>
+  <span class="version">v6.3.54</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -2204,7 +2204,21 @@ function renderRevisionPage() {
     return nameA.localeCompare(nameB);
   });
   
-  revisionList.innerHTML = sortedRevisions.map(r => {
+  // En-têtes
+  let html = `
+    <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1.2fr; gap: 8px; font-weight: 600; font-size: 12px; color: #666; margin-bottom: 8px; padding: 8px; border-bottom: 2px solid #ddd;">
+      <div>Marque Modèle</div>
+      <div>Immatriculation</div>
+      <div>Conducteur</div>
+      <div>Dernière Révision</div>
+      <div>Prochaine Révision</div>
+      <div>Statut</div>
+      <div>Actions</div>
+    </div>
+  `;
+  
+  // Lignes
+  html += sortedRevisions.map(r => {
     const nextDate = new Date(r.prochainDate);
     const today = new Date();
     const daysLeft = Math.floor((nextDate - today) / (1000 * 60 * 60 * 24));
@@ -2220,24 +2234,22 @@ function renderRevisionPage() {
     }
     
     return `
-      <div style="background: white; border: 1px solid #ddd; border-left: 4px solid ${statusColor}; padding: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-        <div style="flex: 1;">
-          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">${r.marque} ${r.modele}</div>
-          <div style="font-size: 12px; color: #666;">
-            <div>Immatriculation: ${r.immatriculation}</div>
-            <div>Conducteur: ${r.conducteur || "—"}</div>
-            <div>Dernière révision: ${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-            <div>Prochaine révision: ${new Date(r.prochainDate).toLocaleDateString('fr-FR')} (${daysLeft} jours)</div>
-            <div style="color: ${statusColor}; font-weight: 600; margin-top: 4px;">${statusLabel}</div>
-          </div>
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn" style="background: #1976d2; color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="openEditRevisionModal('${r.immatriculation}')">Modifier</button>
-          <button class="btn" style="background: #d32f2f; color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="deleteRevision('${r.immatriculation}')">Supprimer</button>
+      <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1.2fr; gap: 8px; align-items: center; padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 12px; background: white; border-left: 3px solid ${statusColor};">
+        <div style="font-weight: 500;">${r.marque} ${r.modele}</div>
+        <div style="color: #666;">${r.immatriculation}</div>
+        <div style="color: #666;">${r.conducteur || "—"}</div>
+        <div style="color: #666;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
+        <div style="color: #666;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')}<br><span style="font-size: 11px; color: ${statusColor};">${daysLeft} j</span></div>
+        <div style="color: ${statusColor}; font-weight: 600; font-size: 11px;">${statusLabel}</div>
+        <div style="display: flex; gap: 4px;">
+          <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openEditRevisionModal('${r.immatriculation}')">✏️</button>
+          <button class="btn" style="background: #d32f2f; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="deleteRevision('${r.immatriculation}')">🗑️</button>
         </div>
       </div>
     `;
   }).join("");
+  
+  revisionList.innerHTML = html;
 }
 
 function openAddRevisionModal() {
