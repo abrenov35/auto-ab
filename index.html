@@ -785,7 +785,7 @@
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.1</span>
+  <span class="version">v6.3.3</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1053,6 +1053,21 @@ async function loadData() {
         { immatriculation: "HJ 896 AW", conducteur: "Jimmy", dernierDate: "2026-06-14", prochainDate: "2027-01-15" },
         { immatriculation: "GD-344-XC", conducteur: "Solenn et Mathieu", dernierDate: "2025-12-01", prochainDate: "2026-12-12" },
         { immatriculation: "HG-631-YY", conducteur: "Pascale", dernierDate: "2025-12-09", prochainDate: "2026-12-09" }
+      ];
+    }
+
+    // Initialiser les contrôles techniques si non présents
+    if (!data.controlsTk || data.controlsTk.length === 0) {
+      data.controlsTk = [
+        { immatriculation: "CD 799 PT", conducteur: "Dépôt Alexandre", dernierDate: "2026-04-16", prochainDate: "2027-04-15" },
+        { immatriculation: "HG-877-TV", conducteur: "Kevin", dernierDate: "2025-09-17", prochainDate: "2027-09-16" },
+        { immatriculation: "HD 453 ND", conducteur: "Morvan", dernierDate: "", prochainDate: "2029-05-15" },
+        { immatriculation: "FS 552 SF", conducteur: "Alexis", dernierDate: "2024-09-11", prochainDate: "2026-08-25" },
+        { immatriculation: "GN 478 AP", conducteur: "Younès", dernierDate: "", prochainDate: "2027-03-29" },
+        { immatriculation: "FG 758 GJ", conducteur: "Mohammed", dernierDate: "2025-02-20", prochainDate: "2027-02-19" },
+        { immatriculation: "HJ 896 AW", conducteur: "Jimmy", dernierDate: "2025-11-07", prochainDate: "2027-11-03" },
+        { immatriculation: "GD-344-XC", conducteur: "Mathieu et Solenn", dernierDate: "2025-12-29", prochainDate: "2027-12-28" },
+        { immatriculation: "HG-631-YY", conducteur: "Pascale", dernierDate: "", prochainDate: "2029-12-01" }
       ];
     }
   } catch (err) {
