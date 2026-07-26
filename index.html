@@ -785,7 +785,7 @@
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.3</span>
+  <span class="version">v6.3.4</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1068,6 +1068,21 @@ async function loadData() {
         { immatriculation: "HJ 896 AW", conducteur: "Jimmy", dernierDate: "2025-11-07", prochainDate: "2027-11-03" },
         { immatriculation: "GD-344-XC", conducteur: "Mathieu et Solenn", dernierDate: "2025-12-29", prochainDate: "2027-12-28" },
         { immatriculation: "HG-631-YY", conducteur: "Pascale", dernierDate: "", prochainDate: "2029-12-01" }
+      ];
+    }
+    
+    // Initialiser les véhicules si non présents
+    if (!data.vehicules || data.vehicules.length === 0) {
+      data.vehicules = [
+        { immatriculation: "CD 799 PT", marque: "Renault", modele: "Master", annee: 2019, statut: "Actif" },
+        { immatriculation: "HG-877-TV", marque: "Citroën", modele: "Berlingo", annee: 2018, statut: "Actif" },
+        { immatriculation: "HD 453 ND", marque: "Renault", modele: "Trafic", annee: 2017, statut: "Actif" },
+        { immatriculation: "FS 552 SF", marque: "Peugeot", modele: "Partner", annee: 2016, statut: "Actif" },
+        { immatriculation: "GN 478 AP", marque: "Renault", modele: "Mégane", annee: 2015, statut: "Actif" },
+        { immatriculation: "FG 758 GJ", marque: "Renault", modele: "Master", annee: 2020, statut: "Actif" },
+        { immatriculation: "HJ 896 AW", marque: "Citroën", modele: "Berlingo", annee: 2019, statut: "Actif" },
+        { immatriculation: "GD-344-XC", marque: "Citroën", modele: "C3", annee: 2021, statut: "Actif" },
+        { immatriculation: "HG-631-YY", marque: "Fiat", modele: "600", annee: 2022, statut: "Actif" }
       ];
     }
   } catch (err) {
