@@ -879,7 +879,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.49</span>
+  <span class="version">v6.3.50</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1786,7 +1786,6 @@ function deleteVehiculeFromModal() {
   
   data.vehicules = data.vehicules.filter(v => v.immatriculation !== immat);
   renderVehicleManagement();
-  renderVehicles();
   renderInviteVehiculeSelect();
   closeVehiculeModal();
   showMsg("Véhicule supprimé ✅", "ok");
@@ -2032,7 +2031,6 @@ async function exitVehicleFromModal() {
     closeVehiculeModal();
     await loadData();
     renderVehiculeManagement();
-    renderVehicles();
     renderInviteVehiculeSelect();
     renderVehiclesPage();
     showMsg("Véhicule marqué comme sortie du parc ✅", "ok");
