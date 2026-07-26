@@ -854,7 +854,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.20</span>
+  <span class="version">v6.3.21</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1086,6 +1086,17 @@
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
     </div>
+  </div>
+</div>
+
+<!-- PAGE COMPLÈTE CONTRÔLES TECHNIQUES -->
+<div id="ctPage" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 1000; overflow-y: auto;">
+  <div style="padding: 20px; max-width: 1000px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #185fa5; padding-bottom: 15px;">
+      <h1 style="margin: 0; font-size: 28px; color: #0d3a66;">🔧 Contrôles Techniques</h1>
+      <button onclick="closeCtPage()" style="background: #999; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">Fermer</button>
+    </div>
+    <div id="ctPageList" style="display: grid; gap: 16px;"></div>
   </div>
 </div>
 
@@ -1890,12 +1901,62 @@ function renderControleTk() {
 }
 
 function openControleTkModal() {
-  renderCtComplete();
-  document.getElementById("ctCompleteModal").classList.add("active");
+  renderCtPage();
+  document.getElementById("ctPage").style.display = "block";
 }
 
 function closeControleTkModal() {
-  document.getElementById("ctCompleteModal").classList.remove("active");
+  document.getElementById("ctPage").style.display = "none";
+}
+
+function closeCtPage() {
+  closeControleTkModal();
+}
+
+function renderCtPage() {
+  const ctList = document.getElementById("ctPageList");
+  
+  // Trier par Marque + Modèle (alphabétiquement)
+  const sorted = [...data.controlsTk].sort((a, b) => {
+    const vA = data.vehicules.find(v => v.immatriculation === a.immatriculation);
+    const vB = data.vehicules.find(v => v.immatriculation === b.immatriculation);
+    const fullA = (vA ? vA.marque + " " + vA.modele : "").toLowerCase();
+    const fullB = (vB ? vB.marque + " " + vB.modele : "").toLowerCase();
+    return fullA.localeCompare(fullB);
+  });
+  
+  ctList.innerHTML = sorted.map(ct => {
+    const v = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
+    const daysLeft = calculateDaysUntilCT(ct.prochainDate);
+    let statusClass = "";
+    let statusText = "";
+    
+    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
+      statusClass = "warning";
+      statusText = `⚠️ ${daysLeft}j`;
+    } else if (daysLeft !== null && daysLeft <= 0) {
+      statusClass = "danger";
+      statusText = "🔴 DÉPASSÉ";
+    } else if (daysLeft !== null && daysLeft > 30) {
+      statusClass = "ok";
+      statusText = `✅ ${daysLeft}j`;
+    }
+    
+    return `
+      <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="font-weight: 600; font-size: 16px; color: #0d3a66; margin-bottom: 12px;">${v ? v.marque + " " + v.modele : "Inconnu"} - ${ct.immatriculation}</div>
+        <div style="font-size: 14px; color: #666; margin-bottom: 12px;">
+          <div style="margin-bottom: 8px;"><strong>Conducteur:</strong> ${ct.conducteur || "-"}</div>
+          <div style="margin-bottom: 8px;"><strong>Dernier CT:</strong> ${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "-"}</div>
+          <div style="margin-bottom: 8px; font-weight: 600; color: ${statusClass === 'danger' ? '#d32f2f' : statusClass === 'warning' ? '#f57c00' : '#388e3c'};"><strong>Prochain CT:</strong> ${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "-"} ${statusText}</div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button class="block-btn-edit" onclick="openCtEditModal('${ct.immatriculation}')">Modifier</button>
+          <button style="background: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer;" onclick="downloadCtDocs('${ct.immatriculation}')">📥 Télécharger pièces</button>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 function renderCtComplete() {
