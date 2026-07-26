@@ -554,7 +554,10 @@
   <div class="management-container">
     <!-- SIDEBAR VÉHICULES -->
     <div class="sidebar">
-      <h2>Véhicules</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px;">
+        <h2 style="margin: 0; flex: 1;">Véhicules</h2>
+        <button class="btn btn-success" onclick="openAddVehiculeModal()" style="padding: 8px 12px; font-size: 13px; white-space: nowrap;">+ Ajouter</button>
+      </div>
       <ul class="vehicule-list" id="vehiculeList"></ul>
     </div>
     
@@ -605,6 +608,47 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeDocModal()">Annuler</button>
       <button class="btn btn-success" onclick="submitDocument()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AJOUTER/MODIFIER VÉHICULE -->
+<div class="modal" id="vehiculeModal">
+  <div class="modal-content">
+    <div class="modal-header" id="vehiculeModalTitle">Ajouter un véhicule</div>
+    
+    <div class="form-group">
+      <label>Immatriculation *</label>
+      <input type="text" id="vehiculeImmat" required placeholder="Ex: AB-123-CD">
+    </div>
+    
+    <div class="form-group">
+      <label>Marque *</label>
+      <input type="text" id="vehiculeMarque" required placeholder="Ex: Renault">
+    </div>
+    
+    <div class="form-group">
+      <label>Modèle *</label>
+      <input type="text" id="vehiculeModele" required placeholder="Ex: Clio">
+    </div>
+    
+    <div class="form-group">
+      <label>Année *</label>
+      <input type="number" id="vehiculeAnnee" required placeholder="Ex: 2020" min="2000" max="2099">
+    </div>
+    
+    <div class="form-group">
+      <label>Statut</label>
+      <select id="vehiculeStatut">
+        <option value="Actif">Actif</option>
+        <option value="Inactif">Inactif</option>
+        <option value="Maintenance">Maintenance</option>
+      </select>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
+      <button class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -803,6 +847,55 @@ async function deleteDocument(docId) {
 
 function openDocLink(url) {
   window.open(url, "_blank");
+}
+
+// ========== VÉHICULES ==========
+function openAddVehiculeModal() {
+  document.getElementById("vehiculeModalTitle").textContent = "Ajouter un véhicule";
+  document.getElementById("vehiculeImmat").value = "";
+  document.getElementById("vehiculeMarque").value = "";
+  document.getElementById("vehiculeModele").value = "";
+  document.getElementById("vehiculeAnnee").value = "";
+  document.getElementById("vehiculeStatut").value = "Actif";
+  document.getElementById("vehiculeModal").classList.add("active");
+}
+
+function closeVehiculeModal() {
+  document.getElementById("vehiculeModal").classList.remove("active");
+}
+
+async function submitVehicule() {
+  const immat = document.getElementById("vehiculeImmat").value;
+  const marque = document.getElementById("vehiculeMarque").value;
+  const modele = document.getElementById("vehiculeModele").value;
+  const annee = document.getElementById("vehiculeAnnee").value;
+  const statut = document.getElementById("vehiculeStatut").value;
+  
+  if (!immat || !marque || !modele || !annee) {
+    showMsg("Remplis tous les champs requis", "err");
+    return;
+  }
+  
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      payload: JSON.stringify({
+        action: "createVehicule",
+        immatriculation: immat,
+        marque: marque,
+        modele: modele,
+        annee: annee,
+        statut: statut
+      })
+    });
+    
+    closeVehiculeModal();
+    await loadData();
+    renderVehicules();
+    showMsg("Véhicule ajouté avec succès!", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+  }
 }
 
 // ========== UTILITAIRES ==========
