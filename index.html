@@ -878,7 +878,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <span class="version">v6.3.30</span>
+  <span class="version">v6.3.31</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1697,6 +1697,7 @@ async function submitVehicule() {
 function openVehicleManagementModal() {
   renderVehiclesPage();
   document.getElementById("management").style.display = "none";
+  document.getElementById("ctPage").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "block";
   document.getElementById("btnVehicleManagement").classList.add("active");
   window.scrollTo(0, 0);
@@ -1993,6 +1994,7 @@ function renderControleTk() {
 function openControleTkModal() {
   renderCtPage();
   document.getElementById("management").style.display = "none";
+  document.getElementById("vehiclesPage").style.display = "none";
   document.getElementById("ctPage").style.display = "block";
   // Scroll vers le haut
   window.scrollTo(0, 0);
