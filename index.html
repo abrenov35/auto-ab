@@ -818,7 +818,7 @@
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
   <button class="btn-toolbar" onclick="openAddVehiculeModal()">+ Ajouter</button>
-  <span class="version">v6.3.8</span>
+  <span class="version">v6.3.9</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1153,8 +1153,12 @@ function renderVehicules() {
 
 function selectVehiculeFromDropdown() {
   const immatriculation = document.getElementById("vehiculeSelectToolbar").value;
-  if (!immatriculation) return;
+  if (!immatriculation) {
+    console.log("Aucun véhicule sélectionné");
+    return;
+  }
   
+  console.log("Véhicule sélectionné:", immatriculation);
   selectedVehicule = immatriculation;
   document.querySelectorAll(".vehicule-item").forEach(el => el.classList.remove("active"));
   
@@ -1171,7 +1175,11 @@ function selectVehiculeFromDropdown() {
   document.getElementById("inviteBtn").style.display = "block";
   document.getElementById("inviteVehiculeSelect").style.display = "block";
   
-  renderDocuments();
+  // Afficher le bloc maintenance immédiatement
+  document.getElementById("maintenanceBlocks").style.display = "block";
+  
+  // Appeler renderMaintenanceBlocks directement
+  renderMaintenanceBlocks();
 }
 
 function selectVehicule(immatriculation, element) {
