@@ -565,7 +565,40 @@
     <div class="main">
       <div class="header-actions">
         <h2 id="vehiculeTitle">Sélectionne un véhicule</h2>
-        <button class="btn btn-success" onclick="openAddDocumentModal()" id="addDocBtn" style="display:none;">+ Ajouter document</button>
+        <div style="display: flex; gap: 12px;">
+          <select id="inviteVehiculeSelect" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; cursor: pointer; display: none;">
+            <option value="">-- Sélectionne un véhicule --</option>
+          </select>
+          <button class="btn btn-success" onclick="toggleInviteForm()" id="inviteBtn" style="display: none;">+ Ajouter un invité</button>
+          <button class="btn btn-success" onclick="openAddDocumentModal()" id="addDocBtn" style="display:none;">+ Ajouter document</button>
+        </div>
+      </div>
+      
+      <!-- FORMULAIRE INVITÉ (caché par défaut) -->
+      <div id="inviteFormContainer" style="display: none; background: #f0f8ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #185fa5;">
+        <h3 style="color: #185fa5; margin-bottom: 16px;">Ajouter un invité</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; align-items: flex-end;">
+          <div>
+            <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px;">Véhicule *</label>
+            <select id="inviteVehicule" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;"></select>
+          </div>
+          <div>
+            <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px;">Nom *</label>
+            <input type="text" id="inviteName" required placeholder="Ex: Jean Dupont" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+          </div>
+          <div>
+            <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px;">Email</label>
+            <input type="email" id="inviteEmail" placeholder="ex@mail.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+          </div>
+          <div>
+            <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px;">Téléphone</label>
+            <input type="tel" id="invitePhone" placeholder="06 12 34 56 78" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end;">
+          <button class="btn btn-secondary" onclick="toggleInviteForm()">Annuler</button>
+          <button class="btn btn-success" onclick="submitInvite()">Enregistrer l'invité</button>
+        </div>
       </div>
       
       <div id="documentsContainer">
@@ -714,6 +747,8 @@ function selectVehicule(immatriculation, element) {
   
   document.getElementById("vehiculeTitle").textContent = immatriculation;
   document.getElementById("addDocBtn").style.display = "block";
+  document.getElementById("inviteBtn").style.display = "block";
+  document.getElementById("inviteVehiculeSelect").style.display = "block";
   
   renderDocuments();
 }
@@ -892,7 +927,64 @@ async function submitVehicule() {
     closeVehiculeModal();
     await loadData();
     renderVehicules();
+    renderInviteVehiculeSelect();
     showMsg("Véhicule ajouté avec succès!", "ok");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+  }
+}
+
+// ========== INVITÉS ==========
+function renderInviteVehiculeSelect() {
+  const select = document.getElementById("inviteVehicule");
+  select.innerHTML = '<option value="">-- Sélectionne un véhicule --</option>';
+  
+  data.vehicules.forEach(v => {
+    const option = document.createElement("option");
+    option.value = v.immatriculation;
+    option.textContent = `${v.immatriculation} - ${v.marque} ${v.modele}`;
+    select.appendChild(option);
+  });
+}
+
+function toggleInviteForm() {
+  const container = document.getElementById("inviteFormContainer");
+  container.style.display = container.style.display === "none" ? "block" : "none";
+  
+  if (container.style.display === "block") {
+    renderInviteVehiculeSelect();
+  }
+}
+
+async function submitInvite() {
+  const vehicule = document.getElementById("inviteVehicule").value;
+  const nom = document.getElementById("inviteName").value;
+  const email = document.getElementById("inviteEmail").value;
+  const phone = document.getElementById("invitePhone").value;
+  
+  if (!vehicule || !nom) {
+    showMsg("Remplis les champs requis (Véhicule et Nom)", "err");
+    return;
+  }
+  
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      payload: JSON.stringify({
+        action: "createInvite",
+        immatriculation: vehicule,
+        nom: nom,
+        email: email,
+        phone: phone
+      })
+    });
+    
+    document.getElementById("inviteName").value = "";
+    document.getElementById("inviteEmail").value = "";
+    document.getElementById("invitePhone").value = "";
+    toggleInviteForm();
+    
+    showMsg("Invité ajouté avec succès!", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
   }

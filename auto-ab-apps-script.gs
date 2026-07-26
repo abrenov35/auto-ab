@@ -108,70 +108,104 @@ function createVehicule(immatriculation, marque, modele, annee, statut) {
   return { success: true };
 }
 
+// ========== AJOUTER INVITÉ ==========
+function createInvite(immatriculation, nom, email, phone) {
+  try {
+    const sheet = SHEET.getSheetByName("Invités");
+    const data = sheet.getDataRange().getValues();
+    const newId = (data.length - 1) + 1;
+    const dateNow = new Date().toISOString().split("T")[0];
+    
+    sheet.appendRow([newId, immatriculation, nom, email, phone, dateNow]);
+    return { success: true, id: newId };
+  } catch (err) {
+    return { success: false, error: "Erreur: " + err.toString() };
+  }
+}
+
+// ========== HELPER: Add CORS headers ==========
+function setCorsHeaders_(output) {
+  return output
+    .setHeader("Access-Control-Allow-Origin", "*")
+    .setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    .setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+// ========== HANDLE OPTIONS (CORS preflight) ==========
+function doOptions(e) {
+  return HtmlService.createHtmlOutput("")
+    .setHeader("Access-Control-Allow-Origin", "*")
+    .setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    .setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
 // ========== WEB APP ENDPOINT ==========
 function doGet(e) {
   const action = e.parameter.action || "";
   
   try {
+    let response;
+    
     if (action === "getAll") {
-      return ContentService.createTextOutput(JSON.stringify({
+      response = ContentService.createTextOutput(JSON.stringify({
         vehicules: getVehicules(),
         documents: getDocuments(),
         categories: getCategories()
       })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    if (action === "getVehiculeDocuments") {
+    } else if (action === "getVehiculeDocuments") {
       const immatriculation = e.parameter.immatriculation;
-      return ContentService.createTextOutput(JSON.stringify({
+      response = ContentService.createTextOutput(JSON.stringify({
         documents: getDocumentsByVehicule(immatriculation)
       })).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      response = ContentService.createTextOutput(JSON.stringify({ error: "Action inconnue" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
     
-    return ContentService.createTextOutput(JSON.stringify({ error: "Action inconnue" }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return setCorsHeaders_(response);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
+    const errorResponse = ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+    return setCorsHeaders_(errorResponse);
   }
 }
 
 function doPost(e) {
-  const action = JSON.parse(e.postData.contents).action;
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action;
   
   try {
+    let response;
+    
     if (action === "createDocument") {
-      const data = JSON.parse(e.postData.contents);
-      return ContentService.createTextOutput(JSON.stringify(
+      response = ContentService.createTextOutput(JSON.stringify(
         createDocument(data.immatriculation, data.categorie, data.nom, data.date, data.description, data.lienDrive)
       )).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    if (action === "updateDocument") {
-      const data = JSON.parse(e.postData.contents);
-      return ContentService.createTextOutput(JSON.stringify(
+    } else if (action === "updateDocument") {
+      response = ContentService.createTextOutput(JSON.stringify(
         updateDocument(data.id, data.categorie, data.nom, data.date, data.description, data.lienDrive)
       )).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    if (action === "deleteDocument") {
-      const data = JSON.parse(e.postData.contents);
-      return ContentService.createTextOutput(JSON.stringify(
+    } else if (action === "deleteDocument") {
+      response = ContentService.createTextOutput(JSON.stringify(
         deleteDocument(data.id)
       )).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    if (action === "createVehicule") {
-      const data = JSON.parse(e.postData.contents);
-      return ContentService.createTextOutput(JSON.stringify(
+    } else if (action === "createVehicule") {
+      response = ContentService.createTextOutput(JSON.stringify(
         createVehicule(data.immatriculation, data.marque, data.modele, data.annee, data.statut)
       )).setMimeType(ContentService.MimeType.JSON);
+    } else if (action === "createInvite") {
+      response = ContentService.createTextOutput(JSON.stringify(
+        createInvite(data.immatriculation, data.nom, data.email, data.phone)
+      )).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      response = ContentService.createTextOutput(JSON.stringify({ error: "Action inconnue" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
     
-    return ContentService.createTextOutput(JSON.stringify({ error: "Action inconnue" }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return setCorsHeaders_(response);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
+    const errorResponse = ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+    return setCorsHeaders_(errorResponse);
   }
 }
