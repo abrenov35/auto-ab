@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.40</span>
+  <span class="version">v6.3.41</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1059,7 +1059,7 @@
     
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
-      <button class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
+      <button id="submitVehiculeBtn" class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
       <button id="btnSupprimer" class="btn" style="background: #d32f2f; color: white; display: none;" onclick="deleteVehiculeFromModal()">Supprimer</button>
       <button id="btnExitModal" class="btn" style="background: #f57c00; color: white; display: none;" onclick="exitVehicleFromModal()">Sortie du parc</button>
     </div>
@@ -1120,7 +1120,7 @@
     
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
-      <button class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
+      <button id="submitCtBtn" class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
       <button id="btnViewDocsModal" class="btn" style="background: #1976d2; color: white; display: none;" onclick="viewCtDocumentsInModal()">👁️ Voir pièces</button>
     </div>
   </div>
@@ -1657,6 +1657,10 @@ function closeVehiculeModal() {
   document.getElementById("vehiculeModal").classList.remove("active");
   document.getElementById("btnSupprimer").style.display = "none";
   document.getElementById("btnExitModal").style.display = "none";
+  
+  // Réactiver le bouton
+  const submitBtn = document.getElementById("submitVehiculeBtn");
+  if (submitBtn) submitBtn.disabled = false;
 }
 
 function deleteVehiculeFromModal() {
@@ -1696,18 +1700,26 @@ async function submitVehicule() {
     return;
   }
   
+  // Désactiver le bouton pour éviter les double-clics
+  const submitBtn = document.getElementById("submitVehiculeBtn");
+  if (submitBtn) submitBtn.disabled = true;
+  
   try {
-    await fetch(APPS_SCRIPT_URL, {
+    const payload = {
+      action: window.editingImmat ? "updateVehicule" : "createVehicule",
+      immatriculation: immat,
+      marque: marque,
+      modele: modele,
+      annee: annee,
+      conducteur: conducteur,
+      statut: statut
+    };
+    
+    console.log("Envoi au GAS:", payload);
+    
+    const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify({
-        action: "createVehicule",
-        immatriculation: immat,
-        marque: marque,
-        modele: modele,
-        annee: annee,
-        conducteur: conducteur,
-        statut: statut
-      })
+      body: JSON.stringify(payload)
     });
     
     closeVehiculeModal();
@@ -1717,6 +1729,9 @@ async function submitVehicule() {
     showMsg("Véhicule ajouté ✅", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+  } finally {
+    // Réactiver le bouton
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
@@ -2189,6 +2204,10 @@ function closeCtEditModal() {
   document.getElementById("ctEditModal").classList.remove("active");
   editingCtImmat = null;
   document.getElementById("ctDocumentsSection").style.display = "none";
+  
+  // Réactiver le bouton
+  const submitBtn = document.getElementById("submitCtBtn");
+  if (submitBtn) submitBtn.disabled = false;
 }
 
 function viewCtDocumentsInModal() {
@@ -2215,6 +2234,10 @@ async function submitControleTk() {
     return;
   }
   
+  // Désactiver le bouton pour éviter les double-clics
+  const submitBtn = document.getElementById("submitCtBtn");
+  if (submitBtn) submitBtn.disabled = true;
+  
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
@@ -2234,6 +2257,8 @@ async function submitControleTk() {
     showMsg("Contrôle technique mis à jour ✅", "ok");
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
