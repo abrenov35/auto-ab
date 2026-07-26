@@ -878,7 +878,7 @@
   <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
     <option value="">-- Sélectionne un véhicule --</option>
   </select>
-  <span class="version">v6.3.32</span>
+  <span class="version">v6.3.33</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1756,7 +1756,7 @@ function renderVehiclesPage() {
   // Afficher véhicules actifs
   activeList.innerHTML = active.map(v => `
     <div style="background: #f9fafb; padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-      <div style="font-weight: 600; font-size: 13px; color: #0d3a66; margin-bottom: 4px;">${v.immatriculation} - ${v.marque} ${v.modele}</div>
+      <div style="font-weight: 600; font-size: 13px; color: #0d3a66; margin-bottom: 4px;">${v.marque} ${v.modele} - ${v.immatriculation}</div>
       <div style="font-size: 11px; color: #999; margin-bottom: 6px;">${v.annee ? v.annee : '-'}</div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
         <button class="block-btn-edit" onclick="openEditVehiculeModal('${v.immatriculation}')" style="padding: 4px 8px; font-size: 11px;">Modifier</button>
@@ -1769,7 +1769,7 @@ function renderVehiclesPage() {
   // Afficher véhicules en sortie
   inactiveList.innerHTML = inactive.length > 0 ? inactive.map(v => `
     <div style="background: #fff9e6; padding: 8px; border-radius: 4px; border-left: 3px solid #ff9800; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-      <div style="font-weight: 600; font-size: 13px; color: #666; margin-bottom: 4px;">${v.immatriculation} - ${v.marque} ${v.modele}</div>
+      <div style="font-weight: 600; font-size: 13px; color: #666; margin-bottom: 4px;">${v.marque} ${v.modele} - ${v.immatriculation}</div>
       <div style="font-size: 11px; color: #999; margin-bottom: 6px;">Statut: ${v.statut}</div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
         <button style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; cursor: pointer;" onclick="markVehicleAsActive('${v.immatriculation}')">Réintégrer</button>
