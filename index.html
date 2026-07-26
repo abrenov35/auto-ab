@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v2 -->
+<!-- AB PARC AUTO v3 -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -42,7 +42,138 @@
       border-radius: 4px;
     }
     
-    .container {
+    .tabs {
+      background: white;
+      border-bottom: 2px solid #e0e0e0;
+      display: flex;
+      gap: 0;
+    }
+    
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 16px 24px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    
+    .tab-btn:hover {
+      color: #185fa5;
+    }
+    
+    .tab-btn.active {
+      color: #185fa5;
+      border-bottom-color: #185fa5;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* ===== HOME PAGE ===== */
+    .home-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    
+    .hero {
+      background: linear-gradient(135deg, #0d3a66 0%, #185fa5 100%);
+      color: white;
+      padding: 60px 40px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 40px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .hero h2 {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    
+    .hero p {
+      font-size: 16px;
+      opacity: 0.9;
+      margin-bottom: 30px;
+    }
+    
+    .hero-btn {
+      background: white;
+      color: #185fa5;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .hero-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .sections {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    
+    .section h3 {
+      color: #185fa5;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #185fa5;
+      padding-bottom: 10px;
+    }
+    
+    .section ul {
+      list-style: none;
+    }
+    
+    .section li {
+      margin-bottom: 14px;
+      padding-left: 24px;
+      position: relative;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .section li:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #185fa5;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    .feature-name, .storage-name {
+      font-weight: 600;
+      color: #222;
+    }
+    
+    /* ===== MANAGEMENT PAGE ===== */
+    .management-container {
       max-width: 1200px;
       margin: 20px auto;
       padding: 0 20px;
@@ -308,27 +439,13 @@
       to { transform: translateX(0); }
     }
     
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #999;
-    }
-    
     @media (max-width: 1024px) {
-      .container {
+      .management-container {
         grid-template-columns: 1fr;
       }
       
-      .sidebar {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
-      }
-      
-      .vehicule-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 8px;
+      .sections {
+        grid-template-columns: 1fr;
       }
     }
     
@@ -341,9 +458,30 @@
         font-size: 18px;
       }
       
-      .container {
+      .tabs {
+        overflow-x: auto;
+      }
+      
+      .tab-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+      
+      .hero {
+        padding: 40px 20px;
+      }
+      
+      .hero h2 {
+        font-size: 24px;
+      }
+      
+      .home-container, .management-container {
         margin: 10px auto;
         padding: 0 12px;
+      }
+      
+      .section {
+        padding: 20px;
       }
       
       .main {
@@ -365,25 +503,71 @@
 
 <div class="toolbar">
   <h1>🚗 AB PARC AUTO</h1>
-  <span class="version">v2</span>
+  <span class="version">v3</span>
 </div>
 
-<div class="container">
-  <!-- SIDEBAR VÉHICULES -->
-  <div class="sidebar">
-    <h2>Véhicules</h2>
-    <ul class="vehicule-list" id="vehiculeList"></ul>
-  </div>
-  
-  <!-- MAIN CONTENT -->
-  <div class="main">
-    <div class="header-actions">
-      <h2 id="vehiculeTitle">Sélectionne un véhicule</h2>
-      <button class="btn btn-success" onclick="openAddDocumentModal()" id="addDocBtn" style="display:none;">+ Ajouter document</button>
+<!-- TABS NAVIGATION -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('home')">Accueil</button>
+  <button class="tab-btn" onclick="switchTab('management')">Gestion du parc</button>
+</div>
+
+<!-- ===== HOME TAB ===== -->
+<div class="tab-content active" id="home">
+  <div class="home-container">
+    <div class="hero">
+      <h2>Bienvenue dans AB PARC AUTO</h2>
+      <p>Gestion centralisée et documentaire de votre parc automobile</p>
+      <button class="hero-btn" onclick="switchTab('management')">Accéder à la gestion →</button>
     </div>
     
-    <div id="documentsContainer">
-      <div class="empty">Sélectionne un véhicule pour voir ses documents</div>
+    <div class="sections">
+      <!-- FONCTIONNALITÉS -->
+      <div class="section">
+        <h3>Fonctionnalités</h3>
+        <ul>
+          <li><span class="feature-name">Ajout de documents</span> — importer un fichier avec son nom, sa catégorie et sa description.</li>
+          <li><span class="feature-name">Liste dynamique</span> — afficher immédiatement les documents ajoutés, sans rechargement de la page.</li>
+          <li><span class="feature-name">Recherche et filtres</span> — retrouver rapidement un document par véhicule, catégorie, nom ou date.</li>
+          <li><span class="feature-name">Visualisation</span> — ouvrir directement les documents stockés dans Google Drive.</li>
+          <li><span class="feature-name">Modification</span> — remplacer un fichier existant ou modifier son nom, sa catégorie et sa description.</li>
+          <li><span class="feature-name">Suppression</span> — supprimer le fichier dans Google Drive ainsi que son enregistrement dans Google Sheets, après confirmation.</li>
+        </ul>
+      </div>
+      
+      <!-- STOCKAGE -->
+      <div class="section">
+        <h3>Stockage</h3>
+        <ul>
+          <li><span class="storage-name">Google Drive</span> — stockage des fichiers originaux.</li>
+          <li><span class="storage-name">Google Sheets</span> — stockage des métadonnées, des identifiants et des liens Drive.</li>
+          <li><span class="storage-name">Synchronisation automatique</span> — mise à jour des données entre l'application, Google Drive et Google Sheets.</li>
+          <li><span class="storage-name">Stockage centralisé</span> — tous les documents sont rattachés à la fiche du véhicule concerné.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MANAGEMENT TAB ===== -->
+<div class="tab-content" id="management">
+  <div class="management-container">
+    <!-- SIDEBAR VÉHICULES -->
+    <div class="sidebar">
+      <h2>Véhicules</h2>
+      <ul class="vehicule-list" id="vehiculeList"></ul>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div class="main">
+      <div class="header-actions">
+        <h2 id="vehiculeTitle">Sélectionne un véhicule</h2>
+        <button class="btn btn-success" onclick="openAddDocumentModal()" id="addDocBtn" style="display:none;">+ Ajouter document</button>
+      </div>
+      
+      <div id="documentsContainer">
+        <div class="empty">Sélectionne un véhicule pour voir ses documents</div>
+      </div>
     </div>
   </div>
 </div>
@@ -432,6 +616,19 @@ let data = { vehicules: [], documents: [], categories: [] };
 let selectedVehicule = null;
 let editingDocId = null;
 
+// ========== TABS ==========
+function switchTab(tabName) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+  
+  document.getElementById(tabName).classList.add("active");
+  event.target.classList.add("active");
+  
+  if (tabName === "management" && data.vehicules.length === 0) {
+    init();
+  }
+}
+
 // ========== INIT ==========
 async function init() {
   await loadData();
@@ -461,15 +658,15 @@ function renderVehicules() {
       <div class="vehicule-name">${v.immatriculation}</div>
       <div class="vehicule-meta">${v.marque} ${v.modele}</div>
     `;
-    li.onclick = () => selectVehicule(v.immatriculation);
+    li.onclick = () => selectVehicule(v.immatriculation, li);
     list.appendChild(li);
   });
 }
 
-function selectVehicule(immatriculation) {
+function selectVehicule(immatriculation, element) {
   selectedVehicule = immatriculation;
   document.querySelectorAll(".vehicule-item").forEach(el => el.classList.remove("active"));
-  event.target.closest(".vehicule-item").classList.add("active");
+  element.classList.add("active");
   
   document.getElementById("vehiculeTitle").textContent = immatriculation;
   document.getElementById("addDocBtn").style.display = "block";
@@ -616,8 +813,6 @@ function showMsg(text, type) {
   document.body.appendChild(msg);
   setTimeout(() => msg.remove(), 3000);
 }
-
-init();
 </script>
 
 </body>
