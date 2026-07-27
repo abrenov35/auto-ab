@@ -977,7 +977,7 @@
       </div>
       
       <!-- BLOCS MAINTENANCE -->
-      <div class="maintenance-blocks" id="maintenanceBlocks" style="display: grid;">
+      <div class="maintenance-blocks" id="maintenanceBlocks" style="display: none;">
         <!-- CONTRÔLE TECHNIQUE -->
         <div class="maintenance-block ct">
           <div class="block-title">
@@ -1498,7 +1498,7 @@ function selectVehiculeFromDropdown() {
   document.getElementById("inviteVehiculeSelect").style.display = "block";
   
   // Afficher le bloc maintenance immédiatement
-  document.getElementById("maintenanceBlocks").style.display = "block";
+  document.getElementById("maintenanceBlocks").style.display = "grid";
   
   // Appeler renderMaintenanceBlocks directement
   renderMaintenanceBlocks();
