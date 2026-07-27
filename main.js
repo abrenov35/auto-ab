@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 const app = express();
 
 // Configuration
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz6m4BJNmb93r2rMgc8haiHBe5Ee7DLTWLf84DszQni31QPulDS9bKdOawe3CKFyQBm/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbww_lsH-GbB17nOgH8mBWhLzHYtfEVwjfyAQlMomIjI09beibQ9-0zbyfteIP5aDtkf/exec";
 
 // Middleware: Parse JSON
 app.use(express.json({ limit: '50mb' }));
