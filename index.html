@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AB PARC AUTO - Gestion Documentaire Véhicules</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <style>
     * {
       margin: 0;
@@ -950,6 +951,134 @@
         align-items: flex-start;
       }
     }
+  
+    /* ===== UI V7.1 : TABLEAUX ET ACTIONS UNIFORMES ===== */
+    .toolbar {
+      justify-content: flex-start;
+      gap: 12px;
+    }
+
+    .toolbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .toolbar .version {
+      margin-left: auto;
+    }
+
+    .alert-inner {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding: 5px 8px;
+    }
+
+    .alert-items,
+    .alert-items-revision {
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 2px 0;
+      scrollbar-width: thin;
+    }
+
+    .alert-item,
+    .alert-item-revision {
+      min-width: max-content;
+      max-width: none;
+      min-height: 30px;
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      padding: 5px 10px;
+      border-radius: 7px;
+    }
+
+    .ab-table-head {
+      min-height: 42px;
+      height: 42px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+    }
+
+    .ab-table-cell {
+      min-height: 44px;
+      height: 44px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+    }
+
+    .ab-actions {
+      gap: 6px !important;
+      justify-content: flex-end !important;
+    }
+
+    .ab-icon-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 8px;
+      border: 1px solid currentColor;
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .ab-icon-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,.12);
+      background: rgba(255,255,255,.75);
+    }
+
+    .ab-icon-btn.edit { color: #1565c0; }
+    .ab-icon-btn.view { color: #5f6b7a; }
+    .ab-icon-btn.archive { color: #ef6c00; }
+    .ab-icon-btn.restore { color: #2e7d32; }
+
+    #vehiclesPageList,
+    #revisionPageList,
+    #ctPageList {
+      align-items: stretch;
+    }
+
+    @media (max-width: 900px) {
+      .toolbar {
+        align-items: flex-start;
+      }
+
+      .toolbar-nav {
+        overflow-x: auto;
+        max-width: 100%;
+      }
+
+      .alert-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .alert-banner h3,
+      .alert-banner-revision h3 {
+        min-width: 0;
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -963,15 +1092,17 @@
 
 <div class="toolbar">
   <h1>🚗 AB PARC AUTO</h1>
-  <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-  <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
-  <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v7.0</span>
+  <div class="toolbar-nav">
+    <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
+    <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
+    <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🛡️ Contrôle Technique</button>
+  </div>
+  <span class="version">v7.1</span>
 </div>
 
 <!-- ALERTE CT -->
 <div class="alert-banner" id="alertBanner">
-  <div style="width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: row; align-items: center; gap: 8px;">
+  <div class="alert-inner">
     <h3>⚠️ CONTRÔLES TECHNIQUES À VÉRIFIER</h3>
     <div class="alert-items" id="alertItems"></div>
   </div>
@@ -979,7 +1110,7 @@
 
 <!-- Bandeau d'alerte RÉVISIONS (vert) -->
 <div class="alert-banner-revision" id="alertBannerRevision">
-  <div style="width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: row; align-items: center; gap: 8px;">
+  <div class="alert-inner">
     <h3>🔧 RÉVISIONS À PRÉVOIR</h3>
     <div class="alert-items-revision" id="alertItemsRevision"></div>
   </div>
@@ -1158,7 +1289,7 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
       <button id="submitVehiculeBtn" class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
-      <button id="btnArchiverVehicule" class="btn" style="background: transparent; color: #ef6c00; border: 1px solid #ef6c00; display: none;" onclick="archiveVehiculeFromModal()">📦 Archiver</button>
+      <button id="btnArchiverVehicule" class="btn" style="background: transparent; color: #ef6c00; border: 1px solid #ef6c00; display: none;" onclick="archiveVehiculeFromModal()"><i class="bi bi-archive"></i></button>
     </div>
   </div>
 </div>
@@ -2277,31 +2408,31 @@ function renderVehiclesPage() {
   );
 
   const header = `
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Statut</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Statut</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
   `;
 
   const activeRows = actifs.map(v => `
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #2e7d46;padding-left:8px;font-weight:600;">${v.marque || ""} ${v.modele || ""}</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.immatriculation}</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.conducteur || "—"}</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"}</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">
-      <button onclick="openEditVehiculeModal('${v.immatriculation}')" style="background:transparent;color:#1565c0;border:1px solid #1565c0;border-radius:6px;padding:5px 10px;cursor:pointer;">✏️ Modifier</button>
-      <button onclick="archiveItem('archiveVehicule','${v.immatriculation}','Véhicule')" style="background:transparent;color:#ef6c00;border:1px solid #ef6c00;border-radius:6px;padding:5px 10px;cursor:pointer;">📦 Archiver</button>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #2e7d46;padding-left:8px;font-weight:600;">${v.marque || ""} ${v.modele || ""}</div>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.immatriculation}</div>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.conducteur || "—"}</div>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"}</div>
+    <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">
+      <button class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditVehiculeModal('${v.immatriculation}')"><i class="bi bi-pencil"></i></button>
+      <button class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveVehicule','${v.immatriculation}','Véhicule')"><i class="bi bi-archive"></i></button>
     </div>
   `).join("");
 
   const archiveRows = archives.map(v => `
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #98a2b3;padding-left:8px;font-weight:600;color:#667085;">${v.marque || ""} ${v.modele || ""}</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.immatriculation}</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.conducteur || "—"}</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">Archivé</div>
-    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;justify-content:flex-end;">
-      <button onclick="archiveItem('restoreVehicule','${v.immatriculation}','Véhicule')" style="background:transparent;color:#2e7d46;border:1px solid #2e7d46;border-radius:6px;padding:5px 10px;cursor:pointer;">↻ Restaurer</button>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #98a2b3;padding-left:8px;font-weight:600;color:#667085;">${v.marque || ""} ${v.modele || ""}</div>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.immatriculation}</div>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.conducteur || "—"}</div>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">Archivé</div>
+    <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;justify-content:flex-end;">
+      <button class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreVehicule','${v.immatriculation}','Véhicule')"><i class="bi bi-arrow-counterclockwise"></i></button>
     </div>
   `).join("");
 
@@ -2684,12 +2815,12 @@ function renderRevisionPage() {
   const archives = sortRows(complete.filter(r => r.statut === "Archivé"));
 
   const header = `
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernière Révision</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochaine Révision</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernière Révision</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochaine Révision</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
   `;
 
   const makeRows = (rows, archived) => rows.map(r => {
@@ -2699,17 +2830,17 @@ function renderRevisionPage() {
       : null;
     const color = days !== null && days < 0 ? "#d32f2f" : days !== null && days < 30 ? "#f57c00" : "#2e7d46";
     const action = archived
-      ? `<button onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')" style="background:transparent;color:#2e7d46;border:1px solid #2e7d46;border-radius:6px;padding:5px 10px;cursor:pointer;">↻ Restaurer</button>`
-      : `<button onclick="openEditRevisionModal('${r.immatriculation}')" style="background:transparent;color:#1565c0;border:1px solid #1565c0;border-radius:6px;padding:5px 10px;cursor:pointer;">✏️ Modifier</button>
-         <button onclick="archiveItem('archiveRevision','${r.immatriculation}','Révision')" style="background:transparent;color:#ef6c00;border:1px solid #ef6c00;border-radius:6px;padding:5px 10px;cursor:pointer;">📦 Archiver</button>`;
+      ? `<button class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`
+      : `<button class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>
+         <button class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveRevision','${r.immatriculation}','Révision')"><i class="bi bi-archive"></i></button>`;
 
     return `
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${r.marque} ${r.modele}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.immatriculation}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.conducteur || "—"}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.prochainDate ? new Date(r.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${r.marque} ${r.modele}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.immatriculation}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.conducteur || "—"}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.prochainDate ? new Date(r.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
+      <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
 
@@ -2975,30 +3106,30 @@ function renderCtPage() {
   const archives = sortRows(complete.filter(ct => ct.statut === "Archivé"));
 
   const header = `
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernier CT</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochain CT</div>
-    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernier CT</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochain CT</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
   `;
 
   const makeRows = (rows, archived) => rows.map(ct => {
     const days = calculateDaysUntilCT(ct.prochainDate);
     const color = days !== null && days <= 0 ? "#d32f2f" : days !== null && days <= 30 ? "#f57c00" : "#2e7d46";
     const action = archived
-      ? `<button onclick="archiveItem('restoreControleTk','${ct.immatriculation}','Contrôle technique')" style="background:transparent;color:#2e7d46;border:1px solid #2e7d46;border-radius:6px;padding:5px 10px;cursor:pointer;">↻ Restaurer</button>`
-      : `<button onclick="openCtEditModal('${ct.immatriculation}')" style="background:transparent;color:#1565c0;border:1px solid #1565c0;border-radius:6px;padding:5px 10px;cursor:pointer;">✏️ Modifier</button>
-         <button onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')" style="width:29px;height:29px;background:transparent;color:#0d5aa8;border:1px solid #0d5aa8;border-radius:999px;cursor:pointer;">👁️</button>
-         <button onclick="archiveItem('archiveControleTk','${ct.immatriculation}','Contrôle technique')" style="background:transparent;color:#ef6c00;border:1px solid #ef6c00;border-radius:6px;padding:5px 10px;cursor:pointer;">📦 Archiver</button>`;
+      ? `<button class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreControleTk','${ct.immatriculation}','Contrôle technique')"><i class="bi bi-arrow-counterclockwise"></i></button>`
+      : `<button class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openCtEditModal('${ct.immatriculation}')"><i class="bi bi-pencil"></i></button>
+         <button class="ab-icon-btn view" title="Voir" aria-label="Voir" onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')"><i class="bi bi-eye"></i></button>
+         <button class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveControleTk','${ct.immatriculation}','Contrôle technique')"><i class="bi bi-archive"></i></button>`;
 
     return `
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${ct.marque} ${ct.modele}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.immatriculation}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.conducteur || "—"}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
-      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${ct.marque} ${ct.modele}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.immatriculation}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.conducteur || "—"}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
+      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
+      <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
 
