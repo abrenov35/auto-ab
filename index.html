@@ -2659,7 +2659,7 @@ function renderRevisionPage() {
       <div style="padding: 8px; color: #666;">${r.immatriculation}</div>
       <div style="padding: 8px; color: #666;">${r.conducteur || "—"}</div>
       <div style="padding: 8px; color: #666;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-      <div style="padding: 8px; color: #666;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')} <span style="font-size: 11px; color: ${statusColor}; margin-left: 12px;">${daysLeft} j</span></div>
+      <div style="padding: 8px; color: #666; display: flex; justify-content: space-between; align-items: center;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')} <span style="font-size: 11px; font-weight: 600; color: ${statusColor}; background: ${statusColor}15; padding: 2px 8px; border-radius: 3px;">${daysLeft} j</span></div>
       <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end;">
         <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditRevisionModal('${r.immatriculation}')">✏️ Éditer</button>
       </div>
