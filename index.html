@@ -1206,9 +1206,9 @@
   <div class="modal-content" style="max-width: 500px;">
     <div class="modal-header" id="ctEditTitle">Modifier Contrôle Technique</div>
     
-    <div class="form-group">
-      <label>Dernier Contrôle Technique</label>
-      <input type="date" id="ctDernierDate">
+<div class="form-group">
+      <label>Dernier Contrôle Technique (lecture seule)</label>
+      <input type="date" id="ctDernierDate" disabled style="background: #f5f5f5; color: #999; cursor: not-allowed;">
     </div>
     
     <div class="form-group">
@@ -3171,13 +3171,22 @@ async function submitControleTk() {
   // Protection contre double-clics
   if (isSubmitting) return;
   
-  const dernierDate = document.getElementById("ctDernierDate").value;
   const prochainDate = document.getElementById("ctProchainDate").value;
   
   if (!prochainDate) {
     showMsg("Remplis la date du prochain CT", "err");
     return;
   }
+  
+  // 🔄 LOGIQUE INTELLIGENTE: ancien prochain → dernier
+  const ct = data.controlsTk.find(c => c.immatriculation === editingCtImmat);
+  if (!ct) {
+    showMsg("Contrôle technique non trouvé", "err");
+    return;
+  }
+  
+  // L'ancien prochain devient le dernier
+  const dernierDate = ct.prochainDate || "";
   
   isSubmitting = true;
   const submitBtn = document.getElementById("submitCtBtn");
@@ -3189,18 +3198,18 @@ async function submitControleTk() {
       body: JSON.stringify({
         action: "updateControleTk",
         immatriculation: editingCtImmat,
-        dernierDate: dernierDate,
-        prochainDate: prochainDate
+        dernierDate: dernierDate,  // Ancien prochain
+        prochainDate: prochainDate  // Nouveau prochain
       })
     });
     
     closeCtEditModal();
     showMsg("Contrôle technique mis à jour ✅", "ok");
-    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
+    setTimeout(() => location.reload(), 500);
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
-    setModalButtonsDisabled("ctEditModal", false); // Réactiver en cas d'erreur
+    setModalButtonsDisabled("ctEditModal", false);
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -3246,7 +3255,7 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.96</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.97</div>
 
 </body>
 </html>
