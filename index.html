@@ -1873,11 +1873,13 @@ async function submitDocument() {
   
   if (!categorie || !nom) {
     showMsg("Remplis les champs requis", "err");
+    setModalButtonsDisabled("documentModal", false); // Réactiver
     return;
   }
   
   if (!editingDocId && !selectedFile) {
     showMsg("Sélectionne un fichier", "err");
+    setModalButtonsDisabled("documentModal", false); // Réactiver
     return;
   }
   
@@ -1891,6 +1893,7 @@ async function submitDocument() {
       lienDrive = await uploadFileToGoogleDrive(selectedFile);
       if (!lienDrive) {
         isSubmitting = false;
+        setModalButtonsDisabled("documentModal", false); // Réactiver
         return;
       }
     }
@@ -1915,6 +1918,7 @@ async function submitDocument() {
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
+    setModalButtonsDisabled("documentModal", false); // Réactiver en cas d'erreur
   }
 }
 
@@ -2057,6 +2061,7 @@ async function submitVehicule() {
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
+    setModalButtonsDisabled("vehiculeModal", false); // Réactiver en cas d'erreur
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -2627,6 +2632,7 @@ async function submitAddRevision() {
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
+    setModalButtonsDisabled("addRevisionModal", false); // Réactiver en cas d'erreur
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -2988,6 +2994,7 @@ async function submitAddCt() {
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
+    setModalButtonsDisabled("addCtModal", false); // Réactiver en cas d'erreur
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -3027,6 +3034,7 @@ async function submitControleTk() {
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
+    setModalButtonsDisabled("ctEditModal", false); // Réactiver en cas d'erreur
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
