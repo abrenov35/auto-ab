@@ -1220,7 +1220,10 @@
     
 <div class="form-group">
       <label>Dernier Contrôle Technique (lecture seule)</label>
-      <input type="date" id="ctDernierDate" disabled style="background: #f5f5f5; color: #999; cursor: not-allowed;">
+      <div style="padding: 10px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; color: #666; font-size: 14px; min-height: 38px; display: flex; align-items: center;">
+        <span id="ctDernierDateDisplay">—</span>
+      </div>
+      <input type="date" id="ctDernierDate" style="display: none;">
     </div>
     
     <div class="form-group">
@@ -2966,7 +2969,16 @@ function openCtEditModal(immatriculation) {
   if (!ct) return;
   
   document.getElementById("ctEditTitle").textContent = `Modifier CT - ${immatriculation} ${vehicule ? vehicule.marque + " " + vehicule.modele : ""}`;
-  document.getElementById("ctDernierDate").value = ct.dernierDate || "";
+  
+  // Afficher Dernier CT formaté en français
+  if (ct.dernierDate) {
+    document.getElementById("ctDernierDate").value = ct.dernierDate;
+    const dateObj = new Date(ct.dernierDate + "T00:00:00");
+    document.getElementById("ctDernierDateDisplay").textContent = dateObj.toLocaleDateString('fr-FR');
+  } else {
+    document.getElementById("ctDernierDateDisplay").textContent = "—";
+  }
+  
   document.getElementById("ctProchainDate").value = ct.prochainDate || "";
   document.getElementById("ctEditModal").classList.add("active");
   
@@ -3283,7 +3295,7 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.100</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.101</div>
 
 </body>
 </html>
