@@ -2097,7 +2097,7 @@ function checkCtAlerts() {
   
   data.controlsTk.forEach(ct => {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
-    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
+    if (daysLeft !== null && daysLeft <= 30) {
       const vehicule = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
       alerts.push({
         immatriculation: ct.immatriculation,
@@ -2110,15 +2110,25 @@ function checkCtAlerts() {
   
   if (alerts.length > 0) {
     alertBanner.classList.add("active");
-    alertItems.innerHTML = alerts.map(a => `
+    alertItems.innerHTML = alerts.map(a => {
+      let daysText = "";
+      if (a.daysLeft < 0) {
+        daysText = `🔴 EXPIRÉ il y a ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
+      } else if (a.daysLeft === 0) {
+        daysText = `🟠 EXPIRE AUJOURD'HUI`;
+      } else {
+        daysText = `⚠️ Expire dans ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}`;
+      }
+      return `
       <div class="alert-item">
         <span class="alert-item-vehicle">${a.immatriculation} - ${a.vehicule}</span>
         <span class="alert-item-separator">|</span>
         <span class="alert-item-info">CT avant le ${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
         <span class="alert-item-separator">|</span>
-        <span class="alert-item-days">⏱️ ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}</span>
+        <span class="alert-item-days">${daysText}</span>
       </div>
-    `).join("");
+    `;
+    }).join("");
   } else {
     alertBanner.classList.remove("active");
   }
@@ -2134,10 +2144,10 @@ function renderControleTk() {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
     
     let dateClass = "";
-    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
-      dateClass = "warning";
-    } else if (daysLeft !== null && daysLeft <= 0) {
-      dateClass = "danger";
+    if (daysLeft !== null && daysLeft <= 0) {
+      dateClass = "danger"; // CT expiré
+    } else if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
+      dateClass = "warning"; // CT expire bientôt
     }
     
     return `
