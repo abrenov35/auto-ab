@@ -1455,6 +1455,9 @@ async function loadData() {
     const response = await fetch(APPS_SCRIPT_URL + "?action=loadData");
     data = await response.json();
     
+    console.log("Données du backend reçues:", data);
+    console.log("Nombre de véhicules:", data.vehicules ? data.vehicules.length : 0);
+    
     // Initialiser les révisions si non présentes
     if (!data.revisions || data.revisions.length === 0) {
       data.revisions = [
@@ -1494,19 +1497,26 @@ async function loadData() {
       ];
     }
     
-    // Initialiser les véhicules avec les 9 vrais (toujours à jour)
-    // Cela écrase les données du backend si elles sont mauvaises
-    data.vehicules = [
-      { immatriculation: "CD 799 PT", marque: "Renault", modele: "Master", annee: 2019, statut: "Actif" },
-      { immatriculation: "HG-877-TV", marque: "Citroën", modele: "Berlingo", annee: 2018, statut: "Actif" },
-      { immatriculation: "HD 453 ND", marque: "Renault", modele: "Trafic", annee: 2017, statut: "Actif" },
-      { immatriculation: "FS 552 SF", marque: "Peugeot", modele: "Partner", annee: 2016, statut: "Actif" },
-      { immatriculation: "GN 478 AP", marque: "Renault", modele: "Mégane", annee: 2015, statut: "Actif" },
-      { immatriculation: "FG 758 GJ", marque: "Renault", modele: "Master", annee: 2020, statut: "Actif" },
-      { immatriculation: "HJ 896 AW", marque: "Citroën", modele: "Berlingo", annee: 2019, statut: "Actif" },
-      { immatriculation: "GD-344-XC", marque: "Citroën", modele: "C3", annee: 2021, statut: "Actif" },
-      { immatriculation: "HG-631-YY", marque: "Fiat", modele: "600", annee: 2022, statut: "Actif" }
-    ];
+    // N'utiliser que les données du backend
+    // Les véhicules sont gérés dans la Google Sheet via le backend
+    if (!data.vehicules || data.vehicules.length === 0) {
+      console.warn("⚠️ Aucun véhicule reçu du backend - utiliser fallback");
+      // Fallback: utiliser les 9 véhicules de référence
+      data.vehicules = [
+        { immatriculation: "CD 799 PT", marque: "Renault", modele: "Master", annee: 2019, statut: "Actif", conducteur: "Dépôt Alexandre" },
+        { immatriculation: "HG-877-TV", marque: "Citroën", modele: "Berlingo", annee: 2018, statut: "Actif", conducteur: "Kevin" },
+        { immatriculation: "HD 453 ND", marque: "Renault", modele: "Trafic", annee: 2017, statut: "Actif", conducteur: "Morvan" },
+        { immatriculation: "FS 552 SF", marque: "Peugeot", modele: "Partner", annee: 2016, statut: "Actif", conducteur: "Alexis" },
+        { immatriculation: "GN 478 AP", marque: "Renault", modele: "Mégane", annee: 2015, statut: "Actif", conducteur: "Younès" },
+        { immatriculation: "FG 758 GJ", marque: "Renault", modele: "Master", annee: 2020, statut: "Actif", conducteur: "Mohammed" },
+        { immatriculation: "HJ 896 AW", marque: "Citroën", modele: "Berlingo", annee: 2019, statut: "Actif", conducteur: "Jimmy" },
+        { immatriculation: "GD-344-XC", marque: "Citroën", modele: "C3", annee: 2021, statut: "Actif", conducteur: "Mathieu et Solenn" },
+        { immatriculation: "HG-631-YY", marque: "Fiat", modele: "600", annee: 2022, statut: "Actif", conducteur: "Pascale" }
+      ];
+      console.log("✅ Fallback appliqué - 9 véhicules chargés");
+    } else {
+      console.log("✅ Véhicules récupérés du backend");
+    }
   } catch (err) {
     console.error("Erreur:", err);
     showMsg("Erreur de chargement", "err");
