@@ -2496,7 +2496,7 @@ function renderRevisionPage() {
       <div style="padding: 4px; color: #666;">${r.immatriculation}</div>
       <div style="padding: 4px; color: #666;">${r.conducteur || "—"}</div>
       <div style="padding: 4px; color: #666;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-      <div style="padding: 4px; color: #666;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')}<br><span style="font-size: 11px; color: ${statusColor};">${daysLeft} j</span></div>
+      <div style="padding: 4px; color: #666;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')} <span style="font-size: 11px; color: ${statusColor};">${daysLeft} j</span></div>
       <div style="padding: 4px; display: flex; gap: 6px; justify-content: flex-end;">
         <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditRevisionModal('${r.immatriculation}')">✏️ Éditer</button>
       </div>
@@ -2658,7 +2658,7 @@ function renderCtPage() {
       <div style="padding: 4px; color: #666;">${ct.immatriculation}</div>
       <div style="padding: 4px; color: #666;">${ct.conducteur || "—"}</div>
       <div style="padding: 4px; color: #666;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-      <div style="padding: 4px; color: #666;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"}<br><span style="font-size: 11px; color: ${statusColor};">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
+      <div style="padding: 4px; color: #666;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"} <span style="font-size: 11px; color: ${statusColor};">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
       <div style="padding: 4px; display: flex; gap: 4px;">
         <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">✏️</button>
         <button class="btn" style="background: #0d5aa8; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">👁️</button>
