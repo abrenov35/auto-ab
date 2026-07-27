@@ -1649,7 +1649,6 @@ function renderMaintenanceBlocks() {
           </div>
           <div class="block-actions">
             <button class="block-btn-edit" onclick="openEditRevisionModal('${selectedVehicule}')">Modifier</button>
-            <button class="block-btn-delete" onclick="deleteRevision('${selectedVehicule}')">Supprimer</button>
           </div>
         </div>
       `;
@@ -1695,7 +1694,6 @@ function renderMaintenanceBlocks() {
         </div>
         <div class="block-actions">
           <button class="block-btn-edit" onclick="openCtEditModal('${selectedVehicule}')">Modifier</button>
-          <button class="block-btn-delete" onclick="deleteCt('${selectedVehicule}')">Supprimer</button>
         </div>
       </div>
     `;
@@ -1722,7 +1720,6 @@ function renderMaintenanceBlocks() {
         <div class="block-actions">
           <button class="block-btn-see" onclick="openDocLink('${doc.lienDrive}')">Voir</button>
           <button class="block-btn-edit" onclick="editDocument(${doc.id})">Modifier</button>
-          <button class="block-btn-delete" onclick="deleteDocument(${doc.id})">Supprimer</button>
         </div>
       </div>
     `).join("");
@@ -2100,7 +2097,6 @@ function renderVehiclesPage() {
       <div style="padding: 4px; font-size: 11px; font-weight: 600; color: ${statusColor};">${statusText}</div>
       <div style="padding: 4px; display: flex; gap: 6px; justify-content: flex-end;">
         <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
-        <button class="btn" style="background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="deleteVehicule('${v.immatriculation}')">🗑️ Supprimer</button>
       </div>
     `;
   }).join("");
@@ -2488,7 +2484,6 @@ function renderRevisionPage() {
       <div style="padding: 4px; color: #666;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')}<br><span style="font-size: 11px; color: ${statusColor};">${daysLeft} j</span></div>
       <div style="padding: 4px; display: flex; gap: 6px; justify-content: flex-end;">
         <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditRevisionModal('${r.immatriculation}')">✏️ Éditer</button>
-        <button class="btn" style="background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="deleteRevision('${r.immatriculation}')">🗑️ Supprimer</button>
       </div>
     `;
   }).join("");
