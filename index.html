@@ -2210,8 +2210,15 @@ function renderVehiclesPage() {
     return nameA.localeCompare(nameB);
   });
   
-  // Afficher comme des cartes simples
-  let html = sortedVehicles.map(v => {
+  // Grouper par statut
+  const groupedVehicles = {
+    actif: sortedVehicles.filter(v => v.statut === "Actif"),
+    maintenance: sortedVehicles.filter(v => v.statut === "Maintenance"),
+    sortie: sortedVehicles.filter(v => v.statut !== "Actif" && v.statut !== "Maintenance")
+  };
+  
+  // Fonction pour créer une carte
+  const createCardHTML = (v) => {
     let statusColor = "#4caf50";
     let statusText = "Actif";
     if (v.statut !== "Actif") {
@@ -2234,7 +2241,34 @@ function renderVehiclesPage() {
         <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; flex-shrink: 0;" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
       </div>
     `;
-  }).join("");
+  };
+  
+  // Construire le HTML avec sections
+  let html = '';
+  
+  // Section ACTIF (vert)
+  if (groupedVehicles.actif.length > 0) {
+    html += `<div style="margin-bottom: 24px;">
+      <div style="font-weight: 600; font-size: 14px; color: #4caf50; border-bottom: 2px solid #4caf50; padding-bottom: 8px; margin-bottom: 12px;">✅ ACTIF (${groupedVehicles.actif.length})</div>
+      ${groupedVehicles.actif.map(v => createCardHTML(v)).join('')}
+    </div>`;
+  }
+  
+  // Section MAINTENANCE (bleu)
+  if (groupedVehicles.maintenance.length > 0) {
+    html += `<div style="margin-bottom: 24px;">
+      <div style="font-weight: 600; font-size: 14px; color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 8px; margin-bottom: 12px;">🔧 MAINTENANCE (${groupedVehicles.maintenance.length})</div>
+      ${groupedVehicles.maintenance.map(v => createCardHTML(v)).join('')}
+    </div>`;
+  }
+  
+  // Section SORTIE (orange)
+  if (groupedVehicles.sortie.length > 0) {
+    html += `<div style="margin-bottom: 24px;">
+      <div style="font-weight: 600; font-size: 14px; color: #ff9800; border-bottom: 2px solid #ff9800; padding-bottom: 8px; margin-bottom: 12px;">⛔ SORTIE (${groupedVehicles.sortie.length})</div>
+      ${groupedVehicles.sortie.map(v => createCardHTML(v)).join('')}
+    </div>`;
+  }
   
   vehiclesList.innerHTML = html;
 }
