@@ -966,7 +966,7 @@
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
   <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.71</span>
+  <span class="version">v7.0</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1158,7 +1158,7 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
       <button id="submitVehiculeBtn" class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
-      <button id="btnSupprimer" class="btn" style="background: #d32f2f; color: white; display: none;" onclick="deleteVehiculeFromModal()">Supprimer</button>
+      <button id="btnArchiverVehicule" class="btn" style="background: transparent; color: #ef6c00; border: 1px solid #ef6c00; display: none;" onclick="archiveVehiculeFromModal()">📦 Archiver</button>
     </div>
   </div>
 </div>
@@ -2080,7 +2080,7 @@ function closeVehiculeModal() {
   setModalButtonsDisabled("vehiculeModal", false);
   
   document.getElementById("vehiculeModal").classList.remove("active");
-  document.getElementById("btnSupprimer").style.display = "none";
+  document.getElementById("btnArchiverVehicule").style.display = "none";
   
   // Réinitialiser l'état de modification
   window.editingImmat = null;
@@ -2090,18 +2090,33 @@ function closeVehiculeModal() {
   if (submitBtn) submitBtn.disabled = false;
 }
 
-function deleteVehiculeFromModal() {
+async function archiveVehiculeFromModal() {
   const immat = window.currentVehiculeImmatriculation;
   if (!immat) return;
-  
-  if (!confirm(`Supprimer le véhicule ${immat} ?`)) return;
-  
-  data.vehicules = data.vehicules.filter(v => v.immatriculation !== immat);
-  renderVehicleManagement();
-  renderInviteVehiculeSelect();
-  closeVehiculeModal();
-  showMsg("Véhicule supprimé ✅", "ok");
-  renderVehiclesPage();
+
+  if (!confirm(`Archiver le véhicule ${immat} ?`)) return;
+
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "archiveVehicule",
+        immatriculation: immat
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || "Archivage impossible");
+    }
+
+    closeVehiculeModal();
+    showMsg("Véhicule archivé ✅", "ok");
+    showLoadingAndReload();
+  } catch (err) {
+    showMsg("Erreur : " + err.message, "err");
+  }
 }
 
 async function submitVehicule() {
@@ -2244,44 +2259,58 @@ function renderVehicleManagement() {
 
 function renderVehiclesPage() {
   const vehiclesList = document.getElementById("vehiclesPageList");
-  
-  // Trier par Marque Modèle
-  const sortedVehicles = [...data.vehicules].sort((a, b) => {
-    const nameA = (a.marque + " " + a.modele).toUpperCase();
-    const nameB = (b.marque + " " + b.modele).toUpperCase();
-    return nameA.localeCompare(nameB);
-  });
-  
-  // En-têtes (ligne 1)
-  let html = `
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Conducteur</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Statut</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
+  const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
+
+  const sortByName = list => [...list].sort((a, b) =>
+    `${a.marque || ""} ${a.modele || ""}`.localeCompare(
+      `${b.marque || ""} ${b.modele || ""}`,
+      "fr",
+      { sensitivity: "base" }
+    )
+  );
+
+  const actifs = sortByName(
+    vehicules.filter(v => (v.statut || "Actif") !== "Archivé")
+  );
+  const archives = sortByName(
+    vehicules.filter(v => v.statut === "Archivé")
+  );
+
+  const header = `
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Statut</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
   `;
-  
-  // Lignes de données (5 divs par ligne pour correspondre aux 5 colonnes)
-  html += sortedVehicles.map(v => {
-    let statusColor = "#4caf50";
-    let statusText = "Actif";
-    if (v.statut !== "Actif") {
-      statusColor = "#ff9800";
-      statusText = v.statut || "Sortie";
-    }
-    
-    return `
-      <div style="padding: 8px; font-weight: 500; font-size: 14px; line-height: 1.4; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v.marque} ${v.modele}</div>
-      <div style="padding: 8px; color: #666; font-family: monospace; font-size: 14px; line-height: 1.4;">${v.immatriculation}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4; line-height: 1.4;">${v.conducteur || "—"}</div>
-      <div style="padding: 8px; font-weight: 500; font-size: 14px; line-height: 1.4; color: ${statusColor};">${statusText}</div>
-      <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
-        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
-      </div>
-    `;
-  }).join("");
-  
-  vehiclesList.innerHTML = html;
+
+  const activeRows = actifs.map(v => `
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #2e7d46;padding-left:8px;font-weight:600;">${v.marque || ""} ${v.modele || ""}</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.immatriculation}</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.conducteur || "—"}</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"}</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">
+      <button onclick="openEditVehiculeModal('${v.immatriculation}')" style="background:transparent;color:#1565c0;border:1px solid #1565c0;border-radius:6px;padding:5px 10px;cursor:pointer;">✏️ Modifier</button>
+      <button onclick="archiveItem('archiveVehicule','${v.immatriculation}','Véhicule')" style="background:transparent;color:#ef6c00;border:1px solid #ef6c00;border-radius:6px;padding:5px 10px;cursor:pointer;">📦 Archiver</button>
+    </div>
+  `).join("");
+
+  const archiveRows = archives.map(v => `
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #98a2b3;padding-left:8px;font-weight:600;color:#667085;">${v.marque || ""} ${v.modele || ""}</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.immatriculation}</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.conducteur || "—"}</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">Archivé</div>
+    <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;justify-content:flex-end;">
+      <button onclick="archiveItem('restoreVehicule','${v.immatriculation}','Véhicule')" style="background:transparent;color:#2e7d46;border:1px solid #2e7d46;border-radius:6px;padding:5px 10px;cursor:pointer;">↻ Restaurer</button>
+    </div>
+  `).join("");
+
+  vehiclesList.innerHTML = `
+    ${header}
+    ${activeRows || '<div style="grid-column:1/-1;padding:24px;text-align:center;color:#98a2b3;">Aucun véhicule actif</div>'}
+    <div style="grid-column:1/-1;margin:24px 0 10px;border-top:1px dashed #cfd6df;padding-top:14px;font-size:16px;font-weight:700;color:#0d3a66;">📦 Véhicules archivés (${archives.length})</div>
+    ${archives.length ? header + archiveRows : '<div style="grid-column:1/-1;padding:12px;color:#98a2b3;">Aucun véhicule archivé</div>'}
+  `;
 }
 
 function markVehicleAsOut(immatriculation) {
@@ -2347,7 +2376,7 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("vehiculeModal").classList.add("active");
   
   // Afficher le bouton "Supprimer" et stocker l'immat
-  document.getElementById("btnSupprimer").style.display = "block";
+  document.getElementById("btnArchiverVehicule").style.display = "block";
   window.currentVehiculeImmatriculation = immatriculation;
   
   // Faire un vrai truc: si tu modifies et enregistres, ça va updater
@@ -2397,7 +2426,7 @@ function renderInviteVehiculeSelect() {
   const select = document.getElementById("inviteVehicule");
   select.innerHTML = '<option value="">-- Sélectionne un véhicule --</option>';
   
-  data.vehicules.forEach(v => {
+  data.vehicules.filter(v => (v.statut || "Actif") !== "Archivé").forEach(v => {
     const option = document.createElement("option");
     option.value = v.immatriculation;
     option.textContent = `${v.immatriculation} - ${v.marque} ${v.modele}`;
@@ -2628,167 +2657,68 @@ function closeRevisionModal() {
 function renderRevisionPage() {
   const revisionList = document.getElementById("revisionPageList");
 
-  const cleanValue = value => {
-    const text = String(value ?? "").trim();
-    if (!text || text.toLowerCase() === "undefined" || text.toLowerCase() === "null") {
-      return "";
-    }
-    return text;
-  };
-
   const normalizeImmat = value =>
-    cleanValue(value)
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "");
+    String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
   const revisions = Array.isArray(data.revisions) ? data.revisions : [];
 
-  const revisionsComplete = revisions.map(revision => {
-    const vehicule = vehicules.find(v =>
-      normalizeImmat(v.immatriculation) === normalizeImmat(revision.immatriculation)
+  const complete = revisions.map(r => {
+    const v = vehicules.find(x =>
+      normalizeImmat(x.immatriculation) === normalizeImmat(r.immatriculation)
     );
-
     return {
-      ...revision,
-      immatriculation: cleanValue(revision.immatriculation),
-      marque: cleanValue(vehicule?.marque),
-      modele: cleanValue(vehicule?.modele),
-      conducteur: cleanValue(vehicule?.conducteur)
+      ...r,
+      marque: v?.marque || "",
+      modele: v?.modele || "",
+      conducteur: v?.conducteur || "",
+      statut: r.statut || "Actif"
     };
   });
 
-  const sortedRevisions = revisionsComplete.sort((a, b) => {
-    const nameA = `${a.marque} ${a.modele}`.trim().toUpperCase();
-    const nameB = `${b.marque} ${b.modele}`.trim().toUpperCase();
-    return nameA.localeCompare(nameB);
-  });
+  const sortRows = rows => [...rows].sort((a, b) =>
+    `${a.marque} ${a.modele}`.localeCompare(`${b.marque} ${b.modele}`, "fr")
+  );
 
-  const headerStyle = `
-    font-weight: 600;
-    color: #667085;
-    border-bottom: 1px solid #d9dee7;
-    padding: 8px 6px 10px;
-    font-size: 13px;
+  const actifs = sortRows(complete.filter(r => r.statut !== "Archivé"));
+  const archives = sortRows(complete.filter(r => r.statut === "Archivé"));
+
+  const header = `
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernière Révision</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochaine Révision</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
   `;
 
-  let html = `
-    <div style="${headerStyle}">Marque Modèle</div>
-    <div style="${headerStyle}">Immatriculation</div>
-    <div style="${headerStyle}">Conducteur</div>
-    <div style="${headerStyle}">Dernière Révision</div>
-    <div style="${headerStyle}">Prochaine Révision</div>
-    <div style="${headerStyle} text-align: right;">Actions</div>
-  `;
-
-  if (sortedRevisions.length === 0) {
-    html += `
-      <div style="grid-column: 1 / -1; padding: 28px; text-align: center; color: #98a2b3;">
-        Aucune révision enregistrée
-      </div>
-    `;
-    revisionList.innerHTML = html;
-    return;
-  }
-
-  html += sortedRevisions.map(r => {
-    const prochainDate = r.prochainDate ? new Date(r.prochainDate) : null;
-    const today = new Date();
-    const validNextDate = prochainDate && !Number.isNaN(prochainDate.getTime());
-    const daysLeft = validNextDate
-      ? Math.floor((prochainDate - today) / (1000 * 60 * 60 * 24))
+  const makeRows = (rows, archived) => rows.map(r => {
+    const next = r.prochainDate ? new Date(r.prochainDate) : null;
+    const days = next && !Number.isNaN(next.getTime())
+      ? Math.floor((next - new Date()) / 86400000)
       : null;
-
-    let statusColor = "#2e7d46";
-    if (daysLeft !== null && daysLeft < 30 && daysLeft >= 0) {
-      statusColor = "#f57c00";
-    } else if (daysLeft !== null && daysLeft < 0) {
-      statusColor = "#d32f2f";
-    }
-
-    const marqueModele =
-      `${r.marque} ${r.modele}`.trim() || "Véhicule introuvable";
-
-    const prochainAffichage = validNextDate
-      ? prochainDate.toLocaleDateString("fr-FR")
-      : "—";
-
-    const compteur = daysLeft === null
-      ? ""
-      : `<span style="
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          margin-left: 8px;
-          padding: 1px 7px;
-          border: 1px solid ${statusColor};
-          border-radius: 999px;
-          background: transparent;
-          color: ${statusColor};
-          font-size: 10px;
-          font-weight: 700;
-          white-space: nowrap;
-        ">${daysLeft} j</span>`;
-
-    const cellStyle = `
-      padding: 11px 6px;
-      border-bottom: 1px solid #eef1f5;
-      color: #475467;
-      font-size: 13px;
-      min-height: 42px;
-      display: flex;
-      align-items: center;
-    `;
+    const color = days !== null && days < 0 ? "#d32f2f" : days !== null && days < 30 ? "#f57c00" : "#2e7d46";
+    const action = archived
+      ? `<button onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')" style="background:transparent;color:#2e7d46;border:1px solid #2e7d46;border-radius:6px;padding:5px 10px;cursor:pointer;">↻ Restaurer</button>`
+      : `<button onclick="openEditRevisionModal('${r.immatriculation}')" style="background:transparent;color:#1565c0;border:1px solid #1565c0;border-radius:6px;padding:5px 10px;cursor:pointer;">✏️ Modifier</button>
+         <button onclick="archiveItem('archiveRevision','${r.immatriculation}','Révision')" style="background:transparent;color:#ef6c00;border:1px solid #ef6c00;border-radius:6px;padding:5px 10px;cursor:pointer;">📦 Archiver</button>`;
 
     return `
-      <div style="${cellStyle} border-left: 3px solid ${statusColor}; padding-left: 8px; font-weight: 600; color: #1d2939;">${marqueModele}</div>
-      <div style="${cellStyle}">${r.immatriculation || "—"}</div>
-      <div style="${cellStyle}">${r.conducteur || "—"}</div>
-      <div style="${cellStyle}">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div style="${cellStyle}">${prochainAffichage}${compteur}</div>
-      <div style="${cellStyle} justify-content: flex-end; gap: 7px;">
-        <button
-          type="button"
-          title="Modifier la révision"
-          onclick="openEditRevisionModal('${r.immatriculation}')"
-          style="
-            height: 30px;
-            padding: 0 10px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: transparent;
-            color: #1565c0;
-            border: 1px solid #1565c0;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-          "
-        >✏️ Modifier</button>
-        <button
-          type="button"
-          title="Supprimer la révision"
-          onclick="deleteRevision('${r.immatriculation}')"
-          style="
-            width: 30px;
-            height: 30px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            color: #d32f2f;
-            border: 1px solid #d32f2f;
-            border-radius: 999px;
-            cursor: pointer;
-            font-size: 12px;
-          "
-        >🗑️</button>
-      </div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${r.marque} ${r.modele}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.immatriculation}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.conducteur || "—"}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.prochainDate ? new Date(r.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
 
-  revisionList.innerHTML = html;
+  revisionList.innerHTML = `
+    ${header}
+    ${actifs.length ? makeRows(actifs, false) : '<div style="grid-column:1/-1;padding:24px;text-align:center;color:#98a2b3;">Aucune révision active</div>'}
+    <div style="grid-column:1/-1;margin:24px 0 10px;border-top:1px dashed #cfd6df;padding-top:14px;font-size:16px;font-weight:700;color:#0d3a66;">📦 Révisions archivées (${archives.length})</div>
+    ${archives.length ? header + makeRows(archives, true) : '<div style="grid-column:1/-1;padding:12px;color:#98a2b3;">Aucune révision archivée</div>'}
+  `;
 }
 
 function openAddRevisionModal() {
@@ -2807,10 +2737,11 @@ function openAddRevisionModal() {
       .replace(/[^A-Z0-9]/g, "");
 
   const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
-  const revisions = Array.isArray(data.revisions) ? data.revisions : [];
+  const revisions = (Array.isArray(data.revisions) ? data.revisions : [])
+    .filter(r => (r.statut || "Actif") !== "Archivé");
 
   const vehiculesDisponibles = vehicules.filter(v =>
-    v.statut === "Actif" &&
+    (v.statut || "Actif") === "Actif" &&
     !revisions.some(r =>
       normalizeImmat(r.immatriculation) === normalizeImmat(v.immatriculation)
     )
@@ -3017,130 +2948,66 @@ function closeCtPage() {
 function renderCtPage() {
   const ctList = document.getElementById("ctPageList");
 
-  const cleanValue = value => {
-    const text = String(value ?? "").trim();
-    if (!text || text.toLowerCase() === "undefined" || text.toLowerCase() === "null") {
-      return "";
-    }
-    return text;
-  };
-
   const normalizeImmat = value =>
-    cleanValue(value)
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "");
+    String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
-  const controlsTk = Array.isArray(data.controlsTk) ? data.controlsTk : [];
+  const controls = Array.isArray(data.controlsTk) ? data.controlsTk : [];
 
-  const controlsComplete = controlsTk.map(ct => {
-    const vehicule = vehicules.find(v =>
-      normalizeImmat(v.immatriculation) === normalizeImmat(ct.immatriculation)
+  const complete = controls.map(ct => {
+    const v = vehicules.find(x =>
+      normalizeImmat(x.immatriculation) === normalizeImmat(ct.immatriculation)
     );
-
     return {
       ...ct,
-      immatriculation: cleanValue(ct.immatriculation),
-      marque: cleanValue(vehicule?.marque),
-      modele: cleanValue(vehicule?.modele),
-      conducteur: cleanValue(vehicule?.conducteur)
+      marque: v?.marque || "",
+      modele: v?.modele || "",
+      conducteur: v?.conducteur || "",
+      statut: ct.statut || "Actif"
     };
   });
 
-  const sorted = controlsComplete.sort((a, b) => {
-    const fullA = `${a.marque} ${a.modele}`.trim().toLowerCase();
-    const fullB = `${b.marque} ${b.modele}`.trim().toLowerCase();
-    return fullA.localeCompare(fullB);
-  });
+  const sortRows = rows => [...rows].sort((a, b) =>
+    `${a.marque} ${a.modele}`.localeCompare(`${b.marque} ${b.modele}`, "fr")
+  );
 
-  let html = `
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Conducteur</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Dernier CT</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Prochain CT</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
+  const actifs = sortRows(complete.filter(ct => ct.statut !== "Archivé"));
+  const archives = sortRows(complete.filter(ct => ct.statut === "Archivé"));
+
+  const header = `
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernier CT</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochain CT</div>
+    <div style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
   `;
 
-  if (sorted.length === 0) {
-    html += `
-      <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #999;">
-        Aucun contrôle technique enregistré
-      </div>
-    `;
-    ctList.innerHTML = html;
-    return;
-  }
-
-  html += sorted.map(ct => {
-    const daysLeft = calculateDaysUntilCT(ct.prochainDate);
-
-    let statusColor = "#4caf50";
-    if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
-      statusColor = "#ff9800";
-    } else if (daysLeft !== null && daysLeft <= 0) {
-      statusColor = "#d32f2f";
-    }
-
-    const marqueModele =
-      `${ct.marque} ${ct.modele}`.trim() || "Véhicule introuvable";
-
-    const compteur = daysLeft === null
-      ? ""
-      : `<span style="
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          margin-left: 10px;
-          padding: 1px 7px;
-          border: 1px solid ${statusColor};
-          border-radius: 999px;
-          background: transparent;
-          color: ${statusColor};
-          font-size: 10px;
-          font-weight: 600;
-          line-height: 1.4;
-        ">${daysLeft} j</span>`;
-
-    const iconButton = (borderColor, icon, onclick, title) => `
-      <button
-        type="button"
-        title="${title}"
-        aria-label="${title}"
-        onclick="${onclick}"
-        style="
-          width: 27px;
-          height: 27px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0;
-          background: transparent;
-          color: ${borderColor};
-          border: 1px solid ${borderColor};
-          border-radius: 999px;
-          cursor: pointer;
-          font-size: 12px;
-          line-height: 1;
-        "
-      >${icon}</button>
-    `;
+  const makeRows = (rows, archived) => rows.map(ct => {
+    const days = calculateDaysUntilCT(ct.prochainDate);
+    const color = days !== null && days <= 0 ? "#d32f2f" : days !== null && days <= 30 ? "#f57c00" : "#2e7d46";
+    const action = archived
+      ? `<button onclick="archiveItem('restoreControleTk','${ct.immatriculation}','Contrôle technique')" style="background:transparent;color:#2e7d46;border:1px solid #2e7d46;border-radius:6px;padding:5px 10px;cursor:pointer;">↻ Restaurer</button>`
+      : `<button onclick="openCtEditModal('${ct.immatriculation}')" style="background:transparent;color:#1565c0;border:1px solid #1565c0;border-radius:6px;padding:5px 10px;cursor:pointer;">✏️ Modifier</button>
+         <button onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')" style="width:29px;height:29px;background:transparent;color:#0d5aa8;border:1px solid #0d5aa8;border-radius:999px;cursor:pointer;">👁️</button>
+         <button onclick="archiveItem('archiveControleTk','${ct.immatriculation}','Contrôle technique')" style="background:transparent;color:#ef6c00;border:1px solid #ef6c00;border-radius:6px;padding:5px 10px;cursor:pointer;">📦 Archiver</button>`;
 
     return `
-      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${marqueModele}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.immatriculation || "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.conducteur || "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4; display: flex; align-items: center;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${compteur}</div>
-      <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
-        ${iconButton("#1976d2", "✏️", `openCtEditModal('${ct.immatriculation}')`, "Modifier")}
-        ${iconButton("#0d5aa8", "👁️", `viewCt('${ct.immatriculation}', '${ct.lienCt || ""}')`, "Voir")}
-        ${iconButton("#7b68ee", "📜", `openHistoriqueCt('${ct.immatriculation}')`, "Historique")}
-      </div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${ct.marque} ${ct.modele}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.immatriculation}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.conducteur || "—"}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
+      <div style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
 
-  ctList.innerHTML = html;
+  ctList.innerHTML = `
+    ${header}
+    ${actifs.length ? makeRows(actifs, false) : '<div style="grid-column:1/-1;padding:24px;text-align:center;color:#98a2b3;">Aucun contrôle technique actif</div>'}
+    <div style="grid-column:1/-1;margin:24px 0 10px;border-top:1px dashed #cfd6df;padding-top:14px;font-size:16px;font-weight:700;color:#0d3a66;">📦 Contrôles techniques archivés (${archives.length})</div>
+    ${archives.length ? header + makeRows(archives, true) : '<div style="grid-column:1/-1;padding:12px;color:#98a2b3;">Aucun contrôle technique archivé</div>'}
+  `;
 }
 
 function renderCtComplete() {
@@ -3416,10 +3283,11 @@ function openAddCtModal() {
       .replace(/[^A-Z0-9]/g, "");
 
   const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
-  const controlsTk = Array.isArray(data.controlsTk) ? data.controlsTk : [];
+  const controlsTk = (Array.isArray(data.controlsTk) ? data.controlsTk : [])
+    .filter(ct => (ct.statut || "Actif") !== "Archivé");
 
   const vehiculesAvailables = vehicules.filter(v =>
-    v.statut === "Actif" &&
+    (v.statut || "Actif") === "Actif" &&
     !controlsTk.some(ct =>
       normalizeImmat(ct.immatriculation) === normalizeImmat(v.immatriculation)
     )
@@ -3682,6 +3550,36 @@ function showLoadingAndReload() {
 
 // Initialiser l'app au chargement
 init();
+async function archiveItem(action, immatriculation, label) {
+  const isRestore = action.startsWith("restore");
+  const verb = isRestore ? "restaurer" : "archiver";
+
+  if (!confirm(`${verb.charAt(0).toUpperCase() + verb.slice(1)} ${label.toLowerCase()} ${immatriculation} ?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action,
+        immatriculation
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || "Opération impossible");
+    }
+
+    showMsg(`${label} ${isRestore ? "restauré" : "archivé"} ✅`, "ok");
+    showLoadingAndReload();
+  } catch (err) {
+    showMsg("Erreur : " + err.message, "err");
+  }
+}
+
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
