@@ -897,6 +897,11 @@
       to { transform: translateX(0); }
     }
     
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
     @media (max-width: 1024px) {
       .management-container {
         grid-template-columns: 1fr;
@@ -972,6 +977,13 @@
   </style>
 </head>
 <body>
+
+<!-- MESSAGE DE CHARGEMENT (Mise à jour des informations) -->
+<div id="loadingMessage" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 40px 60px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 9999; text-align: center; display: none; min-width: 300px;">
+  <div style="font-size: 48px; margin-bottom: 16px; animation: pulse 1.5s ease-in-out infinite;">⏳</div>
+  <div style="font-size: 16px; font-weight: 600; color: #1976d2; margin-bottom: 8px;">Mise à jour des informations</div>
+  <div style="font-size: 13px; color: #999;">Actualisation en cours...</div>
+</div>
 
 <div class="toolbar">
   <h1>🚗 AB PARC AUTO</h1>
@@ -1509,6 +1521,12 @@ async function init() {
     document.getElementById("revisionPage").style.display = "none";
     document.getElementById("ctPage").style.display = "block";
   }
+  
+  // Cacher le message de chargement une fois que tout est prêt
+  const loadingMsg = document.getElementById("loadingMessage");
+  if (loadingMsg) {
+    loadingMsg.style.display = "none";
+  }
 }
 
 async function loadData() {
@@ -1954,7 +1972,7 @@ async function submitDocument() {
     
     closeDocModal();
     showMsg(editingDocId ? "Document modifié ✅" : "Document ajouté ✅", "ok");
-    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
+    showLoadingAndReload(); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
@@ -2220,7 +2238,7 @@ async function submitVehicule() {
     
     closeVehiculeModal();
     showMsg("Véhicule " + (window.editingImmat ? "modifié" : "ajouté") + " ✅", "ok");
-    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
+    showLoadingAndReload(); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
@@ -2494,7 +2512,7 @@ async function submitInvite() {
     toggleInviteForm();
     
     showMsg("Invité ajouté avec succès!", "ok");
-    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
+    showLoadingAndReload(); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
@@ -2794,7 +2812,7 @@ async function submitAddRevision() {
     
     closeAddRevisionModal();
     showMsg("Révision ajoutée ✅", "ok");
-    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
+    showLoadingAndReload(); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
@@ -3156,7 +3174,7 @@ async function submitAddCt() {
     
     closeAddCtModal();
     showMsg("Contrôle Technique ajouté ✅", "ok");
-    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
+    showLoadingAndReload(); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
@@ -3205,7 +3223,7 @@ async function submitControleTk() {
     
     closeCtEditModal();
     showMsg("Contrôle technique mis à jour ✅", "ok");
-    setTimeout(() => location.reload(), 500);
+    showLoadingAndReload();
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
     isSubmitting = false;
@@ -3250,12 +3268,22 @@ function showMsg(text, type) {
   setTimeout(() => msg.remove(), 3000);
 }
 
+function showLoadingAndReload() {
+  // Afficher le message de chargement
+  const loadingMsg = document.getElementById("loadingMessage");
+  if (loadingMsg) {
+    loadingMsg.style.display = "block";
+  }
+  // Attendre un peu avant de recharger
+  setTimeout(() => location.reload(), 300);
+}
+
 // Initialiser l'app au chargement
 init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.97</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.98</div>
 
 </body>
 </html>
