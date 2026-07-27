@@ -1174,7 +1174,6 @@
       <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
       <button id="submitVehiculeBtn" class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
       <button id="btnSupprimer" class="btn" style="background: #d32f2f; color: white; display: none;" onclick="deleteVehiculeFromModal()">Supprimer</button>
-      <button id="btnExitModal" class="btn" style="background: #f57c00; color: white; display: none;" onclick="exitVehicleFromModal()">Sortie du parc</button>
     </div>
   </div>
 </div>
@@ -2042,7 +2041,6 @@ function closeVehiculeModal() {
   
   document.getElementById("vehiculeModal").classList.remove("active");
   document.getElementById("btnSupprimer").style.display = "none";
-  document.getElementById("btnExitModal").style.display = "none";
   
   // Réinitialiser l'état de modification
   window.editingImmat = null;
@@ -2367,9 +2365,8 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("vehiculeStatut").value = v.statut;
   document.getElementById("vehiculeModal").classList.add("active");
   
-  // Afficher les boutons "Supprimer" et "Sortie" et stocker l'immat
+  // Afficher le bouton "Supprimer" et stocker l'immat
   document.getElementById("btnSupprimer").style.display = "block";
-  document.getElementById("btnExitModal").style.display = "block";
   window.currentVehiculeImmatriculation = immatriculation;
   
   // Faire un vrai truc: si tu modifies et enregistres, ça va updater
