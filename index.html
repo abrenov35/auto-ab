@@ -1333,13 +1333,30 @@ async function init() {
   // Mettre à jour le compteur du banneau toutes les minutes
   setInterval(checkCtAlerts, 60000); // 60000ms = 1 minute
   
-  // Afficher la page Gestion des Véhicules au démarrage
-  renderVehiclesPage();
-  document.getElementById("management").style.display = "none";
-  document.getElementById("vehiclesPage").style.display = "block";
-  document.getElementById("revisionPage").style.display = "none";
-  document.getElementById("ctPage").style.display = "none";
-  document.getElementById("btnVehicleManagement").classList.add("active");
+  // Récupérer la page active depuis localStorage, par défaut "vehiclesPage"
+  const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+  
+  // Afficher la page sauvegardée
+  if (activePage === "vehiclesPage") {
+    renderVehiclesPage();
+    document.getElementById("management").style.display = "none";
+    document.getElementById("vehiclesPage").style.display = "block";
+    document.getElementById("revisionPage").style.display = "none";
+    document.getElementById("ctPage").style.display = "none";
+    document.getElementById("btnVehicleManagement").classList.add("active");
+  } else if (activePage === "revisionPage") {
+    renderRevisionPage();
+    document.getElementById("management").style.display = "none";
+    document.getElementById("vehiclesPage").style.display = "none";
+    document.getElementById("revisionPage").style.display = "block";
+    document.getElementById("ctPage").style.display = "none";
+  } else if (activePage === "ctPage") {
+    renderCtPage();
+    document.getElementById("management").style.display = "none";
+    document.getElementById("vehiclesPage").style.display = "none";
+    document.getElementById("revisionPage").style.display = "none";
+    document.getElementById("ctPage").style.display = "block";
+  }
 }
 
 async function loadData() {
@@ -1897,6 +1914,7 @@ async function submitVehicule() {
 
 // ========== GESTION VÉHICULES ==========
 function openVehicleManagementModal() {
+  localStorage.setItem("activePageAB", "vehiclesPage");
   renderVehiclesPage();
   document.getElementById("management").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "block";
@@ -2270,6 +2288,7 @@ function renderControleTk() {
 // ========== RÉVISIONS ==========
 
 function openRevisionModal() {
+  localStorage.setItem("activePageAB", "revisionPage");
   renderRevisionPage();
   document.getElementById("management").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "none";
@@ -2426,6 +2445,7 @@ function deleteRevision(immatriculation) {
 }
 
 function openControleTkModal() {
+  localStorage.setItem("activePageAB", "ctPage");
   renderCtPage();
   document.getElementById("management").style.display = "none";
   document.getElementById("vehiclesPage").style.display = "none";
