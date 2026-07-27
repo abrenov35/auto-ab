@@ -43,30 +43,6 @@
       margin: 0;
     }
     
-    #vehiculeSelectToolbar {
-      padding: 6px 10px;
-      border: 1px solid rgba(255,255,255,0.3);
-      border-radius: 6px;
-      font-size: 12px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      cursor: pointer;
-      min-width: 200px;
-      white-space: nowrap;
-    }
-    
-    #vehiculeSelectToolbar option {
-      background: white;
-      color: #333;
-      padding: 10px;
-      margin: 4px 0;
-    }
-    
-    #vehiculeSelectToolbar option:checked {
-      background: #185fa5;
-      color: white;
-    }
-    
     .btn-toolbar {
       background: #2e7d46;
       color: white;
@@ -990,9 +966,6 @@
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
   <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <select id="vehiculeSelectToolbar" onchange="selectVehiculeFromDropdown()">
-    <option value="">-- Sélectionne un véhicule --</option>
-  </select>
   <span class="version">v6.3.65</span>
 </div>
 
@@ -1608,10 +1581,8 @@ async function loadData() {
 // ========== AFFICHAGE VÉHICULES ==========
 function renderVehicules() {
   const list = document.getElementById("vehiculeList");
-  const toolbar_select = document.getElementById("vehiculeSelectToolbar");
   
   list.innerHTML = "";
-  toolbar_select.innerHTML = '<option value="">-- Sélectionne un véhicule --</option>';
   
   // Trier les véhicules par Marque + Modèle (alphabétiquement)
   const sortedVehicules = [...data.vehicules].sort((a, b) => {
@@ -1630,44 +1601,7 @@ function renderVehicules() {
     `;
     li.onclick = () => selectVehicule(v.immatriculation, li);
     list.appendChild(li);
-    
-    // Toolbar dropdown option - FORMAT: Marque Modèle - Immatriculation
-    const option = document.createElement("option");
-    option.value = v.immatriculation;
-    option.textContent = `${v.marque} ${v.modele} - ${v.immatriculation}`;
-    toolbar_select.appendChild(option);
   });
-}
-
-function selectVehiculeFromDropdown() {
-  const immatriculation = document.getElementById("vehiculeSelectToolbar").value;
-  if (!immatriculation) {
-    console.log("Aucun véhicule sélectionné");
-    return;
-  }
-  
-  console.log("Véhicule sélectionné:", immatriculation);
-  selectedVehicule = immatriculation;
-  document.querySelectorAll(".vehicule-item").forEach(el => el.classList.remove("active"));
-  
-  // Highlight dans la sidebar aussi
-  const sidebarItem = Array.from(document.querySelectorAll(".vehicule-item")).find(
-    el => el.textContent.includes(immatriculation)
-  );
-  if (sidebarItem) {
-    sidebarItem.classList.add("active");
-  }
-  
-  document.getElementById("vehiculeTitle").textContent = immatriculation;
-  document.getElementById("addDocBtn").style.display = "block";
-  document.getElementById("inviteBtn").style.display = "block";
-  document.getElementById("inviteVehiculeSelect").style.display = "block";
-  
-  // Afficher le bloc maintenance immédiatement
-  document.getElementById("maintenanceBlocks").style.display = "grid";
-  
-  // Appeler renderMaintenanceBlocks directement
-  renderMaintenanceBlocks();
 }
 
 function selectVehicule(immatriculation, element) {
@@ -3295,7 +3229,7 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.101</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.102</div>
 
 </body>
 </html>
