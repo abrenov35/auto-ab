@@ -966,7 +966,7 @@
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
   <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.69</span>
+  <span class="version">v6.3.70</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -2869,17 +2869,43 @@ function closeCtPage() {
 
 function renderCtPage() {
   const ctList = document.getElementById("ctPageList");
-  
-  // Trier par Marque + Modèle
-  const sorted = [...data.controlsTk].sort((a, b) => {
-    const vA = data.vehicules.find(v => v.immatriculation === a.immatriculation);
-    const vB = data.vehicules.find(v => v.immatriculation === b.immatriculation);
-    const fullA = (vA ? vA.marque + " " + vA.modele : "").toLowerCase();
-    const fullB = (vB ? vB.marque + " " + vB.modele : "").toLowerCase();
+
+  const cleanValue = value => {
+    const text = String(value ?? "").trim();
+    if (!text || text.toLowerCase() === "undefined" || text.toLowerCase() === "null") {
+      return "";
+    }
+    return text;
+  };
+
+  const normalizeImmat = value =>
+    cleanValue(value)
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+  const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
+  const controlsTk = Array.isArray(data.controlsTk) ? data.controlsTk : [];
+
+  const controlsComplete = controlsTk.map(ct => {
+    const vehicule = vehicules.find(v =>
+      normalizeImmat(v.immatriculation) === normalizeImmat(ct.immatriculation)
+    );
+
+    return {
+      ...ct,
+      immatriculation: cleanValue(ct.immatriculation),
+      marque: cleanValue(vehicule?.marque),
+      modele: cleanValue(vehicule?.modele),
+      conducteur: cleanValue(vehicule?.conducteur)
+    };
+  });
+
+  const sorted = controlsComplete.sort((a, b) => {
+    const fullA = `${a.marque} ${a.modele}`.trim().toLowerCase();
+    const fullB = `${b.marque} ${b.modele}`.trim().toLowerCase();
     return fullA.localeCompare(fullB);
   });
-  
-  // En-têtes
+
   let html = `
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
@@ -2888,33 +2914,85 @@ function renderCtPage() {
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Prochain CT</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
   `;
-  
-  // Lignes
+
+  if (sorted.length === 0) {
+    html += `
+      <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #999;">
+        Aucun contrôle technique enregistré
+      </div>
+    `;
+    ctList.innerHTML = html;
+    return;
+  }
+
   html += sorted.map(ct => {
-    const v = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
-    
+
     let statusColor = "#4caf50";
     if (daysLeft !== null && daysLeft <= 30 && daysLeft > 0) {
       statusColor = "#ff9800";
     } else if (daysLeft !== null && daysLeft <= 0) {
       statusColor = "#d32f2f";
     }
-    
+
+    const marqueModele =
+      `${ct.marque} ${ct.modele}`.trim() || "Véhicule introuvable";
+
+    const compteur = daysLeft === null
+      ? ""
+      : `<span style="
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: 10px;
+          padding: 1px 7px;
+          border: 1px solid ${statusColor};
+          border-radius: 999px;
+          background: transparent;
+          color: ${statusColor};
+          font-size: 10px;
+          font-weight: 600;
+          line-height: 1.4;
+        ">${daysLeft} j</span>`;
+
+    const iconButton = (borderColor, icon, onclick, title) => `
+      <button
+        type="button"
+        title="${title}"
+        aria-label="${title}"
+        onclick="${onclick}"
+        style="
+          width: 27px;
+          height: 27px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          background: transparent;
+          color: ${borderColor};
+          border: 1px solid ${borderColor};
+          border-radius: 999px;
+          cursor: pointer;
+          font-size: 12px;
+          line-height: 1;
+        "
+      >${icon}</button>
+    `;
+
     return `
-      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v ? v.marque + " " + v.modele : "Inconnu"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.immatriculation}</div>
+      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${marqueModele}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.immatriculation || "—"}</div>
       <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.conducteur || "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"} <span style="font-size: 11px; color: ${statusColor}; margin-left: 12px;">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
-      <div style="padding: 8px; display: flex; gap: 4px; align-items: center;">
-        <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">✏️</button>
-        <button class="btn" style="background: #0d5aa8; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="viewCt('${ct.immatriculation}', '${ct.lienCt || ''}')">👁️</button>
-        <button class="btn" style="background: #7b68ee; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openHistoriqueCt('${ct.immatriculation}')">📜</button>
+      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4; display: flex; align-items: center;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${compteur}</div>
+      <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+        ${iconButton("#1976d2", "✏️", `openCtEditModal('${ct.immatriculation}')`, "Modifier")}
+        ${iconButton("#0d5aa8", "👁️", `viewCt('${ct.immatriculation}', '${ct.lienCt || ""}')`, "Voir")}
+        ${iconButton("#7b68ee", "📜", `openHistoriqueCt('${ct.immatriculation}')`, "Historique")}
       </div>
     `;
   }).join("");
-  
+
   ctList.innerHTML = html;
 }
 
@@ -3183,35 +3261,44 @@ function viewCtDocumentsInModal() {
 }
 
 function openAddCtModal() {
-  // Remplir le dropdown avec les véhicules du parc
   const vehiculeSelect = document.getElementById("addCtVehicule");
-  
-  // Filtrer les véhicules qui n'ont pas déjà de CT
-  const vehiculesAvailables = data.vehicules.filter(v => 
-    v.statut === "Actif" && !data.controlsTk.find(ct => ct.immatriculation === v.immatriculation)
+
+  const normalizeImmat = value =>
+    String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+  const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
+  const controlsTk = Array.isArray(data.controlsTk) ? data.controlsTk : [];
+
+  const vehiculesAvailables = vehicules.filter(v =>
+    v.statut === "Actif" &&
+    !controlsTk.some(ct =>
+      normalizeImmat(ct.immatriculation) === normalizeImmat(v.immatriculation)
+    )
   );
-  
-  vehiculeSelect.innerHTML = '<option value="">-- Sélectionner un véhicule --</option>';
+
+  vehiculeSelect.innerHTML =
+    '<option value="">-- Sélectionner un véhicule --</option>';
+
   vehiculesAvailables.forEach(v => {
     const option = document.createElement("option");
     option.value = v.immatriculation;
-    option.textContent = `${v.marque} ${v.modele} - ${v.immatriculation}`;
+    option.textContent =
+      `${v.marque || ""} ${v.modele || ""} - ${v.immatriculation}`.trim();
     vehiculeSelect.appendChild(option);
   });
-  
-  // Si aucun véhicule disponible
+
   if (vehiculesAvailables.length === 0) {
-    vehiculeSelect.innerHTML = '<option value="">Aucun véhicule disponible</option>';
+    vehiculeSelect.innerHTML =
+      '<option value="">Aucun véhicule disponible</option>';
     vehiculeSelect.disabled = true;
   } else {
     vehiculeSelect.disabled = false;
   }
-  
-  // Vider les champs
+
   document.getElementById("addCtDernierDate").value = "";
   document.getElementById("addCtProchainDate").value = "";
-  
-  // Ouvrir la modal
   document.getElementById("addCtModal").classList.add("active");
 }
 
@@ -3463,7 +3550,5 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.115</div>
-
 </body>
 </html>
