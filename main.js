@@ -15,6 +15,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Content-Type', 'application/json');
   
   if (req.method === 'OPTIONS') {
     return res.status(204).send();
@@ -22,9 +23,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'auto-ab-proxy' });
+  res.json({ 
+    status: 'ok', 
+    service: 'auto-ab-cors-proxy',
+    gas_url: GAS_URL.substring(0, 50) + '...'
+  });
 });
 
 // Proxy ALL requests to GAS
@@ -32,12 +37,12 @@ app.all('/*', async (req, res) => {
   try {
     // Build GAS URL with query params
     let gasUrl = GAS_URL;
-    const queryString = Object.keys(req.query)
-      .map(key => `${key}=${encodeURIComponent(req.query[key])}`)
+    const queryParams = Object.keys(req.query || {})
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
       .join('&');
     
-    if (queryString) {
-      gasUrl += '?' + queryString;
+    if (queryParams) {
+      gasUrl += '?' + queryParams;
     }
 
     // Prepare body
@@ -46,39 +51,61 @@ app.all('/*', async (req, res) => {
       if (typeof req.body === 'string') {
         body = req.body;
       } else if (typeof req.body === 'object') {
-        body = JSON.stringify(req.body);
+        try {
+          body = JSON.stringify(req.body);
+        } catch (e) {
+          body = req.body;
+        }
       }
     }
 
-    // Fetch from GAS
+    // Fetch from GAS with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
     const gasResponse = await fetch(gasUrl, {
       method: req.method,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'auto-ab-cors-proxy/1.0'
       },
-      body: body
+      body: body,
+      signal: controller.signal
     });
+
+    clearTimeout(timeout);
 
     // Get response text
     const responseText = await gasResponse.text();
 
     // Return with CORS headers
     res.status(gasResponse.status);
-    res.header('Content-Type', 'application/json');
     res.send(responseText);
 
   } catch (error) {
-    console.error('Proxy error:', error);
-    res.status(500).json({ 
-      error: error.message,
-      service: 'auto-ab-proxy'
+    console.error('Proxy error:', error.message);
+    res.status(503).json({ 
+      error: 'Service temporarily unavailable',
+      message: error.message,
+      service: 'auto-ab-cors-proxy'
     });
   }
 });
 
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Not found',
+    path: req.path,
+    method: req.method
+  });
+});
+
 // Start server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`✅ Auto-AB Proxy listening on port ${PORT}`);
-  console.log(`📍 GAS URL: ${GAS_URL}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Auto-AB CORS Proxy v1.0`);
+  console.log(`📍 Listening on port ${PORT}`);
+  console.log(`🔗 GAS Backend: ${GAS_URL.substring(0, 60)}...`);
+  console.log(`📡 CORS: Enabled for all origins`);
 });
