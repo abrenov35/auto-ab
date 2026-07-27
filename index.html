@@ -1328,6 +1328,9 @@ let editingCtImmat = null;
 async function init() {
   await loadData();
   checkCtAlerts();
+  
+  // Mettre à jour le compteur du banneau toutes les minutes
+  setInterval(checkCtAlerts, 60000); // 60000ms = 1 minute
 }
 
 async function loadData() {
