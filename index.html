@@ -2217,7 +2217,7 @@ function renderVehiclesPage() {
     sortie: sortedVehicles.filter(v => v.statut !== "Actif" && v.statut !== "Maintenance")
   };
   
-  // Fonction pour créer une carte
+  // Fonction pour créer une carte avec données bien séparées
   const createCardHTML = (v) => {
     let statusColor = "#4caf50";
     let statusText = "Actif";
@@ -2227,18 +2227,46 @@ function renderVehiclesPage() {
     }
     
     return `
-      <div style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid ${statusColor}; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
-        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-          <div style="font-weight: 600; font-size: 14px; color: #333; white-space: nowrap;">${v.marque} ${v.modele}</div>
-          <span style="color: #999;">•</span>
-          <div style="font-size: 12px; color: #666;">
-            <span>${v.immatriculation}</span>
-            ${v.annee ? `<span> • ${v.annee}</span>` : ''}
-            ${v.conducteur ? `<span> • ${v.conducteur}</span>` : ''}
-            <span style="font-weight: 600; color: ${statusColor};"> • ${statusText}</span>
+      <div style="background: white; padding: 16px; border-radius: 6px; border-left: 4px solid ${statusColor}; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
+          <!-- Marque Modèle (principal) -->
+          <div style="min-width: 140px;">
+            <div style="font-size: 11px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Véhicule</div>
+            <div style="font-weight: 700; font-size: 15px; color: #333;">${v.marque}</div>
+            <div style="font-weight: 600; font-size: 14px; color: #666;">${v.modele}</div>
+          </div>
+          
+          <!-- Immatriculation (badge) -->
+          <div style="background: #f0f0f0; padding: 8px 12px; border-radius: 4px; min-width: 110px; text-align: center;">
+            <div style="font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 3px;">Immat</div>
+            <div style="font-weight: 700; font-size: 13px; color: #1976d2; font-family: monospace;">${v.immatriculation}</div>
+          </div>
+          
+          <!-- Année (badge) -->
+          ${v.annee ? `
+          <div style="background: #f0f0f0; padding: 8px 12px; border-radius: 4px; min-width: 70px; text-align: center;">
+            <div style="font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 3px;">Année</div>
+            <div style="font-weight: 700; font-size: 13px; color: #333;">${v.annee}</div>
+          </div>
+          ` : ''}
+          
+          <!-- Conducteur (badge) -->
+          ${v.conducteur ? `
+          <div style="background: #f0f0f0; padding: 8px 12px; border-radius: 4px; min-width: 120px; text-align: center;">
+            <div style="font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; margin-bottom: 3px;">Conducteur</div>
+            <div style="font-weight: 600; font-size: 12px; color: #666;">${v.conducteur}</div>
+          </div>
+          ` : ''}
+          
+          <!-- Statut (badge coloré) -->
+          <div style="background: ${statusColor}20; border: 1px solid ${statusColor}40; padding: 8px 12px; border-radius: 4px; min-width: 100px; text-align: center;">
+            <div style="font-size: 10px; color: ${statusColor}; font-weight: 600; text-transform: uppercase; margin-bottom: 3px;">Statut</div>
+            <div style="font-weight: 700; font-size: 13px; color: ${statusColor};">${statusText}</div>
           </div>
         </div>
-        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; flex-shrink: 0;" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
+        
+        <!-- Bouton Éditer -->
+        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 8px 14px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; flex-shrink: 0;" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
       </div>
     `;
   };
