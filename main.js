@@ -35,41 +35,25 @@ app.get('/health', (req, res) => {
 // Proxy ALL requests to GAS
 app.all('/*', async (req, res) => {
   try {
-    // Determine method: Use POST for loadData, otherwise follow original method
+    // Keep original method - GET stays GET, POST stays POST
     let method = req.method;
     let body = undefined;
-    let gasUrl = GAS_URL;
     
-    if (req.path === '/' || req.path === '') {
-      // For root requests, always use GET with query params
-      const queryParams = Object.keys(req.query || {})
-        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
-        .join('&');
-      if (queryParams) {
-        gasUrl += '?' + queryParams;
-      }
-      method = 'GET';
-    } else {
-      // For other paths, use query params
-      const queryParams = Object.keys(req.query || {})
-        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
-        .join('&');
-      if (queryParams) {
-        gasUrl += '?' + queryParams;
-      }
-    }
-
-    // Prepare body for POST requests
+    // Build GAS URL with query params
+    const gasUrl = new URL(GAS_URL);
+    Object.entries(req.query || {}).forEach(([key, value]) => {
+      gasUrl.searchParams.set(key, value);
+    });
+    
+    // Prepare body only for POST/PUT requests
     if (method === 'POST' || method === 'PUT') {
-      if (!body) {
-        if (typeof req.body === 'string') {
-          body = req.body;
-        } else if (typeof req.body === 'object') {
-          try {
-            body = JSON.stringify(req.body);
-          } catch (e) {
-            body = req.body;
-          }
+      if (typeof req.body === 'string') {
+        body = req.body;
+      } else if (typeof req.body === 'object') {
+        try {
+          body = JSON.stringify(req.body);
+        } catch (e) {
+          body = JSON.stringify({});
         }
       }
     }
@@ -78,15 +62,21 @@ app.all('/*', async (req, res) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
 
-    const gasResponse = await fetch(gasUrl, {
+    const fetchOptions = {
       method: method,
-      headers: {
+      signal: controller.signal
+    };
+    
+    // Add headers only for POST/PUT
+    if (method === 'POST' || method === 'PUT') {
+      fetchOptions.headers = {
         'Content-Type': 'application/json',
         'User-Agent': 'auto-ab-cors-proxy/1.0'
-      },
-      body: body,
-      signal: controller.signal
-    });
+      };
+      fetchOptions.body = body;
+    }
+
+    const gasResponse = await fetch(gasUrl.toString(), fetchOptions);
 
     clearTimeout(timeout);
 
