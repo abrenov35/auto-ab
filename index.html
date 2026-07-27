@@ -950,22 +950,12 @@
         </div>
       </div>
       
-      <div id="documentsContainer">
+      <div id="documentsContainer" style="display: none;">
         <div class="empty">Sélectionne un véhicule pour voir ses maintenances</div>
       </div>
       
       <!-- BLOCS MAINTENANCE -->
-      <div class="maintenance-blocks" id="maintenanceBlocks" style="display: none;">
-        <!-- RÉVISION -->
-        <div class="maintenance-block revision" style="display: none;">
-          <div class="block-title">
-            <span class="block-icon">🔧</span>
-            MAINTENANCE - RÉVISION
-          </div>
-          <div id="revisionContent"></div>
-          <button class="btn-block-add" onclick="openAddRevisionModal()">+ Ajouter une révision</button>
-        </div>
-        
+      <div class="maintenance-blocks" id="maintenanceBlocks" style="display: grid;">
         <!-- CONTRÔLE TECHNIQUE -->
         <div class="maintenance-block ct">
           <div class="block-title">
@@ -974,6 +964,16 @@
           </div>
           <div id="ctContent"></div>
           <button class="btn-block-add" onclick="openAddCtModal()">+ Ajouter un CT</button>
+        </div>
+        
+        <!-- RÉVISION -->
+        <div class="maintenance-block revision">
+          <div class="block-title">
+            <span class="block-icon">🔧</span>
+            MAINTENANCE - RÉVISION
+          </div>
+          <div id="revisionContent"></div>
+          <button class="btn-block-add" onclick="openAddRevisionModal()">+ Ajouter une révision</button>
         </div>
         
         <!-- DOCUMENTS DIVERS -->
@@ -1484,22 +1484,80 @@ function selectVehicule(immatriculation, element) {
 // ========== AFFICHAGE DOCUMENTS ==========
 // ========== AFFICHAGE BLOCS MAINTENANCE ==========
 function renderMaintenanceBlocks() {
-  if (!data || !selectedVehicule) return;
-  
-  const revision = data.revisions && data.revisions.find(r => r.immatriculation === selectedVehicule);
-  const ct = data.controlsTk && data.controlsTk.find(c => c.immatriculation === selectedVehicule);
-  const docs = data.documents && data.documents.filter(d => d.immatriculation === selectedVehicule) || [];
-  
   const blocksContainer = document.getElementById("maintenanceBlocks");
   const revContent = document.getElementById("revisionContent");
   const ctContent = document.getElementById("ctContent");
   const docsContent = document.getElementById("documentsContent");
   
-  // RÉVISION - SUPPRIMÉ (affichage seulement dans la page Révisions)
-  // revContent est caché
-  if (revContent) revContent.style.display = "none";
+  // Si aucun données, afficher des blocs vides
+  if (!data) {
+    ctContent.innerHTML = '<div class="block-content" style="background: #f5f5f5;">Aucune donnée</div>';
+    docsContent.innerHTML = '<div class="block-content" style="background: #f5f5f5;">Aucune donnée</div>';
+    blocksContainer.style.display = "grid";
+    return;
+  }
   
-
+  // Si aucun véhicule sélectionné, afficher des blocs vides
+  if (!selectedVehicule) {
+    ctContent.innerHTML = '<div class="block-content" style="background: #f5f5f5; text-align: center; color: #999;">Sélectionne un véhicule</div>';
+    docsContent.innerHTML = '<div class="block-content" style="background: #f5f5f5; text-align: center; color: #999;">Sélectionne un véhicule</div>';
+    if (revContent) revContent.innerHTML = '<div class="block-content" style="background: #f5f5f5; text-align: center; color: #999;">Sélectionne un véhicule</div>';
+    blocksContainer.style.display = "grid";
+    return;
+  }
+  
+  const revision = data.revisions && data.revisions.find(r => r.immatriculation === selectedVehicule);
+  const ct = data.controlsTk && data.controlsTk.find(c => c.immatriculation === selectedVehicule);
+  const docs = data.documents && data.documents.filter(d => d.immatriculation === selectedVehicule) || [];
+  
+  // RÉVISION
+  if (revision) {
+    const daysLeftRev = calculateDaysUntilCT(revision.prochainDate);
+    let dateClassRev = "";
+    let alertTextRev = "";
+    if (daysLeftRev !== null && daysLeftRev <= 30 && daysLeftRev > 0) {
+      dateClassRev = "warning";
+      alertTextRev = ` ⚠️ BIENTÔT!`;
+    } else if (daysLeftRev !== null && daysLeftRev <= 0) {
+      dateClassRev = "danger";
+      alertTextRev = ` 🔴 DÉPASSÉE!`;
+    }
+    
+    if (revContent) {
+      revContent.style.display = "block";
+      revContent.innerHTML = `
+        <div class="block-content">
+          <div class="block-info">
+            <div style="font-size: 13px; margin-bottom: 8px; line-height: 1.6;">
+              <div><strong>Immatriculation:</strong> ${selectedVehicule}</div>
+              <div><strong>Conducteur:</strong> ${revision.conducteur || '-'}</div>
+              <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e0e0e0;">
+                <div><strong>Dernière révision:</strong> ${revision.dernierDate ? new Date(revision.dernierDate).toLocaleDateString('fr-FR') : '-'}</div>
+                <div class="${dateClassRev}" style="font-weight: 600; color: ${dateClassRev === 'danger' ? '#d32f2f' : dateClassRev === 'warning' ? '#f57c00' : '#388e3c'};"><strong>Prochaine révision:</strong> ${revision.prochainDate ? new Date(revision.prochainDate).toLocaleDateString('fr-FR') : '-'}${daysLeftRev !== null && daysLeftRev > 0 ? ` (${daysLeftRev}j)${alertTextRev}` : ''}${daysLeftRev !== null && daysLeftRev <= 0 ? alertTextRev : ''}</div>
+              </div>
+            </div>
+          </div>
+          <div class="block-actions">
+            <button class="block-btn-edit" onclick="openEditRevisionModal('${selectedVehicule}')">Modifier</button>
+            <button class="block-btn-delete" onclick="deleteRevision('${selectedVehicule}')">Supprimer</button>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    if (revContent) {
+      revContent.style.display = "block";
+      revContent.innerHTML = `
+        <div class="block-content" style="background: #f5f5f5;">
+          <div style="font-size: 13px; color: #666;">
+            <strong>Immatriculation:</strong> ${selectedVehicule}<br>
+            <span style="color: #999;">Aucune révision enregistrée</span>
+          </div>
+        </div>
+      `;
+    }
+  }
+  
   // CONTRÔLE TECHNIQUE
   if (ct) {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
@@ -1562,7 +1620,7 @@ function renderMaintenanceBlocks() {
     docsContent.innerHTML = '<div class="block-content" style="background: #f5f5f5;">Aucun document enregistré</div>';
   }
   
-  blocksContainer.style.display = "block";
+  blocksContainer.style.display = "grid";
 }
 
 function renderDocuments() {
