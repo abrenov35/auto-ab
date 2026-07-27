@@ -117,10 +117,13 @@
       padding: 6px 10px;
       border-bottom: 3px solid #e57373;
       display: none;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
     }
     
     .alert-banner.active {
-      display: block;
+      display: flex;
     }
     
     .alert-banner h3 {
@@ -128,20 +131,21 @@
       font-size: 11px;
       font-weight: 600;
       color: white;
-      display: inline;
-      margin-right: 12px;
+      display: inline-block;
       background: #d32f2f;
       padding: 2px 6px;
       border-radius: 3px;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     
     .alert-items {
       display: flex;
       flex-direction: row;
-      flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      margin-top: 2px;
+      flex: 1;
+      overflow-x: auto;
     }
     
     .alert-item {
