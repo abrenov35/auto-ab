@@ -114,7 +114,7 @@
     .alert-banner {
       background: #ffcdd2;
       color: #c62828;
-      padding: 10px 12px;
+      padding: 6px 10px;
       border-bottom: 3px solid #e57373;
       display: none;
     }
@@ -137,23 +137,26 @@
     
     .alert-items {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      flex-wrap: wrap;
       gap: 8px;
-      align-items: stretch;
-      margin-top: 6px;
+      align-items: center;
+      margin-top: 2px;
     }
     
     .alert-item {
       background: white;
-      padding: 10px 12px;
-      border-radius: 6px;
-      border-left: 4px solid #e57373;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border-left: 3px solid #e57373;
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
       color: #c62828;
-      font-size: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-size: 11px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      white-space: nowrap;
     }
     
     .alert-item.danger {
@@ -2208,8 +2211,11 @@ function checkCtAlerts() {
       }
       return `
       <div class="alert-item ${statusClass}">
-        <strong>${a.immatriculation} - ${a.vehicule}</strong>
-        <div style="font-size: 11px; color: #999;">CT avant le ${new Date(a.prochainDate).toLocaleDateString('fr-FR')} • ${daysText}</div>
+        <strong>${a.immatriculation}</strong>
+        <span style="color: #999;">|</span>
+        <span style="color: #999; font-size: 10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
+        <span style="color: #999;">|</span>
+        <span>${daysText}</span>
       </div>
     `;
     }).join("");
