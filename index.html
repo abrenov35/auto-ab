@@ -1203,11 +1203,6 @@
     <div class="modal-header" id="ctEditTitle">Modifier Contrôle Technique</div>
     
     <div class="form-group">
-      <label>Conducteur</label>
-      <input type="text" id="ctConducteur" placeholder="Ex: Jean Dupont">
-    </div>
-    
-    <div class="form-group">
       <label>Dernier Contrôle Technique</label>
       <input type="date" id="ctDernierDate">
     </div>
@@ -1258,11 +1253,6 @@
       <select id="addCtVehicule" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
         <option value="">-- Sélectionner un véhicule --</option>
       </select>
-    </div>
-    
-    <div class="form-group">
-      <label>Conducteur</label>
-      <input type="text" id="addCtConducteur" placeholder="Ex: Jean Dupont">
     </div>
     
     <div class="form-group">
@@ -2745,7 +2735,6 @@ function openCtEditModal(immatriculation) {
   if (!ct) return;
   
   document.getElementById("ctEditTitle").textContent = `Modifier CT - ${immatriculation} ${vehicule ? vehicule.marque + " " + vehicule.modele : ""}`;
-  document.getElementById("ctConducteur").value = ct.conducteur || "";
   document.getElementById("ctDernierDate").value = ct.dernierDate || "";
   document.getElementById("ctProchainDate").value = ct.prochainDate || "";
   document.getElementById("ctEditModal").classList.add("active");
@@ -2899,7 +2888,6 @@ function openAddCtModal() {
   }
   
   // Vider les champs
-  document.getElementById("addCtConducteur").value = "";
   document.getElementById("addCtDernierDate").value = "";
   document.getElementById("addCtProchainDate").value = "";
   
@@ -2918,7 +2906,6 @@ async function submitAddCt() {
   if (isSubmitting) return;
   
   const immatriculation = document.getElementById("addCtVehicule").value;
-  const conducteur = document.getElementById("addCtConducteur").value;
   const dernierDate = document.getElementById("addCtDernierDate").value;
   const prochainDate = document.getElementById("addCtProchainDate").value;
   
@@ -2942,7 +2929,6 @@ async function submitAddCt() {
       body: JSON.stringify({
         action: "createControleTk",
         immatriculation: immatriculation,
-        conducteur: conducteur,
         dernierDate: dernierDate,
         prochainDate: prochainDate
       })
@@ -2963,7 +2949,6 @@ async function submitControleTk() {
   // Protection contre double-clics
   if (isSubmitting) return;
   
-  const conducteur = document.getElementById("ctConducteur").value;
   const dernierDate = document.getElementById("ctDernierDate").value;
   const prochainDate = document.getElementById("ctProchainDate").value;
   
@@ -2982,7 +2967,6 @@ async function submitControleTk() {
       body: JSON.stringify({
         action: "updateControleTk",
         immatriculation: editingCtImmat,
-        conducteur: conducteur,
         dernierDate: dernierDate,
         prochainDate: prochainDate
       })
