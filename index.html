@@ -172,6 +172,68 @@
       background: #fff8f0;
     }
     
+    /* Bandeau d'alerte RÉVISION (vert) */
+    .alert-banner-revision {
+      background: #c8e6c9;
+      color: #2e7d46;
+      padding: 0;
+      border-bottom: 3px solid #81c784;
+      display: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
+    .alert-banner-revision.active {
+      display: block;
+    }
+    
+    .alert-banner-revision h3 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+      display: inline-block;
+      background: #2e7d46;
+      padding: 2px 6px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    
+    .alert-items-revision {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      flex: 1;
+      overflow-x: auto;
+    }
+    
+    .alert-item-revision {
+      background: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border-left: 3px solid #81c784;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      color: #2e7d46;
+      font-size: 11px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      white-space: nowrap;
+    }
+    
+    .alert-item-revision.danger {
+      border-left-color: #2e7d46;
+      background: #f1f8f6;
+    }
+    
+    .alert-item-revision.warning {
+      border-left-color: #66bb6a;
+      background: #f1f8f6;
+    }
+    
     .alert-item-vehicle {
       font-weight: 600;
       font-size: 11px;
@@ -920,6 +982,14 @@
   </div>
 </div>
 
+<!-- Bandeau d'alerte RÉVISIONS (vert) -->
+<div class="alert-banner-revision" id="alertBannerRevision">
+  <div style="width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: row; align-items: center; gap: 8px;">
+    <h3>🔧 RÉVISIONS À PRÉVOIR</h3>
+    <div class="alert-items-revision" id="alertItemsRevision"></div>
+  </div>
+</div>
+
 <!-- TABS NAVIGATION -->
 <!-- SUPPRIMÉ - Plus de tabs, seulement la gestion du parc -->
 
@@ -1346,9 +1416,13 @@ let editingCtImmat = null;
 async function init() {
   await loadData();
   checkCtAlerts();
+  checkRevisionAlerts();
   
-  // Mettre à jour le compteur du banneau toutes les minutes
-  setInterval(checkCtAlerts, 60000); // 60000ms = 1 minute
+  // Mettre à jour les alertes toutes les minutes
+  setInterval(() => {
+    checkCtAlerts();
+    checkRevisionAlerts();
+  }, 60000); // 60000ms = 1 minute
   
   // Récupérer la page active depuis localStorage, par défaut "vehiclesPage"
   const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
@@ -2256,6 +2330,60 @@ function checkCtAlerts() {
       }
       return `
       <div class="alert-item ${statusClass}">
+        <strong>${a.immatriculation}</strong>
+        <span style="color: #999;">|</span>
+        <span style="color: #999; font-size: 10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
+        <span style="color: #999;">|</span>
+        <span>${daysText}</span>
+      </div>
+    `;
+    }).join("");
+  } else {
+    alertBanner.classList.remove("active");
+  }
+}
+
+function checkRevisionAlerts() {
+  const alertBanner = document.getElementById("alertBannerRevision");
+  const alertItems = document.getElementById("alertItemsRevision");
+  const alerts = [];
+  
+  // Vérification de sécurité
+  if (!data || !data.revisions || data.revisions.length === 0) {
+    alertBanner.classList.remove("active");
+    return;
+  }
+  
+  data.revisions.forEach(rev => {
+    const daysLeft = calculateDaysUntilCT(rev.prochainDate);
+    if (daysLeft !== null && daysLeft <= 30) {
+      const vehicule = data.vehicules.find(v => v.immatriculation === rev.immatriculation);
+      alerts.push({
+        immatriculation: rev.immatriculation,
+        vehicule: vehicule ? `${vehicule.marque} ${vehicule.modele}` : "Véhicule inconnu",
+        daysLeft: daysLeft,
+        prochainDate: rev.prochainDate
+      });
+    }
+  });
+  
+  if (alerts.length > 0) {
+    alertBanner.classList.add("active");
+    alertItems.innerHTML = alerts.map(a => {
+      let daysText = "";
+      let statusClass = "";
+      if (a.daysLeft < 0) {
+        daysText = `🔴 DÉPASSÉE de ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
+        statusClass = "danger";
+      } else if (a.daysLeft === 0) {
+        daysText = `🟠 AUJOURD'HUI`;
+        statusClass = "danger";
+      } else {
+        daysText = `✅ Prévoir dans ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}`;
+        statusClass = "warning";
+      }
+      return `
+      <div class="alert-item-revision ${statusClass}">
         <strong>${a.immatriculation}</strong>
         <span style="color: #999;">|</span>
         <span style="color: #999; font-size: 10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
