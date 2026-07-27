@@ -1319,6 +1319,7 @@
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3sASfX24W2PWKZbYdTwsLmwXRclKwvz1KA2Ss8EcfILs6RBEyPWpekOOGoAQx0jQN/exec";
 
+let isSubmitting = false; // Protection contre double-clics
 let data = { vehicules: [], documents: [], categories: [], controlsTk: [], revisions: [] };
 let selectedVehicule = null;
 let editingDocId = null;
@@ -1656,6 +1657,9 @@ function fileToBase64(file) {
 }
 
 async function submitDocument() {
+  // Protection contre double-clics
+  if (isSubmitting) return;
+  
   const categorie = document.getElementById("docCategorie").value;
   const nom = document.getElementById("docNom").value;
   const date = document.getElementById("docDate").value;
@@ -1671,13 +1675,18 @@ async function submitDocument() {
     return;
   }
   
+  isSubmitting = true;
+  
   try {
     let lienDrive = document.getElementById("docLienDrive").value;
     
     // Upload du fichier si nouveau fichier sélectionné
     if (selectedFile) {
       lienDrive = await uploadFileToGoogleDrive(selectedFile);
-      if (!lienDrive) return;
+      if (!lienDrive) {
+        isSubmitting = false;
+        return;
+      }
     }
     
     const action = editingDocId ? "updateDocument" : "createDocument";
@@ -1695,11 +1704,11 @@ async function submitDocument() {
     });
     
     closeDocModal();
-    await loadData();
-    renderMaintenanceBlocks();
     showMsg(editingDocId ? "Document modifié ✅" : "Document ajouté ✅", "ok");
+    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+    isSubmitting = false;
   }
 }
 
@@ -1760,6 +1769,9 @@ function deleteVehiculeFromModal() {
 }
 
 async function submitVehicule() {
+  // Protection contre double-clics
+  if (isSubmitting) return;
+  
   const immat = document.getElementById("vehiculeImmat").value;
   const vehicule = document.getElementById("vehiculeVehicule").value;
   const annee = document.getElementById("vehiculeAnnee").value;
@@ -1781,7 +1793,7 @@ async function submitVehicule() {
     return;
   }
   
-  // Désactiver le bouton pour éviter les double-clics
+  isSubmitting = true;
   const submitBtn = document.getElementById("submitVehiculeBtn");
   if (submitBtn) submitBtn.disabled = true;
   
@@ -1804,16 +1816,12 @@ async function submitVehicule() {
     });
     
     closeVehiculeModal();
-    await loadData();
-    renderVehicules();
-    renderInviteVehiculeSelect();
-    renderVehicleManagement();  // ✅ Rafraîchir la page Gestion!
-    renderVehiclesPage();  // ✅ Rafraîchir l'affichage des véhicules!
     showMsg("Véhicule " + (window.editingImmat ? "modifié" : "ajouté") + " ✅", "ok");
+    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+    isSubmitting = false;
   } finally {
-    // Réactiver le bouton
     if (submitBtn) submitBtn.disabled = false;
   }
 }
@@ -2040,6 +2048,9 @@ function toggleInviteForm() {
 }
 
 async function submitInvite() {
+  // Protection contre double-clics
+  if (isSubmitting) return;
+  
   const vehicule = document.getElementById("inviteVehicule").value;
   const nom = document.getElementById("inviteName").value;
   const email = document.getElementById("inviteEmail").value;
@@ -2049,6 +2060,8 @@ async function submitInvite() {
     showMsg("Remplis les champs requis (Véhicule et Nom)", "err");
     return;
   }
+  
+  isSubmitting = true;
   
   try {
     await fetch(APPS_SCRIPT_URL, {
@@ -2068,8 +2081,10 @@ async function submitInvite() {
     toggleInviteForm();
     
     showMsg("Invité ajouté avec succès!", "ok");
+    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+    isSubmitting = false;
   }
 }
 
@@ -2268,6 +2283,9 @@ function closeAddRevisionModal() {
 }
 
 async function submitAddRevision() {
+  // Protection contre double-clics
+  if (isSubmitting) return;
+  
   const immatriculation = document.getElementById("addRevisionVehicule").value;
   const conducteur = document.getElementById("addRevisionConducteur").value;
   const dernierDate = document.getElementById("addRevisionDernierDate").value;
@@ -2283,6 +2301,7 @@ async function submitAddRevision() {
     return;
   }
   
+  isSubmitting = true;
   const submitBtn = document.getElementById("submitAddRevisionBtn");
   if (submitBtn) submitBtn.disabled = true;
   
@@ -2299,11 +2318,11 @@ async function submitAddRevision() {
     });
     
     closeAddRevisionModal();
-    await loadData();
-    renderRevisionPage();
     showMsg("Révision ajoutée ✅", "ok");
+    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+    isSubmitting = false;
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -2621,6 +2640,9 @@ function closeAddCtModal() {
 }
 
 async function submitAddCt() {
+  // Protection contre double-clics
+  if (isSubmitting) return;
+  
   const immatriculation = document.getElementById("addCtVehicule").value;
   const conducteur = document.getElementById("addCtConducteur").value;
   const dernierDate = document.getElementById("addCtDernierDate").value;
@@ -2636,7 +2658,7 @@ async function submitAddCt() {
     return;
   }
   
-  // Désactiver le bouton
+  isSubmitting = true;
   const submitBtn = document.getElementById("submitAddCtBtn");
   if (submitBtn) submitBtn.disabled = true;
   
@@ -2653,19 +2675,20 @@ async function submitAddCt() {
     });
     
     closeAddCtModal();
-    await loadData();
-    checkCtAlerts();
-    renderMaintenanceBlocks();
-    renderCtPage();
     showMsg("Contrôle Technique ajouté ✅", "ok");
+    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+    isSubmitting = false;
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
 }
 
 async function submitControleTk() {
+  // Protection contre double-clics
+  if (isSubmitting) return;
+  
   const conducteur = document.getElementById("ctConducteur").value;
   const dernierDate = document.getElementById("ctDernierDate").value;
   const prochainDate = document.getElementById("ctProchainDate").value;
@@ -2675,7 +2698,7 @@ async function submitControleTk() {
     return;
   }
   
-  // Désactiver le bouton pour éviter les double-clics
+  isSubmitting = true;
   const submitBtn = document.getElementById("submitCtBtn");
   if (submitBtn) submitBtn.disabled = true;
   
@@ -2692,12 +2715,11 @@ async function submitControleTk() {
     });
     
     closeCtEditModal();
-    await loadData();
-    checkCtAlerts();
-    renderMaintenanceBlocks();
     showMsg("Contrôle technique mis à jour ✅", "ok");
+    setTimeout(() => location.reload(), 500); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+    isSubmitting = false;
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
