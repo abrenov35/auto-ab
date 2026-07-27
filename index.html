@@ -1402,6 +1402,7 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3sASfX24W2PWKZbYdTwsLmwXRclKwvz1KA2Ss8EcfILs6RBEyPWpekOOGoAQx0jQN/exec";
 
 let isSubmitting = false; // Protection contre double-clics
+window.editingImmat = null; // Pour savoir si on est en modification ou création de véhicule
 let data = { vehicules: [], documents: [], categories: [], controlsTk: [], revisions: [] };
 let selectedVehicule = null;
 let editingDocId = null;
@@ -1914,6 +1915,9 @@ function openDocLink(url) {
 
 // ========== VÉHICULES ==========
 function openAddVehiculeModal() {
+  // Réinitialiser l'état: on est en création, pas en modification
+  window.editingImmat = null;
+  
   document.getElementById("vehiculeModalTitle").textContent = "Ajouter un véhicule";
   document.getElementById("vehiculeImmat").value = "";
   document.getElementById("vehiculeVehicule").value = "";
@@ -1927,6 +1931,9 @@ function closeVehiculeModal() {
   document.getElementById("vehiculeModal").classList.remove("active");
   document.getElementById("btnSupprimer").style.display = "none";
   document.getElementById("btnExitModal").style.display = "none";
+  
+  // Réinitialiser l'état de modification
+  window.editingImmat = null;
   
   // Réactiver le bouton
   const submitBtn = document.getElementById("submitVehiculeBtn");
@@ -2174,6 +2181,9 @@ function markVehicleAsActive(immatriculation) {
 function openEditVehiculeModal(immatriculation) {
   const v = data.vehicules.find(veh => veh.immatriculation === immatriculation);
   if (!v) return;
+  
+  // IMPORTANT: Enregistrer qu'on est en modification
+  window.editingImmat = immatriculation;
   
   document.getElementById("vehiculeModalTitle").textContent = "Modifier véhicule";
   document.getElementById("vehiculeImmat").value = v.immatriculation;
