@@ -114,7 +114,7 @@
     .alert-banner {
       background: #ffcdd2;
       color: #c62828;
-      padding: 6px 8px;
+      padding: 10px 12px;
       border-bottom: 3px solid #e57373;
       display: none;
     }
@@ -136,25 +136,34 @@
     }
     
     .alert-items {
-      display: inline-flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: flex-start;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+      margin-top: 6px;
     }
     
     .alert-item {
-      background: transparent;
-      padding: 0;
-      border-radius: 0;
-      border-left: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-      overflow-x: visible;
+      background: white;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border-left: 4px solid #e57373;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
       color: #c62828;
-      font-size: 11px;
+      font-size: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .alert-item.danger {
+      border-left-color: #d32f2f;
+      background: #fff5f5;
+    }
+    
+    .alert-item.warning {
+      border-left-color: #ff9800;
+      background: #fff8f0;
     }
     
     .alert-item-vehicle {
@@ -2128,20 +2137,21 @@ function checkCtAlerts() {
     alertBanner.classList.add("active");
     alertItems.innerHTML = alerts.map(a => {
       let daysText = "";
+      let statusClass = "";
       if (a.daysLeft < 0) {
         daysText = `🔴 EXPIRÉ il y a ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
+        statusClass = "danger";
       } else if (a.daysLeft === 0) {
         daysText = `🟠 EXPIRE AUJOURD'HUI`;
+        statusClass = "danger";
       } else {
         daysText = `⚠️ Expire dans ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}`;
+        statusClass = "warning";
       }
       return `
-      <div class="alert-item">
-        <span class="alert-item-vehicle">${a.immatriculation} - ${a.vehicule}</span>
-        <span class="alert-item-separator">|</span>
-        <span class="alert-item-info">CT avant le ${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
-        <span class="alert-item-separator">|</span>
-        <span class="alert-item-days">${daysText}</span>
+      <div class="alert-item ${statusClass}">
+        <strong>${a.immatriculation} - ${a.vehicule}</strong>
+        <div style="font-size: 11px; color: #999;">CT avant le ${new Date(a.prochainDate).toLocaleDateString('fr-FR')} • ${daysText}</div>
       </div>
     `;
     }).join("");
