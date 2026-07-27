@@ -966,7 +966,7 @@
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
   <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.66</span>
+  <span class="version">v6.3.67</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -3260,18 +3260,10 @@ function deleteRevision(immatriculation) {
   showMsg("Suppression en cours de développement", "err");
 }
 
-function openAddRevisionModal() {
-  showMsg("Ajouter révision en cours de développement", "err");
-}
-
 function deleteCt(immatriculation) {
   if (!confirm("Supprimer ce CT?")) return;
   // À implémenter
   showMsg("Suppression CT en cours de développement", "err");
-}
-
-function openAddCtModal() {
-  showMsg("Ajouter CT en cours de développement", "err");
 }
 
 // ========== UTILITAIRES ==========
