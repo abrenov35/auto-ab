@@ -1331,6 +1331,14 @@ async function init() {
   
   // Mettre à jour le compteur du banneau toutes les minutes
   setInterval(checkCtAlerts, 60000); // 60000ms = 1 minute
+  
+  // Afficher la page Gestion des Véhicules au démarrage
+  renderVehiclesPage();
+  document.getElementById("management").style.display = "none";
+  document.getElementById("vehiclesPage").style.display = "block";
+  document.getElementById("revisionPage").style.display = "none";
+  document.getElementById("ctPage").style.display = "none";
+  document.getElementById("btnVehicleManagement").classList.add("active");
 }
 
 async function loadData() {
