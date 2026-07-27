@@ -41,22 +41,14 @@ app.all('/*', async (req, res) => {
     let gasUrl = GAS_URL;
     
     if (req.path === '/' || req.path === '') {
-      // For root requests, check if action=loadData
-      const action = req.query.action || (req.body ? req.body.action : '');
-      
-      if (action === 'loadData') {
-        // Use POST for loadData
-        method = 'POST';
-        body = JSON.stringify({ action: 'loadData' });
-      } else {
-        // Use query params for GET
-        const queryParams = Object.keys(req.query || {})
-          .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
-          .join('&');
-        if (queryParams) {
-          gasUrl += '?' + queryParams;
-        }
+      // For root requests, always use GET with query params
+      const queryParams = Object.keys(req.query || {})
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
+        .join('&');
+      if (queryParams) {
+        gasUrl += '?' + queryParams;
       }
+      method = 'GET';
     } else {
       // For other paths, use query params
       const queryParams = Object.keys(req.query || {})
