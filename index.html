@@ -1235,6 +1235,28 @@
   </div>
 </div>
 
+<!-- MODAL HISTORIQUE CT -->
+<div class="modal" id="historiqueCTModal">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">📜 Historique des Contrôles Techniques - <span id="historiqueImmat">—</span></div>
+    
+    <div class="form-group">
+      <label>Filtrer par année</label>
+      <select id="historiqueYearFilter" onchange="filterHistoriqueCT()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">-- Toutes les années --</option>
+      </select>
+    </div>
+    
+    <div id="historiqueCTList" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #f9f9f9;">
+      <div style="text-align: center; color: #999;">Chargement...</div>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeHistoriqueCT()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL AJOUTER CONTRÔLE TECHNIQUE -->
 <div class="modal" id="addCtModal">
   <div class="modal-content" style="max-width: 500px;">
@@ -2832,9 +2854,10 @@ function renderCtPage() {
       <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.conducteur || "—"}</div>
       <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
       <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"} <span style="font-size: 11px; color: ${statusColor}; margin-left: 12px;">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
-      <div style="padding: 8px; display: flex; gap: 4px;">
+      <div style="padding: 8px; display: flex; gap: 4px; align-items: center;">
         <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">✏️</button>
         <button class="btn" style="background: #0d5aa8; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="viewCt('${ct.immatriculation}', '${ct.lienCt || ''}')">👁️</button>
+        <button class="btn" style="background: #7b68ee; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openHistoriqueCt('${ct.immatriculation}')">📜</button>
       </div>
     `;
   }).join("");
@@ -3206,6 +3229,108 @@ function openAddCtModal() {
 }
 
 // ========== UTILITAIRES ==========
+// ========== HISTORIQUE CT ==========
+
+let historiqueCTData = [];
+let historiqueImmatriculation = null;
+
+async function openHistoriqueCt(immatriculation) {
+  historiqueImmatriculation = immatriculation;
+  document.getElementById("historiqueImmat").textContent = immatriculation;
+  document.getElementById("historiqueCTList").innerHTML = '<div style="text-align: center; color: #999;">Chargement...</div>';
+  
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "loadHistoriqueCt"
+      })
+    });
+    
+    historiqueCTData = await response.json();
+    
+    // Filtrer pour cet immatriculation
+    const filtered = historiqueCTData.filter(ct => ct.immatriculation === immatriculation);
+    
+    if (filtered.length === 0) {
+      document.getElementById("historiqueCTList").innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Aucun historique trouvé</div>';
+      document.getElementById("historiqueYearFilter").innerHTML = '<option value="">-- Aucun --</option>';
+      document.getElementById("historiqueCTModal").classList.add("active");
+      return;
+    }
+    
+    // Extraire les années uniques
+    const years = [...new Set(filtered.map(ct => {
+      const date = new Date(ct.date + "T00:00:00");
+      return date.getFullYear();
+    }))].sort((a, b) => b - a);
+    
+    // Remplir le filtre année
+    document.getElementById("historiqueYearFilter").innerHTML = '<option value="">-- Toutes les années --</option>' +
+      years.map(year => `<option value="${year}">${year}</option>`).join('');
+    
+    // Afficher tous les CT
+    displayHistoriqueCT(filtered);
+    
+    document.getElementById("historiqueCTModal").classList.add("active");
+  } catch (err) {
+    showMsg("Erreur: " + err.message, "err");
+    document.getElementById("historiqueCTList").innerHTML = '<div style="text-align: center; color: #d32f2f; padding: 20px;">Erreur de chargement</div>';
+  }
+}
+
+function closeHistoriqueCT() {
+  document.getElementById("historiqueCTModal").classList.remove("active");
+  historiqueCTData = [];
+  historiqueImmatriculation = null;
+}
+
+function filterHistoriqueCT() {
+  const year = document.getElementById("historiqueYearFilter").value;
+  const filtered = historiqueCTData.filter(ct => ct.immatriculation === historiqueImmatriculation);
+  
+  if (year) {
+    const filtered_year = filtered.filter(ct => {
+      const date = new Date(ct.date + "T00:00:00");
+      return date.getFullYear().toString() === year;
+    });
+    displayHistoriqueCT(filtered_year);
+  } else {
+    displayHistoriqueCT(filtered);
+  }
+}
+
+function displayHistoriqueCT(data) {
+  if (data.length === 0) {
+    document.getElementById("historiqueCTList").innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Aucun CT pour cette année</div>';
+    return;
+  }
+  
+  // Trier par date (récent en premier)
+  const sorted = [...data].sort((a, b) => new Date(b.date + "T00:00:00") - new Date(a.date + "T00:00:00"));
+  
+  document.getElementById("historiqueCTList").innerHTML = sorted.map((ct, idx) => {
+    const dateObj = new Date(ct.date + "T00:00:00");
+    const dateFormatted = dateObj.toLocaleDateString('fr-FR');
+    
+    return `
+      <div style="padding: 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 600; color: #333;">${dateFormatted}</div>
+          <div style="font-size: 12px; color: #999; margin-top: 4px;">${ct.lienPdf ? 'PDF disponible' : 'Pas de document'}</div>
+        </div>
+        ${ct.lienPdf ? `
+          <button class="btn" style="background: #2e7d46; color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="window.open('${ct.lienPdf}', '_blank')">📥 Ouvrir</button>
+        ` : `
+          <span style="color: #999; font-size: 12px;">—</span>
+        `}
+      </div>
+    `;
+  }).join('');
+}
+
+// ========== FIN HISTORIQUE CT ==========
+
 function showMsg(text, type) {
   const msg = document.createElement("div");
   msg.className = `msg ${type}`;
@@ -3229,7 +3354,7 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.102</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.103</div>
 
 </body>
 </html>
