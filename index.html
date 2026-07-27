@@ -1402,6 +1402,24 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3sASfX24W2PWKZbYdTwsLmwXRclKwvz1KA2Ss8EcfILs6RBEyPWpekOOGoAQx0jQN/exec";
 
 let isSubmitting = false; // Protection contre double-clics
+
+// Fonction pour désactiver/activer les boutons d'une modale
+function setModalButtonsDisabled(modalId, disabled) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  
+  const buttons = modal.querySelectorAll('button');
+  buttons.forEach(btn => {
+    btn.disabled = disabled;
+    if (disabled) {
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  });
+}
 window.editingImmat = null; // Pour savoir si on est en modification ou création de véhicule
 let data = { vehicules: [], documents: [], categories: [], controlsTk: [], revisions: [] };
 let selectedVehicule = null;
@@ -1843,6 +1861,7 @@ function fileToBase64(file) {
 }
 
 async function submitDocument() {
+  setModalButtonsDisabled("documentModal", true);
   // Protection contre double-clics
   if (isSubmitting) return;
   
@@ -1934,6 +1953,9 @@ function openAddVehiculeModal() {
 }
 
 function closeVehiculeModal() {
+  // Réactiver TOUS les boutons de la modale
+  setModalButtonsDisabled("vehiculeModal", false);
+  
   document.getElementById("vehiculeModal").classList.remove("active");
   document.getElementById("btnSupprimer").style.display = "none";
   document.getElementById("btnExitModal").style.display = "none";
@@ -1961,6 +1983,9 @@ function deleteVehiculeFromModal() {
 }
 
 async function submitVehicule() {
+  // Protection contre double-clics: désactiver TOUS les boutons
+  setModalButtonsDisabled("vehiculeModal", true);
+  
   // Protection contre double-clics
   if (isSubmitting) return;
   
@@ -1976,12 +2001,14 @@ async function submitVehicule() {
     // Création: tous les champs obligatoires
     if (!immat || !vehicule || !annee) {
       showMsg("Remplis tous les champs requis", "err");
+      setModalButtonsDisabled("vehiculeModal", false); // Réactiver
       return;
     }
   } else {
     // Modification: seulement immatriculation obligatoire
     if (!immat) {
       showMsg("L'immatriculation ne peut pas être vide", "err");
+      setModalButtonsDisabled("vehiculeModal", false); // Réactiver
       return;
     }
   }
@@ -1996,6 +2023,7 @@ async function submitVehicule() {
     
     if (!modele) {
       showMsg("Entre marque ET modèle (ex: Renault Clio)", "err");
+      setModalButtonsDisabled("vehiculeModal", false); // Réactiver
       return;
     }
   }
@@ -2548,12 +2576,16 @@ function openAddRevisionModal() {
 }
 
 function closeAddRevisionModal() {
+  // Réactiver TOUS les boutons de la modale
+  setModalButtonsDisabled("addRevisionModal", false);
+  
   document.getElementById("addRevisionModal").classList.remove("active");
   const submitBtn = document.getElementById("submitAddRevisionBtn");
   if (submitBtn) submitBtn.disabled = false;
 }
 
 async function submitAddRevision() {
+  setModalButtonsDisabled("addRevisionModal", true);
   // Protection contre double-clics
   if (isSubmitting) return;
   
@@ -2754,6 +2786,9 @@ function openCtEditModal(immatriculation) {
 }
 
 function closeCtEditModal() {
+  // Réactiver TOUS les boutons de la modale
+  setModalButtonsDisabled("ctEditModal", false);
+  
   document.getElementById("ctEditModal").classList.remove("active");
   editingCtImmat = null;
   document.getElementById("ctDocumentsSection").style.display = "none";
@@ -2904,12 +2939,16 @@ function openAddCtModal() {
 }
 
 function closeAddCtModal() {
+  // Réactiver TOUS les boutons de la modale
+  setModalButtonsDisabled("addCtModal", false);
+  
   document.getElementById("addCtModal").classList.remove("active");
   const submitBtn = document.getElementById("submitAddCtBtn");
   if (submitBtn) submitBtn.disabled = false;
 }
 
 async function submitAddCt() {
+  setModalButtonsDisabled("addCtModal", true);
   // Protection contre double-clics
   if (isSubmitting) return;
   
@@ -2954,6 +2993,7 @@ async function submitAddCt() {
 }
 
 async function submitControleTk() {
+  setModalButtonsDisabled("ctEditModal", true);
   // Protection contre double-clics
   if (isSubmitting) return;
   
