@@ -966,7 +966,7 @@
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
   <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.70</span>
+  <span class="version">v6.3.71</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1229,7 +1229,7 @@
 <!-- PAGE RÉVISIONS -->
 <div id="revisionPage" style="display: none; background: white; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box;">
   <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">🔧 Maintenance - Révision</h2>
-  <div id="revisionPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px; margin-bottom: 16px;"></div>
+  <div id="revisionPageList" style="display: grid; grid-template-columns: 1.35fr 0.9fr 0.9fr 1fr 1.15fr 1.05fr; column-gap: 14px; row-gap: 0; font-size: 12px; margin-bottom: 16px; align-items: center;"></div>
   <div style="margin-top: 16px;">
     <button class="btn btn-success" onclick="openAddRevisionModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter une Révision</button>
   </div>
@@ -1289,7 +1289,7 @@
 <!-- MODAL AJOUTER RÉVISION -->
 <div class="modal" id="addRevisionModal">
   <div class="modal-content" style="max-width: 500px;">
-    <div class="modal-header">Ajouter une Révision</div>
+    <div class="modal-header" id="addRevisionModalTitle">Ajouter une Révision</div>
     
     <div class="form-group">
       <label>Véhicule *</label>
@@ -1474,6 +1474,7 @@ let data = { vehicules: [], documents: [], categories: [], controlsTk: [], revis
 let selectedVehicule = null;
 let editingDocId = null;
 let editingCtImmat = null;
+let editingRevisionImmat = null;
 
 // ========== INIT ==========
 async function init() {
@@ -2643,7 +2644,6 @@ function renderRevisionPage() {
   const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
   const revisions = Array.isArray(data.revisions) ? data.revisions : [];
 
-  // La fiche véhicule est la source de référence pour marque, modèle et conducteur.
   const revisionsComplete = revisions.map(revision => {
     const vehicule = vehicules.find(v =>
       normalizeImmat(v.immatriculation) === normalizeImmat(revision.immatriculation)
@@ -2664,18 +2664,26 @@ function renderRevisionPage() {
     return nameA.localeCompare(nameB);
   });
 
+  const headerStyle = `
+    font-weight: 600;
+    color: #667085;
+    border-bottom: 1px solid #d9dee7;
+    padding: 8px 6px 10px;
+    font-size: 13px;
+  `;
+
   let html = `
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Conducteur</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Dernière Révision</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Prochaine Révision</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
+    <div style="${headerStyle}">Marque Modèle</div>
+    <div style="${headerStyle}">Immatriculation</div>
+    <div style="${headerStyle}">Conducteur</div>
+    <div style="${headerStyle}">Dernière Révision</div>
+    <div style="${headerStyle}">Prochaine Révision</div>
+    <div style="${headerStyle} text-align: right;">Actions</div>
   `;
 
   if (sortedRevisions.length === 0) {
     html += `
-      <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #999;">
+      <div style="grid-column: 1 / -1; padding: 28px; text-align: center; color: #98a2b3;">
         Aucune révision enregistrée
       </div>
     `;
@@ -2691,9 +2699,9 @@ function renderRevisionPage() {
       ? Math.floor((prochainDate - today) / (1000 * 60 * 60 * 24))
       : null;
 
-    let statusColor = "#4caf50";
+    let statusColor = "#2e7d46";
     if (daysLeft !== null && daysLeft < 30 && daysLeft >= 0) {
-      statusColor = "#ff9800";
+      statusColor = "#f57c00";
     } else if (daysLeft !== null && daysLeft < 0) {
       statusColor = "#d32f2f";
     }
@@ -2707,16 +2715,75 @@ function renderRevisionPage() {
 
     const compteur = daysLeft === null
       ? ""
-      : `<span style="font-size: 11px; font-weight: 600; color: ${statusColor}; background: ${statusColor}15; padding: 2px 8px; border-radius: 3px;">${daysLeft} j</span>`;
+      : `<span style="
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: 8px;
+          padding: 1px 7px;
+          border: 1px solid ${statusColor};
+          border-radius: 999px;
+          background: transparent;
+          color: ${statusColor};
+          font-size: 10px;
+          font-weight: 700;
+          white-space: nowrap;
+        ">${daysLeft} j</span>`;
+
+    const cellStyle = `
+      padding: 11px 6px;
+      border-bottom: 1px solid #eef1f5;
+      color: #475467;
+      font-size: 13px;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+    `;
 
     return `
-      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${marqueModele}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.immatriculation || "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.conducteur || "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4; display: flex; justify-content: space-between; align-items: center;">${prochainAffichage} ${compteur}</div>
-      <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
-        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="openEditRevisionModal('${r.immatriculation}')">✏️ Éditer</button>
+      <div style="${cellStyle} border-left: 3px solid ${statusColor}; padding-left: 8px; font-weight: 600; color: #1d2939;">${marqueModele}</div>
+      <div style="${cellStyle}">${r.immatriculation || "—"}</div>
+      <div style="${cellStyle}">${r.conducteur || "—"}</div>
+      <div style="${cellStyle}">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
+      <div style="${cellStyle}">${prochainAffichage}${compteur}</div>
+      <div style="${cellStyle} justify-content: flex-end; gap: 7px;">
+        <button
+          type="button"
+          title="Modifier la révision"
+          onclick="openEditRevisionModal('${r.immatriculation}')"
+          style="
+            height: 30px;
+            padding: 0 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: transparent;
+            color: #1565c0;
+            border: 1px solid #1565c0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+          "
+        >✏️ Modifier</button>
+        <button
+          type="button"
+          title="Supprimer la révision"
+          onclick="deleteRevision('${r.immatriculation}')"
+          style="
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: #d32f2f;
+            border: 1px solid #d32f2f;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 12px;
+          "
+        >🗑️</button>
       </div>
     `;
   }).join("");
@@ -2725,7 +2792,14 @@ function renderRevisionPage() {
 }
 
 function openAddRevisionModal() {
+  editingRevisionImmat = null;
+
+  const title = document.getElementById("addRevisionModalTitle");
+  const submitBtn = document.getElementById("submitAddRevisionBtn");
   const vehiculeSelect = document.getElementById("addRevisionVehicule");
+
+  if (title) title.textContent = "Ajouter une Révision";
+  if (submitBtn) submitBtn.textContent = "Enregistrer";
 
   const normalizeImmat = value =>
     String(value || "")
@@ -2753,35 +2827,48 @@ function openAddRevisionModal() {
     vehiculeSelect.appendChild(option);
   });
 
+  vehiculeSelect.disabled = vehiculesDisponibles.length === 0;
+
   if (vehiculesDisponibles.length === 0) {
     vehiculeSelect.innerHTML =
       '<option value="">Aucun véhicule disponible</option>';
-    vehiculeSelect.disabled = true;
-  } else {
-    vehiculeSelect.disabled = false;
   }
 
   document.getElementById("addRevisionDernierDate").value = "";
   document.getElementById("addRevisionProchainDate").value = "";
 
+  setModalButtonsDisabled("addRevisionModal", false);
   document.getElementById("addRevisionModal").classList.add("active");
 }
 
 function closeAddRevisionModal() {
-  // Réactiver TOUS les boutons de la modale
   setModalButtonsDisabled("addRevisionModal", false);
-  
+  editingRevisionImmat = null;
   document.getElementById("addRevisionModal").classList.remove("active");
+
   const submitBtn = document.getElementById("submitAddRevisionBtn");
-  if (submitBtn) submitBtn.disabled = false;
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Enregistrer";
+  }
 }
 
 async function submitAddRevision() {
-  setModalButtonsDisabled("addRevisionModal", true);
-  // Protection contre double-clics
   if (isSubmitting) return;
-  
+
   const immatriculation = document.getElementById("addRevisionVehicule").value;
+  const dernierDate = document.getElementById("addRevisionDernierDate").value;
+  const prochainDate = document.getElementById("addRevisionProchainDate").value;
+
+  if (!immatriculation) {
+    showMsg("Sélectionne un véhicule", "err");
+    return;
+  }
+
+  if (!prochainDate) {
+    showMsg("Remplis la date de la prochaine révision", "err");
+    return;
+  }
 
   const normalizeImmat = value =>
     String(value || "")
@@ -2793,58 +2880,118 @@ async function submitAddRevision() {
   );
 
   const conducteur = vehicule?.conducteur || "";
-  const dernierDate = document.getElementById("addRevisionDernierDate").value;
-  const prochainDate = document.getElementById("addRevisionProchainDate").value;
-  
-  if (!immatriculation) {
-    showMsg("Sélectionne un véhicule", "err");
-    return;
-  }
-  
-  if (!prochainDate) {
-    showMsg("Remplis la date de la prochaine révision", "err");
-    return;
-  }
-  
+  const action = editingRevisionImmat ? "updateRevision" : "createRevision";
+
   isSubmitting = true;
+  setModalButtonsDisabled("addRevisionModal", true);
+
   const submitBtn = document.getElementById("submitAddRevisionBtn");
-  if (submitBtn) submitBtn.disabled = true;
-  
+  if (submitBtn) submitBtn.textContent = editingRevisionImmat ? "Modification..." : "Enregistrement...";
+
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "createRevision",
-        immatriculation: immatriculation,
-        conducteur: conducteur,
-        dernierDate: dernierDate,
-        prochainDate: prochainDate
+        action,
+        immatriculation,
+        conducteur,
+        dernierDate,
+        prochainDate
       })
     });
-    
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || "Erreur lors de l'enregistrement");
+    }
+
     closeAddRevisionModal();
-    showMsg("Révision ajoutée ✅", "ok");
-    showLoadingAndReload(); // Actualiser après 500ms
+    showMsg(
+      editingRevisionImmat
+        ? "Révision modifiée ✅"
+        : "Révision ajoutée ✅",
+      "ok"
+    );
+    showLoadingAndReload();
   } catch (err) {
-    showMsg("Erreur: " + err.message, "err");
+    showMsg("Erreur : " + err.message, "err");
     isSubmitting = false;
-    setModalButtonsDisabled("addRevisionModal", false); // Réactiver en cas d'erreur
-  } finally {
-    if (submitBtn) submitBtn.disabled = false;
+    setModalButtonsDisabled("addRevisionModal", false);
+    if (submitBtn) submitBtn.textContent = editingRevisionImmat ? "Modifier" : "Enregistrer";
   }
 }
 
+
 function openEditRevisionModal(immatriculation) {
-  // À implémenter si nécessaire
-  showMsg("Fonctionnalité en cours de développement", "err");
+  const normalizeImmat = value =>
+    String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+  const revision = (Array.isArray(data.revisions) ? data.revisions : []).find(r =>
+    normalizeImmat(r.immatriculation) === normalizeImmat(immatriculation)
+  );
+
+  const vehicule = (Array.isArray(data.vehicules) ? data.vehicules : []).find(v =>
+    normalizeImmat(v.immatriculation) === normalizeImmat(immatriculation)
+  );
+
+  if (!revision) {
+    showMsg("Révision introuvable", "err");
+    return;
+  }
+
+  editingRevisionImmat = revision.immatriculation;
+
+  const title = document.getElementById("addRevisionModalTitle");
+  const submitBtn = document.getElementById("submitAddRevisionBtn");
+  const vehiculeSelect = document.getElementById("addRevisionVehicule");
+
+  if (title) title.textContent = "Modifier la Révision";
+  if (submitBtn) submitBtn.textContent = "Modifier";
+
+  vehiculeSelect.innerHTML = "";
+  const option = document.createElement("option");
+  option.value = revision.immatriculation;
+  option.textContent =
+    `${vehicule?.marque || ""} ${vehicule?.modele || ""} - ${revision.immatriculation}`.trim();
+  vehiculeSelect.appendChild(option);
+  vehiculeSelect.value = revision.immatriculation;
+  vehiculeSelect.disabled = true;
+
+  document.getElementById("addRevisionDernierDate").value =
+    revision.dernierDate || "";
+  document.getElementById("addRevisionProchainDate").value =
+    revision.prochainDate || "";
+
+  setModalButtonsDisabled("addRevisionModal", false);
+  document.getElementById("addRevisionModal").classList.add("active");
 }
 
-function deleteRevision(immatriculation) {
-  if (!confirm(`Supprimer la révision pour ${immatriculation} ?`)) return;
-  
-  data.revisions = data.revisions.filter(r => r.immatriculation !== immatriculation);
-  renderRevisionPage();
-  showMsg("Révision supprimée ✅", "ok");
+async function deleteRevision(immatriculation) {
+  if (!confirm(`Supprimer la révision de ${immatriculation} ?`)) return;
+
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "deleteRevision",
+        immatriculation
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || "Suppression impossible");
+    }
+
+    showMsg("Révision supprimée ✅", "ok");
+    showLoadingAndReload();
+  } catch (err) {
+    showMsg("Erreur : " + err.message, "err");
+  }
 }
 
 function openControleTkModal() {
@@ -3404,18 +3551,6 @@ async function submitControleTk() {
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
-}
-
-// ========== RÉVISIONS ==========
-function openEditRevisionModal(immatriculation) {
-  // À implémenter
-  showMsg("Fonctionnalité en cours de développement", "err");
-}
-
-function deleteRevision(immatriculation) {
-  if (!confirm("Supprimer cette révision?")) return;
-  // À implémenter
-  showMsg("Suppression en cours de développement", "err");
 }
 
 function deleteCt(immatriculation) {
