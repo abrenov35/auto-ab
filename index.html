@@ -1356,6 +1356,25 @@
   </div>
 </div>
 
+<!-- MODAL VISUALISATION CONTRÔLE TECHNIQUE -->
+<div class="modal" id="viewCtModal">
+  <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-header" id="viewCtTitle">Visualiser le Contrôle Technique</div>
+    
+    <div style="padding: 20px; text-align: center;">
+      <div id="viewCtContent" style="min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <!-- Contenu dynamique: soit lien, soit "Pas de pièce" -->
+      </div>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeViewCtModal()">Fermer</button>
+      <button id="viewCtLinkBtn" class="btn" style="background: #1976d2; color: white; display: none;" onclick="openViewCtLink()">Télécharger le CT</button>
+      <button id="uploadCtBtn" class="btn" style="background: #4caf50; color: white; display: none;" onclick="openUploadCtModal()">📤 Charger une pièce</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL SORTIE DU PARC -->
 <div class="modal" id="exitVehicleModal">
   <div class="modal-content" style="max-width: 400px;">
@@ -2021,7 +2040,74 @@ function openDocLink(url) {
   window.open(url, "_blank");
 }
 
-// ========== VÉHICULES ==========
+// ========== VISUALISATION CONTRÔLES TECHNIQUES ==========
+let currentViewCtLink = null;
+
+function viewCt(ctImmat, lienCt) {
+  const viewCtContent = document.getElementById("viewCtContent");
+  const viewCtTitle = document.getElementById("viewCtTitle");
+  const viewCtLinkBtn = document.getElementById("viewCtLinkBtn");
+  const uploadCtBtn = document.getElementById("uploadCtBtn");
+  
+  // Mettre à jour le titre
+  viewCtTitle.textContent = `CT - ${ctImmat}`;
+  
+  if (!lienCt || lienCt.trim() === "") {
+    // Pas de pièce disponible
+    viewCtContent.innerHTML = `
+      <div style="text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
+        <div style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #d32f2f;">Pièce n'existe pas</div>
+        <div style="color: #666; font-size: 14px;">
+          Aucun Contrôle Technique n'a été enregistré pour ce véhicule.<br>
+          Veuillez charger une pièce.
+        </div>
+      </div>
+    `;
+    viewCtLinkBtn.style.display = "none";
+    uploadCtBtn.style.display = "block";
+  } else {
+    // CT disponible
+    currentViewCtLink = lienCt;
+    viewCtContent.innerHTML = `
+      <div style="text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
+        <div style="font-size: 18px; font-weight: 600; margin-bottom: 12px;">CT disponible</div>
+        <div style="color: #666; font-size: 14px; margin-bottom: 20px;">
+          Cliquez sur "Télécharger le CT" pour accéder au fichier.
+        </div>
+        <div style="background: #f5f5f5; padding: 12px; border-radius: 4px; word-break: break-all; font-size: 12px; color: #666;">
+          ${lienCt}
+        </div>
+      </div>
+    `;
+    viewCtLinkBtn.style.display = "block";
+    uploadCtBtn.style.display = "block";
+  }
+  
+  // Ouvrir la modale
+  document.getElementById("viewCtModal").classList.add("active");
+}
+
+function closeViewCtModal() {
+  document.getElementById("viewCtModal").classList.remove("active");
+  currentViewCtLink = null;
+}
+
+function openViewCtLink() {
+  if (currentViewCtLink) {
+    window.open(currentViewCtLink, "_blank");
+  }
+}
+
+function openUploadCtModal() {
+  // TODO: Ouvrir la modale d'upload du CT
+  closeViewCtModal();
+  // openAddCtModal() ou openCtEditModal si on veut
+  alert("📤 Fonctionnalité d'upload à implémenter");
+}
+
+// ========== VÉHICULES ===========
 function openAddVehiculeModal() {
   // Réinitialiser l'état: on est en création, pas en modification
   window.editingImmat = null;
@@ -2829,7 +2915,7 @@ function renderCtPage() {
       <div style="padding: 8px; color: #666;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"} <span style="font-size: 11px; color: ${statusColor}; margin-left: 12px;">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
       <div style="padding: 8px; display: flex; gap: 4px;">
         <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">✏️</button>
-        <button class="btn" style="background: #0d5aa8; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">👁️</button>
+        <button class="btn" style="background: #0d5aa8; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="viewCt('${ct.immatriculation}', '${ct.lienCt || ''}')">👁️</button>
       </div>
     `;
   }).join("");
