@@ -2298,13 +2298,6 @@ function renderVehiclesPage() {
     return nameA.localeCompare(nameB);
   });
   
-  // Grouper par statut
-  const groupedVehicles = {
-    actif: sortedVehicles.filter(v => v.statut === "Actif"),
-    maintenance: sortedVehicles.filter(v => v.statut === "Maintenance"),
-    sortie: sortedVehicles.filter(v => v.statut !== "Actif" && v.statut !== "Maintenance")
-  };
-  
   // Fonction pour créer une ligne de tableau
   const createRowHTML = (v) => {
     let statusColor = "#4caf50";
@@ -2339,29 +2332,8 @@ function renderVehiclesPage() {
     </div>
   `;
   
-  // Section ACTIF (vert)
-  if (groupedVehicles.actif.length > 0) {
-    html += `<div style="margin-bottom: 24px;">
-      <div style="font-weight: 600; font-size: 14px; color: #4caf50; border-bottom: 2px solid #4caf50; padding-bottom: 8px; margin-bottom: 12px;">✅ ACTIF (${groupedVehicles.actif.length})</div>
-      ${groupedVehicles.actif.map(v => createRowHTML(v)).join('')}
-    </div>`;
-  }
-  
-  // Section MAINTENANCE (bleu)
-  if (groupedVehicles.maintenance.length > 0) {
-    html += `<div style="margin-bottom: 24px;">
-      <div style="font-weight: 600; font-size: 14px; color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 8px; margin-bottom: 12px;">🔧 MAINTENANCE (${groupedVehicles.maintenance.length})</div>
-      ${groupedVehicles.maintenance.map(v => createRowHTML(v)).join('')}
-    </div>`;
-  }
-  
-  // Section SORTIE (orange)
-  if (groupedVehicles.sortie.length > 0) {
-    html += `<div style="margin-bottom: 24px;">
-      <div style="font-weight: 600; font-size: 14px; color: #ff9800; border-bottom: 2px solid #ff9800; padding-bottom: 8px; margin-bottom: 12px;">⛔ SORTIE (${groupedVehicles.sortie.length})</div>
-      ${groupedVehicles.sortie.map(v => createRowHTML(v)).join('')}
-    </div>`;
-  }
+  // Afficher tous les véhicules triés (sans titres de section)
+  html += sortedVehicles.map(v => createRowHTML(v)).join('');
   
   vehiclesList.innerHTML = html;
 }
