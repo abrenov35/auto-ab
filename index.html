@@ -2300,11 +2300,11 @@ function renderVehiclesPage() {
   
   // En-têtes (ligne 1)
   let html = `
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque Modèle</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Immatriculation</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Conducteur</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Statut</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right;">Actions</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Conducteur</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Statut</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
   `;
   
   // Lignes de données (5 divs par ligne pour correspondre aux 5 colonnes)
@@ -2317,10 +2317,10 @@ function renderVehiclesPage() {
     }
     
     return `
-      <div style="padding: 8px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v.marque} ${v.modele}</div>
-      <div style="padding: 8px; color: #666; font-family: monospace;">${v.immatriculation}</div>
-      <div style="padding: 8px; color: #666;">${v.conducteur || "—"}</div>
-      <div style="padding: 8px; font-weight: 600; color: ${statusColor};">${statusText}</div>
+      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v.marque} ${v.modele}</div>
+      <div style="padding: 8px; color: #666; font-family: monospace; font-size: 14px;">${v.immatriculation}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${v.conducteur || "—"}</div>
+      <div style="padding: 8px; font-weight: 500; font-size: 14px; color: ${statusColor};">${statusText}</div>
       <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end;">
         <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
       </div>
@@ -2683,12 +2683,12 @@ function renderRevisionPage() {
   
   // En-têtes (une seule fois en haut)
   let html = `
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque Modèle</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Immatriculation</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Conducteur</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Dernière Révision</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Prochaine Révision</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right;">Actions</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Conducteur</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Dernière Révision</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Prochaine Révision</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
   `;
   
   // Lignes de données
@@ -2705,11 +2705,11 @@ function renderRevisionPage() {
     }
     
     return `
-      <div style="padding: 8px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${r.marque} ${r.modele}</div>
-      <div style="padding: 8px; color: #666;">${r.immatriculation}</div>
-      <div style="padding: 8px; color: #666;">${r.conducteur || "—"}</div>
-      <div style="padding: 8px; color: #666;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-      <div style="padding: 8px; color: #666; display: flex; justify-content: space-between; align-items: center;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')} <span style="font-size: 11px; font-weight: 600; color: ${statusColor}; background: ${statusColor}15; padding: 2px 8px; border-radius: 3px;">${daysLeft} j</span></div>
+      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${r.marque} ${r.modele}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${r.immatriculation}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${r.conducteur || "—"}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')} <span style="font-size: 11px; font-weight: 600; color: ${statusColor}; background: ${statusColor}15; padding: 2px 8px; border-radius: 3px;">${daysLeft} j</span></div>
       <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end;">
         <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditRevisionModal('${r.immatriculation}')">✏️ Éditer</button>
       </div>
@@ -2851,12 +2851,12 @@ function renderCtPage() {
   
   // En-têtes
   let html = `
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque Modèle</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Immatriculation</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Conducteur</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Dernier CT</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Prochain CT</div>
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right;">Actions</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Conducteur</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Dernier CT</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Prochain CT</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
   `;
   
   // Lignes
@@ -2872,11 +2872,11 @@ function renderCtPage() {
     }
     
     return `
-      <div style="padding: 8px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v ? v.marque + " " + v.modele : "Inconnu"}</div>
-      <div style="padding: 8px; color: #666;">${ct.immatriculation}</div>
-      <div style="padding: 8px; color: #666;">${ct.conducteur || "—"}</div>
-      <div style="padding: 8px; color: #666;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-      <div style="padding: 8px; color: #666;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"} <span style="font-size: 11px; color: ${statusColor}; margin-left: 12px;">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
+      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v ? v.marque + " " + v.modele : "Inconnu"}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${ct.immatriculation}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${ct.conducteur || "—"}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString('fr-FR') : "—"} <span style="font-size: 11px; color: ${statusColor}; margin-left: 12px;">${daysLeft !== null ? daysLeft + ' j' : '—'}</span></div>
       <div style="padding: 8px; display: flex; gap: 4px;">
         <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openCtEditModal('${ct.immatriculation}')">✏️</button>
         <button class="btn" style="background: #0d5aa8; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="viewCt('${ct.immatriculation}', '${ct.lienCt || ''}')">👁️</button>
@@ -3246,7 +3246,7 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.95</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.96</div>
 
 </body>
 </html>
