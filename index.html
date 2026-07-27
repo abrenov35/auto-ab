@@ -1027,7 +1027,7 @@
     <!-- MAIN CONTENT -->
     <div class="main">
       <div class="header-actions">
-        <h2 id="vehiculeTitle">Sélectionne un véhicule</h2>
+        <h2 id="vehiculeTitle"></h2>
         <div style="display: flex; gap: 12px;">
           <select id="inviteVehiculeSelect" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; cursor: pointer; display: none;">
             <option value="">-- Sélectionne un véhicule --</option>
@@ -1696,11 +1696,11 @@ function renderMaintenanceBlocks() {
     return;
   }
   
-  // Si aucun véhicule sélectionné, afficher des blocs vides
+  // Si aucun véhicule sélectionné, afficher des blocs vides (sans message)
   if (!selectedVehicule) {
-    ctContent.innerHTML = '<div class="block-content" style="background: #f5f5f5; text-align: center; color: #999;">Sélectionne un véhicule</div>';
-    docsContent.innerHTML = '<div class="block-content" style="background: #f5f5f5; text-align: center; color: #999;">Sélectionne un véhicule</div>';
-    if (revContent) revContent.innerHTML = '<div class="block-content" style="background: #f5f5f5; text-align: center; color: #999;">Sélectionne un véhicule</div>';
+    ctContent.innerHTML = '';
+    docsContent.innerHTML = '';
+    if (revContent) revContent.innerHTML = '';
     blocksContainer.style.display = "grid";
     return;
   }
@@ -3283,7 +3283,7 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.99</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.100</div>
 
 </body>
 </html>
