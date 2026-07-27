@@ -1,0 +1,13 @@
+{
+  "name": "auto-ab-proxy",
+  "version": "1.0.0",
+  "description": "AB PARC AUTO - Cloud Run CORS Proxy",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  }
+}
