@@ -2220,9 +2220,10 @@ function renderVehiclesPage() {
     }
     
     return `
-      <div style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid ${statusColor}; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div style="font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px;">${v.marque} ${v.modele}</div>
+      <div style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid ${statusColor}; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+          <div style="font-weight: 600; font-size: 14px; color: #333; white-space: nowrap;">${v.marque} ${v.modele}</div>
+          <span style="color: #999;">•</span>
           <div style="font-size: 12px; color: #666;">
             <span>${v.immatriculation}</span>
             ${v.annee ? `<span> • ${v.annee}</span>` : ''}
@@ -2230,7 +2231,7 @@ function renderVehiclesPage() {
             <span style="font-weight: 600; color: ${statusColor};"> • ${statusText}</span>
           </div>
         </div>
-        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
+        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; flex-shrink: 0;" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
       </div>
     `;
   }).join("");
