@@ -1418,6 +1418,12 @@ async function init() {
   setInterval(() => {
     checkCtAlerts();
     checkRevisionAlerts();
+    
+    // Re-rendre la page active pour mettre à jour les compteurs
+    const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+    if (activePage === "vehiclesPage") renderVehiclesPage();
+    if (activePage === "revisionPage") renderRevisionPage();
+    if (activePage === "ctPage") renderCtPage();
   }, 60000); // 60000ms = 1 minute
   
   // Récupérer la page active depuis localStorage, par défaut "vehiclesPage"
