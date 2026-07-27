@@ -966,7 +966,7 @@
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
   <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.65</span>
+  <span class="version">v6.3.66</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1534,74 +1534,51 @@ let data = {};
 
 async function loadData() {
   try {
-    const response = await fetch(APPS_SCRIPT_URL + "?action=loadData");
-    data = await response.json();
-    
-    console.log("Données du backend reçues:", data);
-    console.log("Nombre de véhicules:", data.vehicules ? data.vehicules.length : 0);
-    
-    // Initialiser les révisions si non présentes
-    if (!data.revisions || data.revisions.length === 0) {
-      data.revisions = [
-        { immatriculation: "CD 799 PT", conducteur: "Dépôt", dernierDate: "2026-04-26", prochainDate: "2026-12-08" },
-        { immatriculation: "HG-877-TV", conducteur: "Kevin", dernierDate: "2026-03-30", prochainDate: "2026-11-08" },
-        { immatriculation: "HD 453 ND", conducteur: "Morvan", dernierDate: "2026-05-31", prochainDate: "2027-02-08" },
-        { immatriculation: "FS 552 SF", conducteur: "Alexis", dernierDate: "2026-05-31", prochainDate: "2027-02-08" },
-        { immatriculation: "GN 478 AP", conducteur: "Younès", dernierDate: "2025-12-05", prochainDate: "2026-12-05" },
-        { immatriculation: "FG 758 GJ", conducteur: "Mohammed", dernierDate: "2025-11-18", prochainDate: "2026-08-18" },
-        { immatriculation: "HJ 896 AW", conducteur: "Jimmy", dernierDate: "2026-06-14", prochainDate: "2027-01-15" },
-        { immatriculation: "GD-344-XC", conducteur: "Solenn et Mathieu", dernierDate: "2025-12-01", prochainDate: "2026-12-12" },
-        { immatriculation: "HG-631-YY", conducteur: "Pascale", dernierDate: "2025-12-09", prochainDate: "2026-12-09" }
-      ];
-      
-      // Enrichir avec marque et modèle
-      data.revisions.forEach(r => {
-        const v = data.vehicules.find(v => v.immatriculation === r.immatriculation);
-        if (v) {
-          r.marque = v.marque;
-          r.modele = v.modele;
-        }
-      });
+    const response = await fetch(APPS_SCRIPT_URL + "?action=loadData", {
+      method: "GET",
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur serveur ${response.status}`);
     }
 
-    // Initialiser les contrôles techniques si non présents
-    if (!data.controlsTk || data.controlsTk.length === 0) {
-      data.controlsTk = [
-        { immatriculation: "CD 799 PT", conducteur: "Dépôt Alexandre", dernierDate: "2026-04-16", prochainDate: "2027-04-15" },
-        { immatriculation: "HG-877-TV", conducteur: "Kevin", dernierDate: "2025-09-17", prochainDate: "2027-09-16" },
-        { immatriculation: "HD 453 ND", conducteur: "Morvan", dernierDate: "", prochainDate: "2029-05-15" },
-        { immatriculation: "FS 552 SF", conducteur: "Alexis", dernierDate: "2024-09-11", prochainDate: "2026-08-25" },
-        { immatriculation: "GN 478 AP", conducteur: "Younès", dernierDate: "", prochainDate: "2027-03-29" },
-        { immatriculation: "FG 758 GJ", conducteur: "Mohammed", dernierDate: "2025-02-20", prochainDate: "2027-02-19" },
-        { immatriculation: "HJ 896 AW", conducteur: "Jimmy", dernierDate: "2025-11-07", prochainDate: "2027-11-03" },
-        { immatriculation: "GD-344-XC", conducteur: "Mathieu et Solenn", dernierDate: "2025-12-29", prochainDate: "2027-12-28" },
-        { immatriculation: "HG-631-YY", conducteur: "Pascale", dernierDate: "", prochainDate: "2029-12-01" }
-      ];
+    const backendData = await response.json();
+
+    if (!backendData || backendData.ok !== true) {
+      throw new Error(backendData?.error || "Réponse invalide du backend");
     }
-    
-    // N'utiliser que les données du backend
-    // Les véhicules sont gérés dans la Google Sheet via le backend
-    if (!data.vehicules || data.vehicules.length === 0) {
-      console.warn("⚠️ Aucun véhicule reçu du backend - utiliser fallback");
-      // Fallback: utiliser les 9 véhicules de référence
-      data.vehicules = [
-        { immatriculation: "CD 799 PT", marque: "Renault", modele: "Master", annee: 2019, statut: "Actif", conducteur: "Dépôt Alexandre" },
-        { immatriculation: "HG-877-TV", marque: "Citroën", modele: "Berlingo", annee: 2018, statut: "Actif", conducteur: "Kevin" },
-        { immatriculation: "HD 453 ND", marque: "Renault", modele: "Trafic", annee: 2017, statut: "Actif", conducteur: "Morvan" },
-        { immatriculation: "FS 552 SF", marque: "Peugeot", modele: "Partner", annee: 2016, statut: "Actif", conducteur: "Alexis" },
-        { immatriculation: "GN 478 AP", marque: "Renault", modele: "Mégane", annee: 2015, statut: "Actif", conducteur: "Younès" },
-        { immatriculation: "FG 758 GJ", marque: "Renault", modele: "Master", annee: 2020, statut: "Actif", conducteur: "Mohammed" },
-        { immatriculation: "HJ 896 AW", marque: "Citroën", modele: "Berlingo", annee: 2019, statut: "Actif", conducteur: "Jimmy" },
-        { immatriculation: "GD-344-XC", marque: "Citroën", modele: "C3", annee: 2021, statut: "Actif", conducteur: "Mathieu et Solenn" },
-        { immatriculation: "HG-631-YY", marque: "Fiat", modele: "600", annee: 2022, statut: "Actif", conducteur: "Pascale" }
-      ];
-      console.log("✅ Fallback appliqué - 9 véhicules chargés");
-    } else {
-      console.log("✅ Véhicules récupérés du backend");
-    }
+
+    // Source unique : Google Sheets via le GAS.
+    // Aucun véhicule, aucune révision et aucun CT de démonstration.
+    data = {
+      ...backendData,
+      vehicules: Array.isArray(backendData.vehicules) ? backendData.vehicules : [],
+      documents: Array.isArray(backendData.documents) ? backendData.documents : [],
+      categories: Array.isArray(backendData.categories) ? backendData.categories : [],
+      revisions: Array.isArray(backendData.revisions) ? backendData.revisions : [],
+      controlsTk: Array.isArray(backendData.controlsTk)
+        ? backendData.controlsTk
+        : (Array.isArray(backendData.controls) ? backendData.controls : [])
+    };
+
+    console.log("Données du backend reçues:", data);
+    console.log("Nombre de véhicules:", data.vehicules.length);
+    console.log("Nombre de révisions:", data.revisions.length);
+    console.log("Nombre de contrôles techniques:", data.controlsTk.length);
   } catch (err) {
-    console.error("Erreur:", err);
-    showMsg("Erreur de chargement", "err");
+    console.error("Erreur de chargement:", err);
+
+    // Conserver une structure exploitable afin d'éviter les erreurs .find()/.forEach().
+    data = {
+      vehicules: [],
+      documents: [],
+      categories: [],
+      revisions: [],
+      controlsTk: []
+    };
+
+    showMsg("Erreur de chargement des données", "err");
   }
 }
 
@@ -3427,4 +3404,3 @@ init();
 
 </body>
 </html>
-
