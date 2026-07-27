@@ -114,16 +114,15 @@
     .alert-banner {
       background: #ffcdd2;
       color: #c62828;
-      padding: 6px 10px;
+      padding: 0;
       border-bottom: 3px solid #e57373;
       display: none;
-      flex-direction: row;
-      align-items: center;
-      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
     }
     
     .alert-banner.active {
-      display: flex;
+      display: block;
     }
     
     .alert-banner h3 {
@@ -901,8 +900,10 @@
 
 <!-- ALERTE CT -->
 <div class="alert-banner" id="alertBanner">
-  <h3>⚠️ CONTRÔLES TECHNIQUES À VÉRIFIER</h3>
-  <div class="alert-items" id="alertItems"></div>
+  <div style="width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: row; align-items: center; gap: 8px;">
+    <h3>⚠️ CONTRÔLES TECHNIQUES À VÉRIFIER</h3>
+    <div class="alert-items" id="alertItems"></div>
+  </div>
 </div>
 
 <!-- TABS NAVIGATION -->
