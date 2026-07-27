@@ -2094,78 +2094,49 @@ function renderVehicleManagement() {
 function renderVehiclesPage() {
   const vehiclesList = document.getElementById("vehiclesPageList");
   
-  // Séparer véhicules actifs et sortis
-  const activeVehicles = data.vehicules.filter(v => v.statut === "Actif");
-  const exitedVehicles = data.vehicules.filter(v => v.statut !== "Actif");
-  
   // Trier par Marque Modèle
-  const sortedActive = [...activeVehicles].sort((a, b) => {
+  const sortedVehicles = [...data.vehicules].sort((a, b) => {
     const nameA = (a.marque + " " + a.modele).toUpperCase();
     const nameB = (b.marque + " " + b.modele).toUpperCase();
     return nameA.localeCompare(nameB);
   });
   
-  const sortedExited = [...exitedVehicles].sort((a, b) => {
-    const nameA = (a.marque + " " + a.modele).toUpperCase();
-    const nameB = (b.marque + " " + b.modele).toUpperCase();
-    return nameA.localeCompare(nameB);
-  });
-  
-  // SECTION 1: Véhicules actifs
+  // En-têtes (une seule fois en haut)
   let html = `
-    <h3 style="margin-top: 0; color: #333; font-size: 16px; border-bottom: 3px solid #4caf50; padding-bottom: 8px;">📋 Véhicules Actifs</h3>
-  `;
-  
-  // En-têtes tableau actifs (une seule fois en haut)
-  html += `
-    <div style="display: grid; grid-template-columns: 0.8fr 0.8fr 0.8fr 0.6fr 1fr 1.2fr; gap: 8px; margin-bottom: 12px;">
+    <div style="display: grid; grid-template-columns: 0.8fr 0.8fr 0.8fr 0.6fr 1fr 0.8fr 1.2fr; gap: 8px; margin-bottom: 12px;">
       <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque</div>
       <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Modèle</div>
       <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Immatriculation</div>
       <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Année</div>
       <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Conducteur</div>
+      <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Statut</div>
       <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Actions</div>
     </div>
   `;
   
-  // Lignes actifs
-  html += sortedActive.map(v => {
+  // Lignes de données
+  html += sortedVehicles.map(v => {
+    let statusColor = "#4caf50";
+    let statusText = "Actif";
+    if (v.statut !== "Actif") {
+      statusColor = "#ff9800";
+      statusText = v.statut || "Sortie";
+    }
+    
     return `
-      <div style="display: grid; grid-template-columns: 0.8fr 0.8fr 0.8fr 0.6fr 1fr 1.2fr; gap: 8px; margin-bottom: 4px;">
-        <div style="padding: 8px; font-weight: 500; border-left: 3px solid #4caf50; padding-left: 6px;">${v.marque || "—"}</div>
+      <div style="display: grid; grid-template-columns: 0.8fr 0.8fr 0.8fr 0.6fr 1fr 0.8fr 1.2fr; gap: 8px; margin-bottom: 4px;">
+        <div style="padding: 8px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v.marque || "—"}</div>
         <div style="padding: 8px; color: #666;">${v.modele || "—"}</div>
         <div style="padding: 8px; color: #666;">${v.immatriculation}</div>
         <div style="padding: 8px; color: #666;">${v.annee || "—"}</div>
         <div style="padding: 8px; color: #666;">${v.conducteur || "—"}</div>
+        <div style="padding: 8px; font-size: 11px; font-weight: 600; color: ${statusColor};">${statusText}</div>
         <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end;">
           <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Éditer</button>
         </div>
       </div>
     `;
   }).join("");
-  
-  // SECTION 2: Véhicules sortis du parc
-  html += `
-    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd;">
-      <h3 style="color: #666; font-size: 16px; border-bottom: 3px solid #ff9800; padding-bottom: 8px;">📦 Véhicules Sortis du Parc</h3>
-  `;
-  
-  if (sortedExited.length > 0) {
-    html += sortedExited.map(v => `
-      <div style="background: #fff3cd; padding: 12px; border-radius: 6px; border-left: 4px solid #ff9800; margin-bottom: 8px;">
-        <div style="font-weight: 600; margin-bottom: 4px; color: #333;">${v.immatriculation} - ${v.marque} ${v.modele} (${v.annee})</div>
-        <div style="font-size: 12px; color: #666; margin-bottom: 8px;">Statut: <strong>${v.statut || "Sortie du parc"}</strong></div>
-        <div style="display: flex; gap: 8px;">
-          <button style="background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="markVehicleAsActive('${v.immatriculation}')">♻️ Réintégrer</button>
-          <button style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️ Modifier</button>
-        </div>
-      </div>
-    `).join("");
-  } else {
-    html += '<div style="color: #999; padding: 12px; font-style: italic;">Aucun véhicule en sortie du parc</div>';
-  }
-  
-  html += '</div>';
   
   vehiclesList.innerHTML = html;
 }
