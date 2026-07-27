@@ -1287,7 +1287,7 @@
   <div style="margin-bottom: 16px;">
     <button class="btn btn-success" onclick="openAddVehiculeModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter un Véhicule</button>
   </div>
-  <div id="vehiclesPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1.2fr; gap: 8px; font-size: 12px;"></div>
+  <div id="vehiclesPageList" style="display: grid; grid-template-columns: 0.8fr 0.8fr 0.8fr 0.6fr 1fr 0.8fr 1.2fr; gap: 8px; font-size: 12px;"></div>
 </div>
 
 <!-- MODAL GESTION DES VÉHICULES (legacy) -->
@@ -1955,25 +1955,31 @@ function renderVehiclesPage() {
   
   // En-têtes (une seule fois en haut)
   let html = `
-    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque Modèle</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Modèle</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Immatriculation</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Année</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Conducteur</div>
+    <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Statut</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Actions</div>
   `;
   
   // Lignes de données
   html += sortedVehicles.map(v => {
     let statusColor = "#4caf50";
+    let statusText = "Actif";
     if (v.statut !== "Actif") {
       statusColor = "#ff9800";
+      statusText = v.statut || "Sortie";
     }
     
     return `
-      <div style="padding: 4px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v.marque} ${v.modele}</div>
+      <div style="padding: 4px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v.marque || "—"}</div>
+      <div style="padding: 4px; color: #666;">${v.modele || "—"}</div>
       <div style="padding: 4px; color: #666;">${v.immatriculation}</div>
       <div style="padding: 4px; color: #666;">${v.annee || "—"}</div>
       <div style="padding: 4px; color: #666;">${v.conducteur || "—"}</div>
+      <div style="padding: 4px; font-size: 11px; font-weight: 600; color: ${statusColor};">${statusText}</div>
       <div style="padding: 4px; display: flex; gap: 4px;">
         <button class="btn" style="background: #1976d2; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="openEditVehiculeModal('${v.immatriculation}')">✏️</button>
         <button class="btn" style="background: #d32f2f; color: white; padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer;" onclick="deleteVehicule('${v.immatriculation}')">🗑️</button>
