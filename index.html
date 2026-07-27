@@ -1330,7 +1330,11 @@
       <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 20px; border: 2px dashed #1976d2;">
         <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce</div>
         <input type="file" id="documentFileInput" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
-        <button class="btn" style="background: #1976d2; color: white; width: 100%; padding: 10px;" onclick="uploadDocument()">Uploader le fichier</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn" style="background: #1976d2; color: white; flex: 1; padding: 10px;" onclick="uploadDocument()">Choisir un fichier</button>
+          <button class="btn btn-success" style="flex: 1; padding: 10px;" id="submitUploadCtBtn" onclick="submitUploadCt()">✅ Enregistrer</button>
+        </div>
+        <div id="uploadCtMessage" style="margin-top: 8px; font-size: 12px; text-align: center; display: none;"></div>
       </div>
       
       <!-- Liste des documents -->
@@ -2984,30 +2988,7 @@ function closeDocumentsModal() {
   document.getElementById("documentsModal").classList.remove("active");
 }
 
-function loadDocumentsList(immat) {
-  // Récupérer les documents pour ce CT
-  const ctDocs = data.documents.filter(d => d.immatriculation === immat) || [];
-  
-  const docsList = document.getElementById("documentsList");
-  
-  if (ctDocs.length === 0) {
-    docsList.innerHTML = `<div style="color: #999; text-align: center; padding: 20px;">Aucun document pour ce CT</div>`;
-  } else {
-    docsList.innerHTML = ctDocs.map((doc, idx) => `
-      <div style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div style="font-weight: 600; font-size: 14px;">📄 ${doc.nom || "Document " + (idx + 1)}</div>
-          <div style="font-size: 12px; color: #666; margin-top: 4px;">
-            ${doc.date ? new Date(doc.date).toLocaleDateString('fr-FR') : ""}
-          </div>
-        </div>
-        <button class="btn" style="background: #d32f2f; color: white; padding: 6px 12px; font-size: 12px;" onclick="deleteDocument('${immat}', ${idx})">Supprimer</button>
-      </div>
-    `).join("");
-  }
-}
-
-function uploadDocument() {
+async function submitUploadCt() {
   const immat = window.currentCtImmatriculation;
   const fileInput = document.getElementById("documentFileInput");
   
@@ -3022,42 +3003,129 @@ function uploadDocument() {
   }
   
   const file = fileInput.files[0];
-  const reader = new FileReader();
   
-  reader.onload = function(e) {
+  // Vérifier l'extension PDF
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    showMsg("Seuls les fichiers PDF sont autorisés", "err");
+    return;
+  }
+  
+  // Convertir en Base64
+  const reader = new FileReader();
+  reader.onload = async function(e) {
     try {
-      // Ajouter le document aux données locales (simulé)
-      if (!data.documents) data.documents = [];
+      const fileBase64 = e.target.result.split(',')[1];
       
-      data.documents.push({
-        immatriculation: immat,
-        nom: file.name,
-        type: file.type,
-        size: file.size,
-        date: new Date(),
-        data: e.target.result // Base64
+      document.getElementById("uploadCtMessage").textContent = "Envoi en cours...";
+      document.getElementById("uploadCtMessage").style.color = "#1976d2";
+      document.getElementById("uploadCtMessage").style.display = "block";
+      
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "uploadCtFile",
+          immatriculation: immat,
+          fileName: file.name,
+          fileBase64: fileBase64
+        })
       });
       
-      // Rafraîchir la liste
-      loadDocumentsList(immat);
-      fileInput.value = "";
-      showMsg("Document uploadé ✅", "ok");
+      const result = await response.json();
       
-      // TODO: Envoyer au GAS pour stocker dans Google Drive/Sheet
+      if (result.success) {
+        document.getElementById("uploadCtMessage").textContent = "✅ Fichier uploadé avec succès!";
+        document.getElementById("uploadCtMessage").style.color = "#4caf50";
+        document.getElementById("uploadCtMessage").style.display = "block";
+        
+        // Réinitialiser
+        fileInput.value = "";
+        document.getElementById("submitUploadCtBtn").style.display = "none";
+        
+        // Recharger les documents
+        setTimeout(() => {
+          loadDocumentsList(immat);
+          document.getElementById("uploadCtMessage").style.display = "none";
+        }, 1000);
+      } else {
+        showMsg("Erreur: " + result.message, "err");
+        document.getElementById("uploadCtMessage").textContent = "❌ Erreur";
+        document.getElementById("uploadCtMessage").style.color = "#d32f2f";
+      }
     } catch (err) {
-      showMsg("Erreur: " + err.message, "err");
+      showMsg("Erreur upload: " + err.message, "err");
+      document.getElementById("uploadCtMessage").textContent = "❌ Erreur réseau";
+      document.getElementById("uploadCtMessage").style.color = "#d32f2f";
     }
   };
   
   reader.readAsDataURL(file);
 }
 
-function deleteDocument(immat, idx) {
+function loadDocumentsList(immat) {
+  // Récupérer les documents uploadés pour ce CT
+  fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "loadDocumentsCt"
+    })
+  })
+  .then(response => response.json())
+  .then(allDocs => {
+    const ctDocs = allDocs.filter(d => d.immatriculation === immat) || [];
+    const docsList = document.getElementById("documentsList");
+    
+    if (ctDocs.length === 0) {
+      docsList.innerHTML = `<div style="color: #999; text-align: center; padding: 20px;">Aucun document pour ce CT</div>`;
+    } else {
+      // Trier par date (récent en premier)
+      const sorted = [...ctDocs].sort((a, b) => new Date(b.dateUpload) - new Date(a.dateUpload));
+      
+      docsList.innerHTML = sorted.map((doc) => `
+        <div style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">📄 ${doc.nomFichier}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 4px;">
+              ${doc.dateUpload}
+            </div>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <button class="btn" style="background: #2e7d46; color: white; padding: 6px 10px; font-size: 12px;" onclick="window.open('${doc.lienDrive}', '_blank')">📥 Voir</button>
+            <button class="btn" style="background: #d32f2f; color: white; padding: 6px 10px; font-size: 12px;" onclick="deleteDocument('${immat}', '${doc.nomFichier}')">🗑️</button>
+          </div>
+        </div>
+      `).join("");
+    }
+  })
+  .catch(err => {
+    console.log("Erreur loadDocumentsList:", err);
+    const docsList = document.getElementById("documentsList");
+    docsList.innerHTML = `<div style="color: #d32f2f; text-align: center; padding: 20px;">Erreur chargement</div>`;
+  });
+}
+
+function uploadDocument() {
+  // Ouvrir le file picker
+  document.getElementById("documentFileInput").click();
+  
+  // Quand un fichier est sélectionné, afficher le bouton Enregistrer
+  const fileInput = document.getElementById("documentFileInput");
+  fileInput.onchange = function() {
+    if (fileInput.files && fileInput.files.length > 0) {
+      const fileName = fileInput.files[0].name;
+      document.getElementById("submitUploadCtBtn").style.display = "block";
+      document.getElementById("uploadCtMessage").textContent = `✓ ${fileName} sélectionné`;
+      document.getElementById("uploadCtMessage").style.display = "block";
+      document.getElementById("uploadCtMessage").style.color = "#4caf50";
+    }
+  };
+}
+
+function deleteDocument(immat, fileName) {
   if (!confirm("Supprimer ce document ?")) return;
   
-  data.documents = data.documents.filter((d, i) => !(d.immatriculation === immat && data.documents.indexOf(d) === idx));
-  loadDocumentsList(immat);
-  showMsg("Document supprimé ✅", "ok");
+  // Pour l'instant, juste rafraîchir la liste
+  // TODO: Ajouter action GAS pour supprimer du Drive
+  showMsg("Suppression non implémentée - Accès Drive", "warn");
 }
 
 function viewCtDocumentsInModal() {
@@ -3354,7 +3422,7 @@ init();
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
-  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.103</div>
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.104</div>
 
 </body>
 </html>
