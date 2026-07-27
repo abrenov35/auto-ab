@@ -35,26 +35,49 @@ app.get('/health', (req, res) => {
 // Proxy ALL requests to GAS
 app.all('/*', async (req, res) => {
   try {
-    // Build GAS URL with query params
+    // Determine method: Use POST for loadData, otherwise follow original method
+    let method = req.method;
+    let body = undefined;
     let gasUrl = GAS_URL;
-    const queryParams = Object.keys(req.query || {})
-      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
-      .join('&');
     
-    if (queryParams) {
-      gasUrl += '?' + queryParams;
+    if (req.path === '/' || req.path === '') {
+      // For root requests, check if action=loadData
+      const action = req.query.action || (req.body ? req.body.action : '');
+      
+      if (action === 'loadData') {
+        // Use POST for loadData
+        method = 'POST';
+        body = JSON.stringify({ action: 'loadData' });
+      } else {
+        // Use query params for GET
+        const queryParams = Object.keys(req.query || {})
+          .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
+          .join('&');
+        if (queryParams) {
+          gasUrl += '?' + queryParams;
+        }
+      }
+    } else {
+      // For other paths, use query params
+      const queryParams = Object.keys(req.query || {})
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.query[key])}`)
+        .join('&');
+      if (queryParams) {
+        gasUrl += '?' + queryParams;
+      }
     }
 
-    // Prepare body
-    let body = undefined;
-    if (req.method === 'POST' || req.method === 'PUT') {
-      if (typeof req.body === 'string') {
-        body = req.body;
-      } else if (typeof req.body === 'object') {
-        try {
-          body = JSON.stringify(req.body);
-        } catch (e) {
+    // Prepare body for POST requests
+    if (method === 'POST' || method === 'PUT') {
+      if (!body) {
+        if (typeof req.body === 'string') {
           body = req.body;
+        } else if (typeof req.body === 'object') {
+          try {
+            body = JSON.stringify(req.body);
+          } catch (e) {
+            body = req.body;
+          }
         }
       }
     }
@@ -64,7 +87,7 @@ app.all('/*', async (req, res) => {
     const timeout = setTimeout(() => controller.abort(), 30000);
 
     const gasResponse = await fetch(gasUrl, {
-      method: req.method,
+      method: method,
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'auto-ab-cors-proxy/1.0'
