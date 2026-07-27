@@ -1408,7 +1408,7 @@
 <!-- PAGE COMPLÈTE GESTION DES VÉHICULES -->
 <div id="vehiclesPage" style="display: none; background: white; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box;">
   <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">📋 Gestion des Véhicules</h2>
-  <div id="vehiclesPageList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;"></div>
+  <div id="vehiclesPageList" style="display: grid; grid-template-columns: 1.2fr 0.9fr 1.1fr 0.8fr 1fr; gap: 16px; margin-bottom: 16px;"></div>
   <div style="margin-top: 16px;">
     <button class="btn btn-success" onclick="openAddVehiculeModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter un Véhicule</button>
   </div>
@@ -2298,7 +2298,7 @@ function renderVehiclesPage() {
     return nameA.localeCompare(nameB);
   });
   
-  // En-têtes (même format que Révisions)
+  // En-têtes (ligne 1)
   let html = `
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Marque Modèle</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Immatriculation</div>
@@ -2307,7 +2307,7 @@ function renderVehiclesPage() {
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right;">Actions</div>
   `;
   
-  // Lignes de données (même format que Révisions)
+  // Lignes de données (5 divs par ligne pour correspondre aux 5 colonnes)
   html += sortedVehicles.map(v => {
     let statusColor = "#4caf50";
     let statusText = "Actif";
@@ -2318,7 +2318,7 @@ function renderVehiclesPage() {
     
     return `
       <div style="padding: 8px; font-weight: 500; border-left: 3px solid ${statusColor}; padding-left: 6px;">${v.marque} ${v.modele}</div>
-      <div style="padding: 8px; color: #666;">${v.immatriculation}</div>
+      <div style="padding: 8px; color: #666; font-family: monospace;">${v.immatriculation}</div>
       <div style="padding: 8px; color: #666;">${v.conducteur || "—"}</div>
       <div style="padding: 8px; font-weight: 600; color: ${statusColor};">${statusText}</div>
       <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end;">
@@ -3244,6 +3244,9 @@ function showMsg(text, type) {
 // Initialiser l'app au chargement
 init();
 </script>
+
+  <!-- VERSION BADGE (bas droit) -->
+  <div style="position: fixed; bottom: 12px; right: 12px; background: #1976d2; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 1000; opacity: 0.7; cursor: help;" title="Version AB PARC AUTO">v6.3.95</div>
 
 </body>
 </html>
