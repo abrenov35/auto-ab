@@ -1967,19 +1967,34 @@ async function submitVehicule() {
   const conducteur = document.getElementById("vehiculeConducteur").value;
   const statut = document.getElementById("vehiculeStatut").value;
   
-  if (!immat || !vehicule || !annee) {
-    showMsg("Remplis tous les champs requis", "err");
-    return;
+  // Pour la MODIFICATION: seulement valider l'immatriculation (clé unique)
+  // Pour la CRÉATION: forcer tous les champs requis
+  if (!window.editingImmat) {
+    // Création: tous les champs obligatoires
+    if (!immat || !vehicule || !annee) {
+      showMsg("Remplis tous les champs requis", "err");
+      return;
+    }
+  } else {
+    // Modification: seulement immatriculation obligatoire
+    if (!immat) {
+      showMsg("L'immatriculation ne peut pas être vide", "err");
+      return;
+    }
   }
   
-  // Parser "Renault Clio" en marque et modèle
-  const parts = vehicule.trim().split(/\s+/);
-  const marque = parts[0];
-  const modele = parts.slice(1).join(" ");
-  
-  if (!modele) {
-    showMsg("Entre marque ET modèle (ex: Renault Clio)", "err");
-    return;
+  // Parser "Renault Clio" en marque et modèle (si fourni)
+  let marque = "";
+  let modele = "";
+  if (vehicule) {
+    const parts = vehicule.trim().split(/\s+/);
+    marque = parts[0];
+    modele = parts.slice(1).join(" ");
+    
+    if (!modele) {
+      showMsg("Entre marque ET modèle (ex: Renault Clio)", "err");
+      return;
+    }
   }
   
   isSubmitting = true;
