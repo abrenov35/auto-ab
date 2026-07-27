@@ -966,7 +966,7 @@
   <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
   <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
   <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🔧 Contrôle Tk</button>
-  <span class="version">v6.3.67</span>
+  <span class="version">v6.3.69</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -1297,13 +1297,7 @@
         <option value="">-- Sélectionner un véhicule --</option>
       </select>
     </div>
-    
-    <div class="form-group">
-      <label>Conducteur</label>
-      <input type="text" id="addRevisionConducteur" placeholder="Ex: Jean Dupont">
-    </div>
-    
-    <div class="form-group">
+<div class="form-group">
       <label>Dernière Révision</label>
       <input type="date" id="addRevisionDernierDate">
     </div>
@@ -2632,15 +2626,44 @@ function closeRevisionModal() {
 
 function renderRevisionPage() {
   const revisionList = document.getElementById("revisionPageList");
-  
-  // Trier par Marque Modèle
-  const sortedRevisions = [...data.revisions].sort((a, b) => {
-    const nameA = (a.marque + " " + a.modele).toUpperCase();
-    const nameB = (b.marque + " " + b.modele).toUpperCase();
+
+  const cleanValue = value => {
+    const text = String(value ?? "").trim();
+    if (!text || text.toLowerCase() === "undefined" || text.toLowerCase() === "null") {
+      return "";
+    }
+    return text;
+  };
+
+  const normalizeImmat = value =>
+    cleanValue(value)
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+  const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
+  const revisions = Array.isArray(data.revisions) ? data.revisions : [];
+
+  // La fiche véhicule est la source de référence pour marque, modèle et conducteur.
+  const revisionsComplete = revisions.map(revision => {
+    const vehicule = vehicules.find(v =>
+      normalizeImmat(v.immatriculation) === normalizeImmat(revision.immatriculation)
+    );
+
+    return {
+      ...revision,
+      immatriculation: cleanValue(revision.immatriculation),
+      marque: cleanValue(vehicule?.marque),
+      modele: cleanValue(vehicule?.modele),
+      conducteur: cleanValue(vehicule?.conducteur)
+    };
+  });
+
+  const sortedRevisions = revisionsComplete.sort((a, b) => {
+    const nameA = `${a.marque} ${a.modele}`.trim().toUpperCase();
+    const nameB = `${b.marque} ${b.modele}`.trim().toUpperCase();
     return nameA.localeCompare(nameB);
   });
-  
-  // En-têtes (une seule fois en haut)
+
   let html = `
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Marque Modèle</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Immatriculation</div>
@@ -2649,60 +2672,98 @@ function renderRevisionPage() {
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Prochaine Révision</div>
     <div style="font-weight: 600; color: #666; border-bottom: 2px solid #ddd; padding-bottom: 6px; text-align: right; font-size: 14px;">Actions</div>
   `;
-  
-  // Lignes de données
+
+  if (sortedRevisions.length === 0) {
+    html += `
+      <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #999;">
+        Aucune révision enregistrée
+      </div>
+    `;
+    revisionList.innerHTML = html;
+    return;
+  }
+
   html += sortedRevisions.map(r => {
-    const nextDate = new Date(r.prochainDate);
+    const prochainDate = r.prochainDate ? new Date(r.prochainDate) : null;
     const today = new Date();
-    const daysLeft = Math.floor((nextDate - today) / (1000 * 60 * 60 * 24));
-    
+    const validNextDate = prochainDate && !Number.isNaN(prochainDate.getTime());
+    const daysLeft = validNextDate
+      ? Math.floor((prochainDate - today) / (1000 * 60 * 60 * 24))
+      : null;
+
     let statusColor = "#4caf50";
-    if (daysLeft < 30 && daysLeft >= 0) {
+    if (daysLeft !== null && daysLeft < 30 && daysLeft >= 0) {
       statusColor = "#ff9800";
-    } else if (daysLeft < 0) {
+    } else if (daysLeft !== null && daysLeft < 0) {
       statusColor = "#d32f2f";
     }
-    
+
+    const marqueModele =
+      `${r.marque} ${r.modele}`.trim() || "Véhicule introuvable";
+
+    const prochainAffichage = validNextDate
+      ? prochainDate.toLocaleDateString("fr-FR")
+      : "—";
+
+    const compteur = daysLeft === null
+      ? ""
+      : `<span style="font-size: 11px; font-weight: 600; color: ${statusColor}; background: ${statusColor}15; padding: 2px 8px; border-radius: 3px;">${daysLeft} j</span>`;
+
     return `
-      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${r.marque} ${r.modele}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.immatriculation}</div>
+      <div style="padding: 8px; font-weight: 500; font-size: 14px; border-left: 3px solid ${statusColor}; padding-left: 6px;">${marqueModele}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.immatriculation || "—"}</div>
       <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.conducteur || "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString('fr-FR') : "—"}</div>
-      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4; display: flex; justify-content: space-between; align-items: center;">${new Date(r.prochainDate).toLocaleDateString('fr-FR')} <span style="font-size: 11px; font-weight: 600; color: ${statusColor}; background: ${statusColor}15; padding: 2px 8px; border-radius: 3px;">${daysLeft} j</span></div>
+      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
+      <div style="padding: 8px; color: #666; font-size: 14px; line-height: 1.4; display: flex; justify-content: space-between; align-items: center;">${prochainAffichage} ${compteur}</div>
       <div style="padding: 8px; display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
-        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';" onclick="openEditRevisionModal('${r.immatriculation}')">✏️ Éditer</button>
+        <button class="btn" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 6px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="openEditRevisionModal('${r.immatriculation}')">✏️ Éditer</button>
       </div>
     `;
   }).join("");
-  
+
   revisionList.innerHTML = html;
 }
 
 function openAddRevisionModal() {
   const vehiculeSelect = document.getElementById("addRevisionVehicule");
-  const vehiculesAvailables = data.vehicules.filter(v => 
-    v.statut === "Actif" && !data.revisions.find(r => r.immatriculation === v.immatriculation)
+
+  const normalizeImmat = value =>
+    String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+  const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
+  const revisions = Array.isArray(data.revisions) ? data.revisions : [];
+
+  const vehiculesDisponibles = vehicules.filter(v =>
+    v.statut === "Actif" &&
+    !revisions.some(r =>
+      normalizeImmat(r.immatriculation) === normalizeImmat(v.immatriculation)
+    )
   );
-  
-  vehiculeSelect.innerHTML = '<option value="">-- Sélectionner un véhicule --</option>';
-  vehiculesAvailables.forEach(v => {
+
+  vehiculeSelect.innerHTML =
+    '<option value="">-- Sélectionner un véhicule --</option>';
+
+  vehiculesDisponibles.forEach(v => {
     const option = document.createElement("option");
     option.value = v.immatriculation;
-    option.textContent = `${v.marque} ${v.modele} - ${v.immatriculation}`;
+    option.textContent =
+      `${v.marque || ""} ${v.modele || ""} - ${v.immatriculation}`.trim();
     vehiculeSelect.appendChild(option);
   });
-  
-  if (vehiculesAvailables.length === 0) {
-    vehiculeSelect.innerHTML = '<option value="">Aucun véhicule disponible</option>';
+
+  if (vehiculesDisponibles.length === 0) {
+    vehiculeSelect.innerHTML =
+      '<option value="">Aucun véhicule disponible</option>';
     vehiculeSelect.disabled = true;
   } else {
     vehiculeSelect.disabled = false;
   }
-  
-  document.getElementById("addRevisionConducteur").value = "";
+
   document.getElementById("addRevisionDernierDate").value = "";
   document.getElementById("addRevisionProchainDate").value = "";
-  
+
   document.getElementById("addRevisionModal").classList.add("active");
 }
 
@@ -2721,7 +2782,17 @@ async function submitAddRevision() {
   if (isSubmitting) return;
   
   const immatriculation = document.getElementById("addRevisionVehicule").value;
-  const conducteur = document.getElementById("addRevisionConducteur").value;
+
+  const normalizeImmat = value =>
+    String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+  const vehicule = (Array.isArray(data.vehicules) ? data.vehicules : []).find(v =>
+    normalizeImmat(v.immatriculation) === normalizeImmat(immatriculation)
+  );
+
+  const conducteur = vehicule?.conducteur || "";
   const dernierDate = document.getElementById("addRevisionDernierDate").value;
   const prochainDate = document.getElementById("addRevisionProchainDate").value;
   
