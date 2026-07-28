@@ -2793,6 +2793,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 const APPS_SCRIPT_URL = "https://auto-ab-cors-proxy.onrender.com";
 
 let isSubmitting = false; // Protection contre double-clics
+let vehiculeModalReturnView = "vehiclesPage";
 
 let customConfirmResolver = null;
 
@@ -3648,6 +3649,7 @@ async function refreshCurrentPageAfterModalClose() {
 
 // ========== VÉHICULES ===========
 function openAddVehiculeModal() {
+  vehiculeModalReturnView = localStorage.getItem("activePageAB") || "vehiclesPage";
   // Réinitialiser l'état: on est en création, pas en modification
   window.editingImmat = null;
   
@@ -3671,13 +3673,10 @@ function closeVehiculeModal(skipRefresh = false) {
   setModalButtonsDisabled("vehiculeModal", false);
 
   const modal = document.getElementById("vehiculeModal");
-  if (modal) {
-    modal.classList.remove("active");
-  }
+  if (modal) modal.classList.remove("active");
 
   const archiveBtn = document.getElementById("btnArchiverVehicule");
   const deleteBtn = document.getElementById("btnDeleteVehiculeModal");
-
   if (archiveBtn) archiveBtn.style.display = "none";
   if (deleteBtn) deleteBtn.style.display = "none";
 
@@ -3691,31 +3690,19 @@ function closeVehiculeModal(skipRefresh = false) {
     submitBtn.textContent = "Enregistrer";
   }
 
-  // Réafficher immédiatement la page Véhicules :
-  // aucune attente réseau et aucun panneau blanc.
-  const management = document.getElementById("management");
-  const vehiclesPage = document.getElementById("vehiclesPage");
-  const revisionPage = document.getElementById("revisionPage");
-  const ctPage = document.getElementById("ctPage");
+  // Retourner exactement à la vue depuis laquelle la modale a été ouverte.
+  localStorage.setItem("activePageAB", vehiculeModalReturnView || "vehiclesPage");
+  displayActivePage();
 
-  if (management) management.style.display = "none";
-  if (vehiclesPage) vehiclesPage.style.display = "block";
-  if (revisionPage) revisionPage.style.display = "none";
-  if (ctPage) ctPage.style.display = "none";
-
-  localStorage.setItem("activePageAB", "vehiclesPage");
-
-  // Après Annuler, la liste déjà affichée reste visible.
-  // La synchronisation se fait ensuite silencieusement en arrière-plan.
   if (!skipRefresh) {
     window.setTimeout(async () => {
       try {
         await loadData();
-        renderVehiclesPage();
+        displayActivePage();
         checkCtAlerts();
         checkRevisionAlerts();
       } catch (error) {
-        console.error("Actualisation silencieuse véhicules :", error);
+        console.error("Actualisation silencieuse véhicule :", error);
       }
     }, 0);
   }
@@ -3790,9 +3777,19 @@ async function confirmDeleteVehiclePermanent() {
 
 async function archiveVehiculeFromModal() {
   const immat = window.currentVehiculeImmatriculation;
-  if (!immat) return;
+  if (!immat || isSubmitting) return;
 
-  if (!await showConfirm(`Archiver le véhicule ${immat} ?`, { title: "Archiver le véhicule", confirmText: "Archiver" })) return;
+  const confirmed = await showConfirm(`Archiver le véhicule ${immat} ?`, {
+    title: "Archiver le véhicule",
+    confirmText: "Archiver"
+  });
+  if (!confirmed) return;
+
+  isSubmitting = true;
+  setModalButtonsDisabled("vehiculeModal", true);
+  const vehicleModal = document.getElementById("vehiculeModal");
+  if (vehicleModal) vehicleModal.classList.remove("active");
+  showLoadingOverlay();
 
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
@@ -3802,21 +3799,30 @@ async function archiveVehiculeFromModal() {
         immatriculation: immat
       })
     });
-
     const result = await response.json();
-
     if (!response.ok || result.ok === false) {
       throw new Error(result.error || "Archivage impossible");
     }
 
-    closeVehiculeModal(true);
-    showMsg("Véhicule archivé ✅", "ok");
+    vehicleDetailImmat = null;
+    selectedVehicule = null;
+    localStorage.removeItem("activeVehicleAB");
+    localStorage.setItem("activePageAB", "vehiclesPage");
+
     await loadData();
-    renderVehiclesPage();
+    closeVehiculeModal(true);
+    displayActivePage();
     checkCtAlerts();
     checkRevisionAlerts();
+    showMsg("Véhicule archivé", "ok");
   } catch (err) {
+    vehiculeModalReturnView = localStorage.getItem("activePageAB") || "vehiclesPage";
+    if (vehicleModal) vehicleModal.classList.add("active");
     showMsg("Erreur : " + err.message, "err");
+  } finally {
+    isSubmitting = false;
+    setModalButtonsDisabled("vehiculeModal", false);
+    hideLoadingOverlay();
   }
 }
 
@@ -3886,14 +3892,22 @@ async function submitVehicule() {
       throw new Error(result.error || "Enregistrement impossible");
     }
 
-    closeVehiculeModal(true);
-    showMsg(`Véhicule ${wasEditing ? "modifié" : "ajouté"} ✅`, "ok");
+    const returnView = vehiculeModalReturnView || "vehiclesPage";
+    const savedImmat = result.immatriculation || immat;
 
-    // La page reste visible pendant la synchronisation.
+    if (returnView === "vehicleDetailPage" && wasEditing) {
+      vehicleDetailImmat = savedImmat;
+      selectedVehicule = savedImmat;
+      localStorage.setItem("activeVehicleAB", savedImmat);
+    }
+    localStorage.setItem("activePageAB", returnView);
+
+    closeVehiculeModal(true);
     await loadData();
-    renderVehiclesPage();
+    displayActivePage();
     checkCtAlerts();
     checkRevisionAlerts();
+    showMsg(`Véhicule ${wasEditing ? "modifié" : "ajouté"}`, "ok");
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
     isSubmitting = false;
@@ -4085,7 +4099,8 @@ function openEditVehiculeModal(immatriculation) {
   const v = data.vehicules.find(veh => veh.immatriculation === immatriculation);
   if (!v) return;
   
-  // IMPORTANT: Enregistrer qu'on est en modification
+  // Mémoriser la vue d'origine pour revenir au bon écran après Annuler/Enregistrer.
+  vehiculeModalReturnView = localStorage.getItem("activePageAB") || "vehiclesPage";
   window.editingImmat = immatriculation;
   
   document.getElementById("vehiculeModalTitle").textContent = "Modifier véhicule";
@@ -4102,8 +4117,6 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("btnDeleteVehiculeModal").style.display = "inline-flex";
   window.currentVehiculeImmatriculation = immatriculation;
   
-  // Faire un vrai truc: si tu modifies et enregistres, ça va updater
-  closeVehicleManagementModal();
 }
 
 async function exitVehicleFromModal() {
@@ -5587,7 +5600,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.34';
+  const APP_VERSION = 'v8.35';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
@@ -5612,6 +5625,7 @@ async function archiveItem(action, immatriculation, label) {
       const annee = clean(document.getElementById('vehiculeAnnee')?.value);
       const conducteur = clean(document.getElementById('vehiculeConducteur')?.value);
       const statut = clean(document.getElementById('vehiculeStatut')?.value || 'Actif');
+      const kilometrage = clean(document.getElementById('vehiculeKilometrage')?.value);
 
       if (!window.editingImmat && !immat && !vehicule && !annee && !conducteur) {
         closeVehiculeModal(true);
@@ -5629,6 +5643,7 @@ async function archiveItem(action, immatriculation, label) {
             vehicule === currentVehicle &&
             annee === clean(current.annee) &&
             conducteur === clean(current.conducteur) &&
+            kilometrage === clean(current.kilometrage ?? current.km) &&
             statut === clean(current.statut || 'Actif');
           if (unchanged) {
             closeVehiculeModal(true);
