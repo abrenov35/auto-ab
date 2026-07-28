@@ -2118,7 +2118,17 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 }
 
 
-/* V8.33 — mode hors ligne anti-503 */
+/* V8.34 — kilométrage visible directement dans l'en-tête */
+.vehicle-detail-km{
+  color:#344054;
+  font-variant-numeric:tabular-nums;
+}
+.vehicle-detail-km i{color:#0d5aa8;}
+@media(max-width:1050px){
+  .vehicle-detail-mainline{gap:10px!important;}
+}
+
+/* V8.34 — mode hors ligne anti-503 conservé */
 #offlineNotice{
   position:fixed;
   left:50%;
@@ -2204,7 +2214,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.33</span>
+      <span class="version" id="appVersionBadge">v8.34</span>
     </div>
   </div>
 
@@ -2422,6 +2432,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-group">
       <label>Conducteur</label>
       <input type="text" id="vehiculeConducteur" placeholder="Ex: Jean Dupont">
+    </div>
+
+    <div class="form-group">
+      <label>Kilométrage</label>
+      <input type="number" id="vehiculeKilometrage" placeholder="Ex: 183450" min="0" step="1" inputmode="numeric">
     </div>
     
     <div class="form-group">
@@ -3641,6 +3656,7 @@ function openAddVehiculeModal() {
   document.getElementById("vehiculeVehicule").value = "";
   document.getElementById("vehiculeAnnee").value = "";
   document.getElementById("vehiculeConducteur").value = "";
+  document.getElementById("vehiculeKilometrage").value = "";
   document.getElementById("vehiculeStatut").value = "Actif";
 
   const archiveBtn = document.getElementById("btnArchiverVehicule");
@@ -3811,6 +3827,8 @@ async function submitVehicule() {
   const vehicule = document.getElementById("vehiculeVehicule").value.trim();
   const annee = document.getElementById("vehiculeAnnee").value;
   const conducteur = document.getElementById("vehiculeConducteur").value.trim();
+  const kilometrageInput = document.getElementById("vehiculeKilometrage").value;
+  const kilometrage = kilometrageInput === "" ? "" : Math.max(0, Math.trunc(Number(kilometrageInput)));
   const statut = document.getElementById("vehiculeStatut").value;
   const wasEditing = Boolean(window.editingImmat);
 
@@ -3853,6 +3871,7 @@ async function submitVehicule() {
       modele,
       annee,
       conducteur,
+      kilometrage,
       statut
     };
 
@@ -4074,6 +4093,7 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("vehiculeVehicule").value = v.marque + " " + v.modele;
   document.getElementById("vehiculeAnnee").value = v.annee || "";
   document.getElementById("vehiculeConducteur").value = v.conducteur || "";
+  document.getElementById("vehiculeKilometrage").value = v.kilometrage ?? v.km ?? "";
   document.getElementById("vehiculeStatut").value = v.statut;
   document.getElementById("vehiculeModal").classList.add("active");
   
@@ -5327,6 +5347,11 @@ function formatFrDate(value){
   const d=new Date(value);
   return Number.isNaN(d.getTime()) ? safeText(value) : d.toLocaleDateString('fr-FR');
 }
+function formatKilometrage(value){
+  if(value === null || value === undefined || value === '') return '— km';
+  const n = Number(String(value).replace(/\s/g,''));
+  return Number.isFinite(n) ? `${Math.max(0, Math.trunc(n)).toLocaleString('fr-FR')} km` : `${safeText(value)} km`;
+}
 function populateVehicleQuickSelect(){
   const select=document.getElementById('vehicleQuickSelect');
   if(!select) return;
@@ -5364,16 +5389,16 @@ function renderVehicleDetailPage(){
       <span class="vehicle-detail-title"><i class="bi bi-truck"></i> ${safeText(`${vehicle.marque||''} ${vehicle.modele||''}`.trim() || 'Véhicule')}</span>
       <span class="vehicle-detail-immat">${safeText(immat)}</span>
       <span class="vehicle-detail-separator">•</span>
-      <span class="vehicle-detail-inline"><i class="bi bi-calendar3"></i> ${safeText(vehicle.annee||'—')}</span>
-      <span class="vehicle-detail-separator">•</span>
       <span class="vehicle-detail-inline"><i class="bi bi-person"></i> ${safeText(vehicle.conducteur||'—')}</span>
+      <span class="vehicle-detail-separator">•</span>
+      <span class="vehicle-detail-inline vehicle-detail-km"><i class="bi bi-speedometer2"></i> ${formatKilometrage(vehicle.kilometrage ?? vehicle.km)}</span>
       <span class="vehicle-detail-separator">•</span>
       <span class="vehicle-detail-status"><span class="vehicle-status-dot"></span>${safeText(vehicle.statut||'Actif')}</span>
     </div>
     <button class="vehicle-outline-action vehicle-edit-main" onclick="openEditVehiculeModal('${safeText(immat)}')" title="Modifier le véhicule"><i class="bi bi-pencil"></i> Modifier</button>
   </div>`;
   const rev=(Array.isArray(data?.revisions)?data.revisions:[]).find(r=>r.immatriculation===immat && r.statut!=='Archivé');
-  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Conducteur</span><span class="vehicle-info-value">${safeText(rev.conducteur||vehicle.conducteur||'—')}</span></div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
+  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span></div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
   const ct=(Array.isArray(data?.controlsTk)?data.controlsTk:[]).find(c=>c.immatriculation===immat && c.statut!=='Archivé');
   const ctDaysLeft = ct ? calculateDaysUntilCT(ct.prochainDate) : null;
   const ctAlertClass = ctDaysLeft !== null && ctDaysLeft <= 30 ? ' vehicle-ct-alert' : '';
@@ -5562,7 +5587,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.33';
+  const APP_VERSION = 'v8.34';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
