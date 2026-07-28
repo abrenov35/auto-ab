@@ -2117,6 +2117,29 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   }
 }
 
+
+/* V8.33 — mode hors ligne anti-503 */
+#offlineNotice{
+  position:fixed;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  z-index:9500;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  max-width:min(620px,calc(100vw - 28px));
+  padding:8px 12px;
+  border:1px solid #f3c969;
+  border-radius:8px;
+  background:#fff8e6;
+  color:#7a4d00;
+  font-size:12px;
+  font-weight:600;
+  box-shadow:0 5px 18px rgba(0,0,0,.12);
+}
+#offlineNotice[hidden]{display:none !important;}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2165,6 +2188,12 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 </div>
 
 
+
+<div id="offlineNotice" hidden role="status">
+  <i class="bi bi-cloud-slash"></i>
+  <span id="offlineNoticeText">Mode hors ligne</span>
+</div>
+
 <div id="syncIndicator" class="sync-indicator" hidden>
   <i class="bi bi-arrow-repeat"></i>
   Mise à jour
@@ -2175,7 +2204,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.32</span>
+      <span class="version" id="appVersionBadge">v8.33</span>
     </div>
   </div>
 
@@ -2855,18 +2884,12 @@ const DATA_CACHE_KEY = "abParcAutoDataCache";
 
 function readDataCache() {
   try {
-    const cached = sessionStorage.getItem(DATA_CACHE_KEY);
+    const cached = localStorage.getItem(DATA_CACHE_KEY);
     if (!cached) return null;
 
     const parsed = JSON.parse(cached);
 
     if (!parsed || !parsed.data || !parsed.savedAt) {
-      return null;
-    }
-
-    // Cache valable pendant 15 minutes.
-    if (Date.now() - parsed.savedAt > 15 * 60 * 1000) {
-      sessionStorage.removeItem(DATA_CACHE_KEY);
       return null;
     }
 
@@ -2879,7 +2902,7 @@ function readDataCache() {
 
 function writeDataCache(value) {
   try {
-    sessionStorage.setItem(
+    localStorage.setItem(
       DATA_CACHE_KEY,
       JSON.stringify({
         savedAt: Date.now(),
@@ -2990,6 +3013,19 @@ async function init() {
   }, 60000);
 }
 
+
+function showOfflineNotice(message) {
+  const notice = document.getElementById("offlineNotice");
+  const label = document.getElementById("offlineNoticeText");
+  if (label) label.textContent = message;
+  if (notice) notice.hidden = false;
+}
+
+function hideOfflineNotice() {
+  const notice = document.getElementById("offlineNotice");
+  if (notice) notice.hidden = true;
+}
+
 async function loadData() {
   const syncIndicator = document.getElementById("syncIndicator");
   const isInitialBoot = document.body.classList.contains("app-booting");
@@ -3033,19 +3069,33 @@ async function loadData() {
     console.log("Nombre de contrôles techniques:", data.controlsTk.length);
 
     writeDataCache(data);
+    hideOfflineNotice();
   } catch (err) {
     console.error("Erreur de chargement:", err);
 
-    // Conserver une structure exploitable afin d'éviter les erreurs .find()/.forEach().
-    data = {
-      vehicules: [],
-      documents: [],
-      categories: [],
-      revisions: [],
-      controlsTk: []
-    };
+    // Ne jamais effacer les données affichées en cas de panne du proxy.
+    const cachedData = readDataCache();
 
-    showMsg("Erreur de chargement des données", "err");
+    if (cachedData) {
+      data = cachedData;
+      showOfflineNotice("Serveur indisponible : affichage des dernières données enregistrées");
+    } else if (!data || !Array.isArray(data.vehicules)) {
+      data = {
+        vehicules: [],
+        documents: [],
+        categories: [],
+        revisions: [],
+        controlsTk: []
+      };
+      showOfflineNotice("Serveur indisponible et aucune donnée locale disponible");
+    } else {
+      showOfflineNotice("Serveur indisponible : les données affichées sont conservées");
+    }
+
+    // Propager l'erreur uniquement si aucune donnée n'est disponible.
+    if (!cachedData && (!data.vehicules || data.vehicules.length === 0)) {
+      throw err;
+    }
   } finally {
     if (syncIndicator) {
       syncIndicator.hidden = true;
@@ -5512,7 +5562,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.32';
+  const APP_VERSION = 'v8.33';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
