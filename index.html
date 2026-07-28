@@ -1292,6 +1292,74 @@
       }
     }
 
+  
+    /* ===== V7.6 : COLONNES D'ÉCHÉANCE PLUS AÉRÉES ===== */
+    #revisionPageList,
+    #ctPageList {
+      grid-template-columns:
+        minmax(180px, 1.35fr)
+        minmax(130px, 0.9fr)
+        minmax(130px, 0.9fr)
+        minmax(130px, 1fr)
+        220px
+        132px !important;
+    }
+
+    .ab-date-cell {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100%;
+      box-sizing: border-box;
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+      gap: 20px !important;
+      white-space: nowrap;
+    }
+
+    .ab-date-cell .date {
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .ab-days-badge {
+      flex: 0 0 56px !important;
+      min-width: 56px !important;
+      height: 22px !important;
+      margin: 0 !important;
+      padding: 0 10px !important;
+      box-sizing: border-box;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      #revisionPageList,
+      #ctPageList {
+        grid-template-columns:
+          minmax(150px, 1.3fr)
+          minmax(120px, .9fr)
+          minmax(120px, .9fr)
+          minmax(120px, 1fr)
+          190px
+          116px !important;
+      }
+
+      .ab-date-cell {
+        gap: 14px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+      }
+
+      .ab-days-badge {
+        flex-basis: 52px !important;
+        min-width: 52px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1308,7 +1376,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v7.5</span>
+      <span class="version">v7.6</span>
     </div>
   </div>
 
@@ -3069,7 +3137,10 @@ function renderRevisionPage() {
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.immatriculation}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.conducteur || "—"}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div class="ab-table-cell ab-date-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.prochainDate ? new Date(r.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span class="ab-days-badge" style="border:1px solid ${color};color:${color};">${days} j</span>`}</div>
+      <div class="ab-table-cell ab-date-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">
+        <span class="date">${r.prochainDate ? new Date(r.prochainDate).toLocaleDateString("fr-FR") : "—"}</span>
+        ${days === null ? "" : `<span class="ab-days-badge" style="border:1px solid ${color};color:${color};">${days} j</span>`}
+      </div>
       <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
@@ -3358,7 +3429,10 @@ function renderCtPage() {
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.immatriculation}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.conducteur || "—"}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div class="ab-table-cell ab-date-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span class="ab-days-badge" style="border:1px solid ${color};color:${color};">${days} j</span>`}</div>
+      <div class="ab-table-cell ab-date-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">
+        <span class="date">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"}</span>
+        ${days === null ? "" : `<span class="ab-days-badge" style="border:1px solid ${color};color:${color};">${days} j</span>`}
+      </div>
       <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
