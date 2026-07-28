@@ -954,11 +954,36 @@
   
     /* ===== UI V7.1 : TABLEAUX ET ACTIONS UNIFORMES ===== */
     .toolbar {
-      justify-content: flex-start;
-      gap: 12px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+      align-items: center;
+      gap: 16px;
+      overflow: visible;
+    }
+
+    .toolbar-brand {
+      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .toolbar-brand h1 {
+      margin: 0;
+    }
+
+    .toolbar-brand .version {
+      font-size: 11px;
+      opacity: 0.75;
+      background: rgba(255,255,255,0.10);
+      padding: 2px 7px;
+      border-radius: 999px;
+      white-space: nowrap;
     }
 
     .toolbar-nav {
+      justify-self: center;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -968,9 +993,7 @@
       background: rgba(255,255,255,0.08);
     }
 
-    .toolbar .version {
-      margin-left: auto;
-    }
+
 
     .alert-inner {
       width: 100%;
@@ -1035,6 +1058,9 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      pointer-events: auto;
+      position: relative;
+      z-index: 2;
       transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
       font-size: 15px;
       line-height: 1;
@@ -1059,7 +1085,14 @@
 
     @media (max-width: 900px) {
       .toolbar {
-        align-items: flex-start;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .toolbar-brand,
+      .toolbar-nav {
+        justify-self: center;
       }
 
       .toolbar-nav {
@@ -1091,13 +1124,15 @@
 </div>
 
 <div class="toolbar">
-  <h1>🚗 AB PARC AUTO</h1>
+  <div class="toolbar-brand">
+    <h1>🚗 AB PARC AUTO</h1>
+</div>
   <div class="toolbar-nav">
     <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
     <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
     <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🛡️ Contrôle Technique</button>
   </div>
-  <span class="version">v7.1</span>
+  <span class="version">v7.2</span>
 </div>
 
 <!-- ALERTE CT -->
@@ -2421,8 +2456,8 @@ function renderVehiclesPage() {
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.conducteur || "—"}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"}</div>
     <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">
-      <button class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditVehiculeModal('${v.immatriculation}')"><i class="bi bi-pencil"></i></button>
-      <button class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveVehicule','${v.immatriculation}','Véhicule')"><i class="bi bi-archive"></i></button>
+      <button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditVehiculeModal('${v.immatriculation}')"><i class="bi bi-pencil"></i></button>
+      <button type="button" class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveVehicule','${v.immatriculation}','Véhicule')"><i class="bi bi-archive"></i></button>
     </div>
   `).join("");
 
@@ -2432,7 +2467,7 @@ function renderVehiclesPage() {
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.conducteur || "—"}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">Archivé</div>
     <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;justify-content:flex-end;">
-      <button class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreVehicule','${v.immatriculation}','Véhicule')"><i class="bi bi-arrow-counterclockwise"></i></button>
+      <button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreVehicule','${v.immatriculation}','Véhicule')"><i class="bi bi-arrow-counterclockwise"></i></button>
     </div>
   `).join("");
 
@@ -2830,9 +2865,9 @@ function renderRevisionPage() {
       : null;
     const color = days !== null && days < 0 ? "#d32f2f" : days !== null && days < 30 ? "#f57c00" : "#2e7d46";
     const action = archived
-      ? `<button class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`
-      : `<button class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>
-         <button class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveRevision','${r.immatriculation}','Révision')"><i class="bi bi-archive"></i></button>`;
+      ? `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`
+      : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>
+         <button type="button" class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveRevision','${r.immatriculation}','Révision')"><i class="bi bi-archive"></i></button>`;
 
     return `
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${r.marque} ${r.modele}</div>
@@ -3118,10 +3153,10 @@ function renderCtPage() {
     const days = calculateDaysUntilCT(ct.prochainDate);
     const color = days !== null && days <= 0 ? "#d32f2f" : days !== null && days <= 30 ? "#f57c00" : "#2e7d46";
     const action = archived
-      ? `<button class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreControleTk','${ct.immatriculation}','Contrôle technique')"><i class="bi bi-arrow-counterclockwise"></i></button>`
-      : `<button class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openCtEditModal('${ct.immatriculation}')"><i class="bi bi-pencil"></i></button>
-         <button class="ab-icon-btn view" title="Voir" aria-label="Voir" onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')"><i class="bi bi-eye"></i></button>
-         <button class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveControleTk','${ct.immatriculation}','Contrôle technique')"><i class="bi bi-archive"></i></button>`;
+      ? `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreControleTk','${ct.immatriculation}','Contrôle technique')"><i class="bi bi-arrow-counterclockwise"></i></button>`
+      : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openCtEditModal('${ct.immatriculation}')"><i class="bi bi-pencil"></i></button>
+         <button type="button" class="ab-icon-btn view" title="Voir" aria-label="Voir" onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')"><i class="bi bi-eye"></i></button>
+         <button type="button" class="ab-icon-btn archive" title="Archiver" aria-label="Archiver" onclick="archiveItem('archiveControleTk','${ct.immatriculation}','Contrôle technique')"><i class="bi bi-archive"></i></button>`;
 
     return `
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${ct.marque} ${ct.modele}</div>
@@ -3682,32 +3717,84 @@ function showLoadingAndReload() {
 // Initialiser l'app au chargement
 init();
 async function archiveItem(action, immatriculation, label) {
-  const isRestore = action.startsWith("restore");
-  const verb = isRestore ? "restaurer" : "archiver";
+  const isRestore = String(action).startsWith("restore");
+  const operationLabel = isRestore ? "Restaurer" : "Archiver";
 
-  if (!confirm(`${verb.charAt(0).toUpperCase() + verb.slice(1)} ${label.toLowerCase()} ${immatriculation} ?`)) {
+  if (!action || !immatriculation) {
+    showMsg("Action d’archivage incomplète", "err");
     return;
   }
+
+  if (!confirm(`${operationLabel} ${label.toLowerCase()} ${immatriculation} ?`)) {
+    return;
+  }
+
+  const buttons = document.querySelectorAll(".ab-icon-btn");
+  buttons.forEach(button => {
+    button.disabled = true;
+    button.style.opacity = "0.55";
+  });
 
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
       body: JSON.stringify({
-        action,
-        immatriculation
+        action: action,
+        immatriculation: immatriculation
       })
     });
 
-    const result = await response.json();
+    const responseText = await response.text();
 
-    if (!response.ok || result.ok === false) {
-      throw new Error(result.error || "Opération impossible");
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error(
+        "Le serveur n’a pas renvoyé du JSON. Vérifie le déploiement GAS v10."
+      );
     }
 
-    showMsg(`${label} ${isRestore ? "restauré" : "archivé"} ✅`, "ok");
-    showLoadingAndReload();
+    if (!response.ok || result.ok === false) {
+      const serverMessage = result.error || result.message || "Opération impossible";
+
+      if (
+        serverMessage.toLowerCase().includes("inconnue") ||
+        serverMessage.toLowerCase().includes("unknown")
+      ) {
+        throw new Error(
+          "Le GAS déployé ne contient pas encore l’archivage. Déploie AB-PARC-AUTO-GAS-v10."
+        );
+      }
+
+      throw new Error(serverMessage);
+    }
+
+    showMsg(
+      `${label} ${isRestore ? "restauré" : "archivé"} ✅`,
+      "ok"
+    );
+
+    await loadData();
+
+    const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+    if (activePage === "vehiclesPage") renderVehiclesPage();
+    if (activePage === "revisionPage") renderRevisionPage();
+    if (activePage === "ctPage") renderCtPage();
+
+    checkCtAlerts();
+    checkRevisionAlerts();
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
+    console.error("Archivage :", err);
+  } finally {
+    buttons.forEach(button => {
+      button.disabled = false;
+      button.style.opacity = "1";
+    });
   }
 }
 
