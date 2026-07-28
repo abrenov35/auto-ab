@@ -2159,6 +2159,7 @@
       <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
       <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
       <button id="btnArchiveRevisionModal" class="btn" title="Archiver la révision" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveRevisionFromModal()"><i class="bi bi-archive"></i> Archiver</button>
+      <button id="btnDeleteRevisionModal" class="btn" title="Supprimer définitivement la révision" style="display:none; background:transparent; color:#d32f2f; border:1px solid #d32f2f;" onclick="deleteRevisionFromModal()"><i class="bi bi-trash"></i> Supprimer</button>
     </div>
   </div>
 </div>
@@ -3951,6 +3952,8 @@ function openAddRevisionModal() {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "none";
+  const deleteBtn = document.getElementById("btnDeleteRevisionModal");
+  if (deleteBtn) deleteBtn.style.display = "none";
 
   const normalizeImmat = value =>
     String(value || "")
@@ -4006,6 +4009,8 @@ async function closeAddRevisionModal(skipRefresh = false) {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "none";
+  const deleteBtn = document.getElementById("btnDeleteRevisionModal");
+  if (deleteBtn) deleteBtn.style.display = "none";
 
   if (!skipRefresh) {
     await refreshCurrentPageAfterModalClose();
@@ -4112,6 +4117,8 @@ function openEditRevisionModal(immatriculation) {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "inline-flex";
+  const deleteBtn = document.getElementById("btnDeleteRevisionModal");
+  if (deleteBtn) deleteBtn.style.display = "inline-flex";
 
   vehiculeSelect.innerHTML = "";
   const option = document.createElement("option");
@@ -4153,6 +4160,38 @@ async function deleteRevision(immatriculation) {
     showLoadingAndReload();
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
+  }
+}
+
+async function deleteRevisionFromModal() {
+  if (!editingRevisionImmat) {
+    showMsg("Aucune révision sélectionnée", "err");
+    return;
+  }
+
+  const immatriculation = editingRevisionImmat;
+  if (!await showConfirm(`Supprimer définitivement la révision de ${immatriculation} ?`, {
+    title: "Supprimer la révision",
+    confirmText: "Supprimer",
+    danger: true
+  })) return;
+
+  try {
+    setModalButtonsDisabled("addRevisionModal", true);
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "deleteRevision", immatriculation })
+    });
+    const result = await response.json();
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || "Suppression impossible");
+    }
+    await closeAddRevisionModal(true);
+    showMsg("Révision supprimée ✅", "ok");
+    await refreshCurrentPageAfterModalClose();
+  } catch (error) {
+    setModalButtonsDisabled("addRevisionModal", false);
+    showMsg("Erreur : " + error.message, "err");
   }
 }
 
