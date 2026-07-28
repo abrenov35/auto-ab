@@ -1596,15 +1596,65 @@
       backdrop-filter: none !important;
     }
 
+  
+    /* ===== V8.6 : LOADER INITIAL INFAILLIBLE ===== */
+    #loadingMessage[hidden] {
+      display: none !important;
+    }
+
+    @keyframes loadingHourglass {
+      0%, 100% { transform: rotate(0deg); opacity: 1; }
+      50% { transform: rotate(180deg); opacity: .72; }
+    }
+
+    body.app-booting > :not(#loadingMessage) {
+      visibility: hidden !important;
+    }
+
   </style>
 </head>
 <body class="app-booting is-loading">
 
 <!-- MESSAGE DE CHARGEMENT -->
-<div id="loadingMessage" class="loading-overlay active" aria-live="polite" aria-busy="true">
-  <div class="loading-card">
-    <div class="loading-hourglass">⌛</div>
-    <div class="loading-title">Chargement en cours</div>
+<div
+  id="loadingMessage"
+  aria-live="polite"
+  aria-busy="true"
+  style="
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#f5f7fa;
+  "
+>
+  <div
+    style="
+      width:auto;
+      min-width:190px;
+      max-width:260px;
+      padding:18px 24px;
+      border:1px solid #dfe5ec;
+      border-radius:12px;
+      background:#ffffff;
+      box-shadow:0 10px 28px rgba(13,58,102,.18);
+      text-align:center;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+    "
+  >
+    <div
+      style="
+        font-size:34px;
+        line-height:1;
+        margin-bottom:10px;
+        animation:loadingHourglass 1.2s ease-in-out infinite;
+      "
+    >⌛</div>
+    <div style="font-size:14px;font-weight:700;color:#0d3a66;">
+      Chargement en cours
+    </div>
   </div>
 </div>
 
@@ -1613,7 +1663,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.5</span>
+      <span class="version">v8.6</span>
     </div>
   </div>
 
@@ -2178,7 +2228,10 @@ let editingRevisionImmat = null;
 // ========== INIT ==========
 function showLoadingOverlay() {
   const overlay = document.getElementById("loadingMessage");
-  if (overlay) overlay.classList.add("active");
+  if (overlay) {
+    overlay.hidden = false;
+    overlay.style.display = "flex";
+  }
   document.body.classList.add("is-loading");
 }
 
@@ -2189,7 +2242,8 @@ function hideLoadingOverlay() {
   document.body.classList.remove("is-loading");
 
   if (overlay) {
-    overlay.classList.remove("active");
+    overlay.hidden = true;
+    overlay.style.display = "none";
   }
 }
 
@@ -2236,13 +2290,6 @@ async function init() {
       document.getElementById("vehiclesPage").style.display = "none";
       document.getElementById("revisionPage").style.display = "none";
       document.getElementById("ctPage").style.display = "block";
-    }
-  
-    // Cacher le message de chargement une fois que tout est prêt
-    const loadingMsg = document.getElementById("loadingMessage");
-    if (loadingMsg) {
-  let data = {};
-      loadingMsg.style.display = "none";
     }
   } catch (error) {
     console.error("Erreur d'initialisation :", error);
@@ -4615,7 +4662,6 @@ async function archiveItem(action, immatriculation, label) {
   }
 }
 
-window.addEventListener("load", hideLoadingOverlay);
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
