@@ -1516,7 +1516,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.2</span>
+      <span class="version">v8.3</span>
     </div>
   </div>
 
@@ -2727,14 +2727,17 @@ function openAddVehiculeModal() {
   document.getElementById("vehiculeModal").classList.add("active");
 }
 
-async function closeVehiculeModal(skipRefresh = false) {
+function closeVehiculeModal(skipRefresh = false) {
   setModalButtonsDisabled("vehiculeModal", false);
 
   const modal = document.getElementById("vehiculeModal");
-  if (modal) modal.classList.remove("active");
+  if (modal) {
+    modal.classList.remove("active");
+  }
 
   const archiveBtn = document.getElementById("btnArchiverVehicule");
   const deleteBtn = document.getElementById("btnDeleteVehiculeModal");
+
   if (archiveBtn) archiveBtn.style.display = "none";
   if (deleteBtn) deleteBtn.style.display = "none";
 
@@ -2748,11 +2751,35 @@ async function closeVehiculeModal(skipRefresh = false) {
     submitBtn.textContent = "Enregistrer";
   }
 
+  // Réafficher immédiatement la page Véhicules :
+  // aucune attente réseau et aucun panneau blanc.
+  const management = document.getElementById("management");
+  const vehiclesPage = document.getElementById("vehiclesPage");
+  const revisionPage = document.getElementById("revisionPage");
+  const ctPage = document.getElementById("ctPage");
+
+  if (management) management.style.display = "none";
+  if (vehiclesPage) vehiclesPage.style.display = "block";
+  if (revisionPage) revisionPage.style.display = "none";
+  if (ctPage) ctPage.style.display = "none";
+
+  localStorage.setItem("activePageAB", "vehiclesPage");
+
+  // Après Annuler, la liste déjà affichée reste visible.
+  // La synchronisation se fait ensuite silencieusement en arrière-plan.
   if (!skipRefresh) {
-    await refreshCurrentPageAfterModalClose();
+    window.setTimeout(async () => {
+      try {
+        await loadData();
+        renderVehiclesPage();
+        checkCtAlerts();
+        checkRevisionAlerts();
+      } catch (error) {
+        console.error("Actualisation silencieuse véhicules :", error);
+      }
+    }, 0);
   }
 }
-
 
 function openDeleteVehicleConfirmModal() {
   const immatriculation = window.currentVehiculeImmatriculation;
@@ -2805,9 +2832,12 @@ async function confirmDeleteVehiclePermanent() {
     }
 
     closeDeleteVehicleConfirmModal();
-    await closeVehiculeModal(true);
+    closeVehiculeModal(true);
     showMsg("Véhicule supprimé définitivement", "ok");
-    await refreshCurrentPageAfterModalClose();
+    await loadData();
+    renderVehiclesPage();
+    checkCtAlerts();
+    checkRevisionAlerts();
   } catch (error) {
     showMsg("Erreur : " + error.message, "err");
   } finally {
@@ -2839,9 +2869,12 @@ async function archiveVehiculeFromModal() {
       throw new Error(result.error || "Archivage impossible");
     }
 
-    await closeVehiculeModal(true);
+    closeVehiculeModal(true);
     showMsg("Véhicule archivé ✅", "ok");
-    await refreshCurrentPageAfterModalClose();
+    await loadData();
+    renderVehiclesPage();
+    checkCtAlerts();
+    checkRevisionAlerts();
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
   }
@@ -2910,9 +2943,14 @@ async function submitVehicule() {
       throw new Error(result.error || "Enregistrement impossible");
     }
 
-    await closeVehiculeModal(true);
+    closeVehiculeModal(true);
     showMsg(`Véhicule ${wasEditing ? "modifié" : "ajouté"} ✅`, "ok");
-    await refreshCurrentPageAfterModalClose();
+
+    // La page reste visible pendant la synchronisation.
+    await loadData();
+    renderVehiclesPage();
+    checkCtAlerts();
+    checkRevisionAlerts();
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
     isSubmitting = false;
