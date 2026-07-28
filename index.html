@@ -1500,15 +1500,76 @@
       }
     }
 
+  
+    /* ===== V8.4 : CHARGEMENT SANS BANDEAU BLANC ===== */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(245, 247, 250, 0.72);
+      backdrop-filter: blur(1px);
+      z-index: 10000;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-card {
+      min-width: 220px;
+      padding: 20px 26px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid #e3e8ef;
+      box-shadow: 0 12px 30px rgba(13, 58, 102, 0.18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .loading-hourglass {
+      font-size: 34px;
+      line-height: 1;
+      animation: loadingHourglass 1.2s ease-in-out infinite;
+    }
+
+    .loading-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0d3a66;
+    }
+
+    @keyframes loadingHourglass {
+      0%, 100% { transform: rotate(0deg); opacity: 1; }
+      50% { transform: rotate(180deg); opacity: .72; }
+    }
+
+    /* Évite l'apparition d'un grand panneau vide pendant les rechargements */
+    #management,
+    #vehiclesPage,
+    #revisionPage,
+    #ctPage {
+      min-height: 0 !important;
+    }
+
+    body.is-loading {
+      overflow: hidden;
+    }
+
   </style>
 </head>
 <body>
 
-<!-- MESSAGE DE CHARGEMENT (Mise à jour des informations) -->
-<div id="loadingMessage" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 40px 60px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 9999; text-align: center; display: none; min-width: 300px;">
-  <div style="font-size: 48px; margin-bottom: 16px; animation: pulse 1.5s ease-in-out infinite;">⏳</div>
-  <div style="font-size: 16px; font-weight: 600; color: #1976d2; margin-bottom: 8px;">Mise à jour des informations</div>
-  <div style="font-size: 13px; color: #999;">Actualisation en cours...</div>
+<!-- MESSAGE DE CHARGEMENT -->
+<div id="loadingMessage" class="loading-overlay" aria-live="polite" aria-busy="true">
+  <div class="loading-card">
+    <div class="loading-hourglass">⌛</div>
+    <div class="loading-title">Chargement en cours</div>
+  </div>
 </div>
 
 <header class="app-header">
@@ -1516,7 +1577,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.3</span>
+      <span class="version">v8.4</span>
     </div>
   </div>
 
@@ -2079,7 +2140,20 @@ let editingCtImmat = null;
 let editingRevisionImmat = null;
 
 // ========== INIT ==========
+function showLoadingOverlay() {
+  const overlay = document.getElementById("loadingMessage");
+  if (overlay) overlay.classList.add("active");
+  document.body.classList.add("is-loading");
+}
+
+function hideLoadingOverlay() {
+  const overlay = document.getElementById("loadingMessage");
+  if (overlay) overlay.classList.remove("active");
+  document.body.classList.remove("is-loading");
+}
+
 async function init() {
+  showLoadingOverlay();
   await loadData();
   checkCtAlerts();
   checkRevisionAlerts();
@@ -2127,6 +2201,7 @@ async function init() {
 let data = {};
     loadingMsg.style.display = "none";
   }
+  hideLoadingOverlay();
 }
 
 async function loadData() {
@@ -2665,6 +2740,7 @@ function openUploadCtModal() {
 
 
 async function refreshCurrentPageAfterModalClose() {
+  showLoadingOverlay();
   const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
 
   try {
@@ -2704,6 +2780,8 @@ async function refreshCurrentPageAfterModalClose() {
     checkRevisionAlerts();
   } catch (error) {
     console.error("Actualisation des alertes :", error);
+  } finally {
+    hideLoadingOverlay();
   }
 }
 
@@ -4328,13 +4406,11 @@ function showMsg(text, type) {
 }
 
 function showLoadingAndReload() {
-  // Afficher le message de chargement
-  const loadingMsg = document.getElementById("loadingMessage");
-  if (loadingMsg) {
-    loadingMsg.style.display = "block";
-  }
-  // Attendre un peu avant de recharger
-  setTimeout(() => location.reload(), 300);
+  showLoadingOverlay();
+
+  window.setTimeout(() => {
+    window.location.reload();
+  }, 120);
 }
 
 // Initialiser l'app au chargement
@@ -4491,6 +4567,7 @@ async function archiveItem(action, immatriculation, label) {
   }
 }
 
+window.addEventListener("load", hideLoadingOverlay);
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
