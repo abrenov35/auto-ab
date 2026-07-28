@@ -1457,6 +1457,49 @@
       gap: 6px;
     }
 
+  
+    /* ===== V8.2 : BOUTONS DES POPUPS CENTRÉS ===== */
+    #vehiculeModal .form-actions,
+    #addRevisionModal .form-actions,
+    #ctEditModal .form-actions,
+    #addCtModal .form-actions,
+    #docModal .form-actions,
+    #deleteVehicleConfirmModal .form-actions {
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 12px !important;
+      flex-wrap: wrap !important;
+      width: 100%;
+      margin-top: 24px !important;
+    }
+
+    #vehiculeModal .form-actions .btn,
+    #addRevisionModal .form-actions .btn,
+    #ctEditModal .form-actions .btn,
+    #addCtModal .form-actions .btn,
+    #docModal .form-actions .btn,
+    #deleteVehicleConfirmModal .form-actions .btn {
+      min-width: 120px;
+      height: 42px;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 0 !important;
+    }
+
+    @media (max-width: 620px) {
+      #vehiculeModal .form-actions .btn,
+      #addRevisionModal .form-actions .btn,
+      #ctEditModal .form-actions .btn,
+      #addCtModal .form-actions .btn,
+      #docModal .form-actions .btn,
+      #deleteVehicleConfirmModal .form-actions .btn {
+        min-width: calc(50% - 6px);
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1473,7 +1516,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.1</span>
+      <span class="version">v8.2</span>
     </div>
   </div>
 
