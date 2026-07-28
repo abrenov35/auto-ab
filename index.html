@@ -2000,6 +2000,20 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   z-index:1;
 }
 
+
+/* V8.26 — Liens natifs de navigation */
+.app-nav a.btn-toolbar{
+  text-decoration:none !important;
+  pointer-events:auto !important;
+  cursor:pointer !important;
+  user-select:none;
+}
+.app-nav a.btn-toolbar:visited{color:#fff;}
+.app-nav a.btn-toolbar.active{
+  outline:2px solid rgba(255,255,255,.45);
+  outline-offset:1px;
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2058,25 +2072,22 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.24</span>
+      <span class="version" id="appVersionBadge">v8.26</span>
     </div>
   </div>
 
   <nav class="app-nav" aria-label="Navigation principale">
-    <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="return abGoPage('vehiclesPage')">
-      <i class="bi bi-card-list"></i>
-      <span>Gestion Véhicules</span>
-    </button>
+    <a id="btnVehicleManagement" class="btn-toolbar nav-vehicles" href="?view=vehicles" aria-label="Gestion Véhicules">
+      <i class="bi bi-card-list"></i><span>Gestion Véhicules</span>
+    </a>
 
-    <button type="button" class="btn-toolbar nav-revisions" onclick="return abGoPage('revisionPage')">
-      <i class="bi bi-wrench-adjustable"></i>
-      <span>Révisions</span>
-    </button>
+    <a class="btn-toolbar nav-revisions" href="?view=revisions" aria-label="Révisions">
+      <i class="bi bi-wrench-adjustable"></i><span>Révisions</span>
+    </a>
 
-    <button type="button" class="btn-toolbar nav-ct" onclick="return abGoPage('ctPage')">
-      <i class="bi bi-shield-check"></i>
-      <span>Contrôle Technique</span>
-    </button>
+    <a class="btn-toolbar nav-ct" href="?view=ct" aria-label="Contrôle Technique">
+      <i class="bi bi-shield-check"></i><span>Contrôle Technique</span>
+    </a>
 
     <div class="vehicle-picker-wrap">
       <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="Sélectionner un véhicule" onchange="openVehicleDetailPage(this.value)">
@@ -5390,7 +5401,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.24';
+  const APP_VERSION = 'v8.26';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
@@ -5518,63 +5529,19 @@ async function archiveItem(action, immatriculation, label) {
 
 
 
-<script>
-/* V8.23 — Navigation directe, sans dépendre des anciennes fonctions */
-window.abGoPage = function(pageId) {
-  try {
-    ["management","vehiclesPage","revisionPage","ctPage","vehicleDetailPage"].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = "none";
-    });
 
-    var selector = document.getElementById("vehicleQuickSelect");
-    if (selector) selector.value = "";
 
-    localStorage.removeItem("activeVehicleAB");
-    localStorage.setItem("activePageAB", pageId);
 
-    var target = document.getElementById(pageId);
-    if (target) target.style.display = "block";
 
-    try {
-      if (pageId === "vehiclesPage" && typeof renderVehiclesPage === "function") renderVehiclesPage();
-      if (pageId === "revisionPage" && typeof renderRevisionPage === "function") renderRevisionPage();
-      if (pageId === "ctPage" && typeof renderCtPage === "function") renderCtPage();
-    } catch (renderError) {
-      console.error("Erreur de rendu de la page :", renderError);
-    }
 
-    document.querySelectorAll(".app-nav .btn-toolbar").forEach(function(btn) {
-      btn.classList.remove("active");
-    });
 
-    if (pageId === "vehiclesPage") {
-      var b1 = document.getElementById("btnVehicleManagement");
-      if (b1) b1.classList.add("active");
-    }
-    if (pageId === "revisionPage") {
-      var b2 = document.querySelector(".app-nav .nav-revisions");
-      if (b2) b2.classList.add("active");
-    }
-    if (pageId === "ctPage") {
-      var b3 = document.querySelector(".app-nav .nav-ct");
-      if (b3) b3.classList.add("active");
-    }
 
-    window.scrollTo(0, 0);
-  } catch (error) {
-    console.error("Erreur navigation toolbar :", error);
-    alert("Erreur de navigation : " + error.message);
-  }
-  return false;
-};
-</script>
 
 
 <script>
-/* V8.24 — Interception globale avant tout autre gestionnaire */
+/* V8.26 — Routeur basé sur l'URL, indépendant des onclick */
 (function(){
-  function navigate(pageId){
+  function showView(view){
     ["management","vehiclesPage","revisionPage","ctPage","vehicleDetailPage"].forEach(function(id){
       var el=document.getElementById(id);
       if(el) el.style.display="none";
@@ -5582,49 +5549,48 @@ window.abGoPage = function(pageId) {
 
     var selector=document.getElementById("vehicleQuickSelect");
     if(selector) selector.value="";
-
-    try{ vehicleDetailImmat=null; }catch(e){}
-    try{ selectedVehicule=null; }catch(e){}
-
     localStorage.removeItem("activeVehicleAB");
+
+    var pageId="vehiclesPage";
+    if(view==="revisions") pageId="revisionPage";
+    if(view==="ct") pageId="ctPage";
+
     localStorage.setItem("activePageAB",pageId);
 
-    if(pageId==="vehiclesPage" && typeof renderVehiclesPage==="function") renderVehiclesPage();
-    if(pageId==="revisionPage" && typeof renderRevisionPage==="function") renderRevisionPage();
-    if(pageId==="ctPage" && typeof renderCtPage==="function") renderCtPage();
+    var target=document.getElementById(pageId);
+    if(target) target.style.display="block";
 
-    var page=document.getElementById(pageId);
-    if(page) page.style.display="block";
+    try{
+      if(pageId==="vehiclesPage" && typeof renderVehiclesPage==="function") renderVehiclesPage();
+      if(pageId==="revisionPage" && typeof renderRevisionPage==="function") renderRevisionPage();
+      if(pageId==="ctPage" && typeof renderCtPage==="function") renderCtPage();
+    }catch(error){
+      console.error("Erreur rendu toolbar :",error);
+    }
 
-    document.querySelectorAll(".app-nav .btn-toolbar").forEach(function(b){b.classList.remove("active");});
+    document.querySelectorAll(".app-nav .btn-toolbar").forEach(function(link){
+      link.classList.remove("active");
+    });
     var active =
-      pageId==="vehiclesPage" ? document.getElementById("btnVehicleManagement") :
-      pageId==="revisionPage" ? document.querySelector(".app-nav .nav-revisions") :
-      document.querySelector(".app-nav .nav-ct");
+      view==="revisions" ? document.querySelector(".app-nav .nav-revisions") :
+      view==="ct" ? document.querySelector(".app-nav .nav-ct") :
+      document.getElementById("btnVehicleManagement");
     if(active) active.classList.add("active");
-
-    window.scrollTo(0,0);
   }
 
-  function handler(e){
-    var button=e.target.closest && e.target.closest(".app-nav .btn-toolbar");
-    if(!button) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-
-    if(button.id==="btnVehicleManagement" || button.classList.contains("nav-vehicles")){
-      navigate("vehiclesPage");
-    }else if(button.classList.contains("nav-revisions")){
-      navigate("revisionPage");
-    }else if(button.classList.contains("nav-ct")){
-      navigate("ctPage");
+  function route(){
+    var params=new URLSearchParams(window.location.search);
+    var view=params.get("view");
+    if(view==="vehicles" || view==="revisions" || view==="ct"){
+      showView(view);
     }
   }
 
-  document.addEventListener("pointerdown",handler,true);
-  document.addEventListener("click",handler,true);
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",route,{once:true});
+  }else{
+    route();
+  }
 })();
 </script>
 
