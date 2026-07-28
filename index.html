@@ -1299,7 +1299,17 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
     .app-nav .nav-vehicles { background: #1976d2; }
     .app-nav .nav-revisions { background: #2e7d46; }
-    .app-nav .nav-ct { background: #ff9800; }
+    .app-nav .nav-ct {
+      background: #00c853;
+      color: #ffffff;
+      box-shadow: 0 3px 10px rgba(0, 200, 83, 0.38);
+    }
+    .app-nav .nav-ct:hover,
+    .app-nav .nav-ct.active {
+      background: #00e676;
+      color: #073b1c;
+      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.48);
+    }
 
     /* Neutralise totalement l'ancien composant toolbar */
     .toolbar {
@@ -2292,7 +2302,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.40</span>
+      <span class="version" id="appVersionBadge">v8.42</span>
     </div>
   </div>
 
@@ -2672,6 +2682,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     </div>
 <div class="form-group">
       <label>Dernière Révision</label>
+      <div id="addRevisionDernierDateReadonly" style="display:none; padding:8px 10px; border:1px solid #d9dee7; border-radius:4px; background:#f5f7fa; color:#475467; font-weight:600;">—</div>
       <input type="date" id="addRevisionDernierDate">
     </div>
     
@@ -4394,7 +4405,7 @@ function checkRevisionAlerts() {
   
   data.revisions.forEach(rev => {
     const daysLeft = calculateDaysUntilCT(rev.prochainDate);
-    if (daysLeft !== null && daysLeft <= 45) {
+    if (daysLeft !== null && daysLeft <= 30) {
       const vehicule = data.vehicules.find(v => v.immatriculation === rev.immatriculation);
       alerts.push({
         immatriculation: rev.immatriculation,
@@ -4621,7 +4632,17 @@ function openAddRevisionModal() {
       '<option value="">Aucun véhicule disponible</option>';
   }
 
-  document.getElementById("addRevisionDernierDate").value = "";
+  const revisionDernierInput = document.getElementById("addRevisionDernierDate");
+  const revisionDernierReadonly = document.getElementById("addRevisionDernierDateReadonly");
+  if (revisionDernierInput) {
+    revisionDernierInput.style.display = "block";
+    revisionDernierInput.disabled = false;
+    revisionDernierInput.value = "";
+  }
+  if (revisionDernierReadonly) {
+    revisionDernierReadonly.style.display = "none";
+    revisionDernierReadonly.textContent = "—";
+  }
   document.getElementById("addRevisionProchainDate").value = "";
 
   setModalButtonsDisabled("addRevisionModal", false);
@@ -4653,8 +4674,26 @@ async function submitAddRevision() {
   if (isSubmitting) return;
 
   const immatriculation = document.getElementById("addRevisionVehicule").value;
-  const dernierDate = document.getElementById("addRevisionDernierDate").value;
   const prochainDate = document.getElementById("addRevisionProchainDate").value;
+
+  // Même logique que le contrôle technique :
+  // lors d'une modification, l'ancienne prochaine révision devient la dernière révision.
+  let dernierDate = document.getElementById("addRevisionDernierDate").value;
+  if (editingRevisionImmat) {
+    const normalizeImmatForUpdate = value =>
+      String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+    const currentRevision = (Array.isArray(data.revisions) ? data.revisions : []).find(r =>
+      normalizeImmatForUpdate(r.immatriculation) === normalizeImmatForUpdate(editingRevisionImmat)
+    );
+
+    if (!currentRevision) {
+      showMsg("Révision introuvable", "err");
+      return;
+    }
+
+    dernierDate = currentRevision.prochainDate || currentRevision.dernierDate || "";
+  }
 
   if (!immatriculation) {
     showMsg("Sélectionne un véhicule", "err");
@@ -4744,8 +4783,8 @@ function openEditRevisionModal(immatriculation) {
   const submitBtn = document.getElementById("submitAddRevisionBtn");
   const vehiculeSelect = document.getElementById("addRevisionVehicule");
 
-  if (title) title.textContent = "Modifier la Révision";
-  if (submitBtn) submitBtn.textContent = "Modifier";
+  if (title) title.textContent = "Enregistrer la nouvelle Révision";
+  if (submitBtn) submitBtn.textContent = "Enregistrer";
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "inline-flex";
@@ -4761,10 +4800,25 @@ function openEditRevisionModal(immatriculation) {
   vehiculeSelect.value = revision.immatriculation;
   vehiculeSelect.disabled = true;
 
-  document.getElementById("addRevisionDernierDate").value =
-    revision.dernierDate || "";
-  document.getElementById("addRevisionProchainDate").value =
-    revision.prochainDate || "";
+  const revisionDernierInput = document.getElementById("addRevisionDernierDate");
+  const revisionDernierReadonly = document.getElementById("addRevisionDernierDateReadonly");
+
+  if (revisionDernierInput) {
+    revisionDernierInput.value = revision.dernierDate || "";
+    revisionDernierInput.disabled = true;
+    revisionDernierInput.style.display = "none";
+  }
+
+  if (revisionDernierReadonly) {
+    const dateReference = revision.prochainDate || revision.dernierDate || "";
+    revisionDernierReadonly.textContent = dateReference
+      ? new Date(dateReference + "T00:00:00").toLocaleDateString("fr-FR")
+      : "—";
+    revisionDernierReadonly.style.display = "block";
+  }
+
+  // Seule la nouvelle date de prochaine révision reste modifiable.
+  document.getElementById("addRevisionProchainDate").value = "";
 
   setModalButtonsDisabled("addRevisionModal", false);
   document.getElementById("addRevisionModal").classList.add("active");
@@ -5719,7 +5773,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.40';
+  const APP_VERSION = 'v8.42';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
