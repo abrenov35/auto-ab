@@ -1974,40 +1974,16 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 }
 
 
-/* V8.24 — La toolbar reste toujours au premier plan et cliquable */
+
+/* V8.28 — Navigation stable */
 .app-header{
-  position:sticky !important;
-  top:0 !important;
-  z-index:999999 !important;
-  pointer-events:auto !important;
-}
-.app-header *,
-.app-nav,
-.app-nav .btn-toolbar{
-  pointer-events:auto !important;
+  position:sticky;
+  top:0;
+  z-index:999;
 }
 .app-nav .btn-toolbar{
-  position:relative !important;
-  z-index:1000000 !important;
-  cursor:pointer !important;
-}
-#vehicleDetailPage,
-#vehiclesPage,
-#revisionPage,
-#ctPage,
-#management{
-  position:relative;
-  z-index:1;
-}
-
-
-
-/* V8.27 — Toolbar restaurée */
-.app-nav .btn-toolbar{
-  pointer-events:auto !important;
-  cursor:pointer !important;
-  position:relative;
-  z-index:2;
+  pointer-events:auto;
+  cursor:pointer;
 }
 
 </style>
@@ -2068,22 +2044,22 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.27</span>
+      <span class="version" id="appVersionBadge">v8.28</span>
     </div>
   </div>
 
   <nav class="app-nav" aria-label="Navigation principale">
-    <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="openVehicleManagementModal()">
+    <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles" data-ab-page="vehiclesPage">
       <i class="bi bi-card-list"></i>
       <span>Gestion Véhicules</span>
     </button>
 
-    <button type="button" class="btn-toolbar nav-revisions" onclick="openRevisionModal()">
+    <button type="button" class="btn-toolbar nav-revisions" data-ab-page="revisionPage">
       <i class="bi bi-wrench-adjustable"></i>
       <span>Révisions</span>
     </button>
 
-    <button type="button" class="btn-toolbar nav-ct" onclick="openControleTkModal()">
+    <button type="button" class="btn-toolbar nav-ct" data-ab-page="ctPage">
       <i class="bi bi-shield-check"></i>
       <span>Contrôle Technique</span>
     </button>
@@ -5400,7 +5376,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.27';
+  const APP_VERSION = 'v8.28';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
@@ -5538,6 +5514,118 @@ async function archiveItem(action, immatriculation, label) {
 
 
 
+
+
+<script>
+/* V8.28 — Routeur reconstruit depuis zéro */
+(function () {
+  const PAGE_IDS = ["management", "vehiclesPage", "revisionPage", "ctPage", "vehicleDetailPage"];
+
+  function hideEveryPage() {
+    PAGE_IDS.forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.style.setProperty("display", "none", "important");
+    });
+  }
+
+  function resetVehicleSheet() {
+    const selector = document.getElementById("vehicleQuickSelect");
+    if (selector) selector.value = "";
+
+    try { vehicleDetailImmat = null; } catch (_) {}
+    try { selectedVehicule = null; } catch (_) {}
+
+    localStorage.removeItem("activeVehicleAB");
+  }
+
+  function setActiveButton(pageId) {
+    document.querySelectorAll(".app-nav .btn-toolbar").forEach(function (button) {
+      button.classList.remove("active");
+    });
+
+    const active = document.querySelector('.app-nav [data-ab-page="' + pageId + '"]');
+    if (active) active.classList.add("active");
+  }
+
+  function safeRender(pageId) {
+    try {
+      if (pageId === "vehiclesPage" && typeof renderVehiclesPage === "function") {
+        renderVehiclesPage();
+      } else if (pageId === "revisionPage" && typeof renderRevisionPage === "function") {
+        renderRevisionPage();
+      } else if (pageId === "ctPage" && typeof renderCtPage === "function") {
+        renderCtPage();
+      }
+    } catch (error) {
+      console.error("[AB NAV] Erreur de rendu de " + pageId + " :", error);
+    }
+  }
+
+  function navigate(pageId) {
+    console.log("[AB NAV] Ouverture :", pageId);
+
+    hideEveryPage();
+    resetVehicleSheet();
+
+    const target = document.getElementById(pageId);
+    if (!target) {
+      console.error("[AB NAV] Élément absent :", pageId);
+      return;
+    }
+
+    // Affichage effectué avant le rendu : une erreur de tableau ne peut plus laisser un écran vide.
+    target.style.setProperty("display", "block", "important");
+
+    localStorage.setItem("activePageAB", pageId);
+    setActiveButton(pageId);
+    safeRender(pageId);
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+
+  // Remplace réellement les anciennes fonctions utilisées ailleurs dans l'application.
+  window.openVehicleManagementModal = function () { navigate("vehiclesPage"); };
+  window.openRevisionModal = function () { navigate("revisionPage"); };
+  window.openControleTkModal = function () { navigate("ctPage"); };
+
+  function bindToolbar() {
+    document.querySelectorAll(".app-nav [data-ab-page]").forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        navigate(button.dataset.abPage);
+      });
+    });
+
+    // Nettoie les anciens paramètres ?view=... laissés par les essais précédents.
+    if (window.location.search) {
+      history.replaceState(null, "", window.location.pathname + window.location.hash);
+    }
+
+    // Si aucune vue n'est affichée au démarrage, restaurer une page valide.
+    window.setTimeout(function () {
+      const visible = ["vehiclesPage", "revisionPage", "ctPage", "vehicleDetailPage"]
+        .some(function (id) {
+          const el = document.getElementById(id);
+          return el && getComputedStyle(el).display !== "none";
+        });
+
+      if (!visible) {
+        const saved = localStorage.getItem("activePageAB");
+        const fallback = ["vehiclesPage", "revisionPage", "ctPage"].includes(saved)
+          ? saved
+          : "vehiclesPage";
+        navigate(fallback);
+      }
+    }, 0);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindToolbar, { once: true });
+  } else {
+    bindToolbar();
+  }
+})();
+</script>
 
 </body>
 </html>
