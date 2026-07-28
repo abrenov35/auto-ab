@@ -1560,12 +1560,48 @@
       overflow: hidden;
     }
 
+  
+    /* ===== V8.5 : AUCUN PANNEAU BLANC AU F5 ===== */
+
+    body.app-booting {
+      background: #f5f7fa;
+      overflow: hidden;
+    }
+
+    body.app-booting .app-header,
+    body.app-booting #alertBanner,
+    body.app-booting #alertBannerRevision,
+    body.app-booting #management,
+    body.app-booting #vehiclesPage,
+    body.app-booting #revisionPage,
+    body.app-booting #ctPage,
+    body.app-booting .msg {
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    body:not(.app-booting) .app-header,
+    body:not(.app-booting) #alertBanner,
+    body:not(.app-booting) #alertBannerRevision,
+    body:not(.app-booting) #management,
+    body:not(.app-booting) #vehiclesPage,
+    body:not(.app-booting) #revisionPage,
+    body:not(.app-booting) #ctPage {
+      transition: opacity .12s ease;
+    }
+
+    .loading-overlay {
+      background: #f5f7fa !important;
+      backdrop-filter: none !important;
+    }
+
   </style>
 </head>
-<body>
+<body class="app-booting is-loading">
 
 <!-- MESSAGE DE CHARGEMENT -->
-<div id="loadingMessage" class="loading-overlay" aria-live="polite" aria-busy="true">
+<div id="loadingMessage" class="loading-overlay active" aria-live="polite" aria-busy="true">
   <div class="loading-card">
     <div class="loading-hourglass">⌛</div>
     <div class="loading-title">Chargement en cours</div>
@@ -1577,7 +1613,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.4</span>
+      <span class="version">v8.5</span>
     </div>
   </div>
 
@@ -2148,60 +2184,72 @@ function showLoadingOverlay() {
 
 function hideLoadingOverlay() {
   const overlay = document.getElementById("loadingMessage");
-  if (overlay) overlay.classList.remove("active");
+
+  document.body.classList.remove("app-booting");
   document.body.classList.remove("is-loading");
+
+  if (overlay) {
+    overlay.classList.remove("active");
+  }
 }
 
 async function init() {
   showLoadingOverlay();
-  await loadData();
-  checkCtAlerts();
-  checkRevisionAlerts();
-  
-  // Mettre à jour les alertes toutes les minutes
-  setInterval(() => {
+
+  try {
+    await loadData();
     checkCtAlerts();
     checkRevisionAlerts();
+  
+    // Mettre à jour les alertes toutes les minutes
+    setInterval(() => {
+      checkCtAlerts();
+      checkRevisionAlerts();
     
-    // Re-rendre la page active pour mettre à jour les compteurs
+      // Re-rendre la page active pour mettre à jour les compteurs
+      const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+      if (activePage === "vehiclesPage") renderVehiclesPage();
+      if (activePage === "revisionPage") renderRevisionPage();
+      if (activePage === "ctPage") renderCtPage();
+    }, 60000); // 60000ms = 1 minute
+  
+    // Récupérer la page active depuis localStorage, par défaut "vehiclesPage"
     const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
-    if (activePage === "vehiclesPage") renderVehiclesPage();
-    if (activePage === "revisionPage") renderRevisionPage();
-    if (activePage === "ctPage") renderCtPage();
-  }, 60000); // 60000ms = 1 minute
   
-  // Récupérer la page active depuis localStorage, par défaut "vehiclesPage"
-  const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+    // Afficher la page sauvegardée
+    if (activePage === "vehiclesPage") {
+      renderVehiclesPage();
+      document.getElementById("management").style.display = "none";
+      document.getElementById("vehiclesPage").style.display = "block";
+      document.getElementById("revisionPage").style.display = "none";
+      document.getElementById("ctPage").style.display = "none";
+      document.getElementById("btnVehicleManagement").classList.add("active");
+    } else if (activePage === "revisionPage") {
+      renderRevisionPage();
+      document.getElementById("management").style.display = "none";
+      document.getElementById("vehiclesPage").style.display = "none";
+      document.getElementById("revisionPage").style.display = "block";
+      document.getElementById("ctPage").style.display = "none";
+    } else if (activePage === "ctPage") {
+      renderCtPage();
+      document.getElementById("management").style.display = "none";
+      document.getElementById("vehiclesPage").style.display = "none";
+      document.getElementById("revisionPage").style.display = "none";
+      document.getElementById("ctPage").style.display = "block";
+    }
   
-  // Afficher la page sauvegardée
-  if (activePage === "vehiclesPage") {
-    renderVehiclesPage();
-    document.getElementById("management").style.display = "none";
-    document.getElementById("vehiclesPage").style.display = "block";
-    document.getElementById("revisionPage").style.display = "none";
-    document.getElementById("ctPage").style.display = "none";
-    document.getElementById("btnVehicleManagement").classList.add("active");
-  } else if (activePage === "revisionPage") {
-    renderRevisionPage();
-    document.getElementById("management").style.display = "none";
-    document.getElementById("vehiclesPage").style.display = "none";
-    document.getElementById("revisionPage").style.display = "block";
-    document.getElementById("ctPage").style.display = "none";
-  } else if (activePage === "ctPage") {
-    renderCtPage();
-    document.getElementById("management").style.display = "none";
-    document.getElementById("vehiclesPage").style.display = "none";
-    document.getElementById("revisionPage").style.display = "none";
-    document.getElementById("ctPage").style.display = "block";
+    // Cacher le message de chargement une fois que tout est prêt
+    const loadingMsg = document.getElementById("loadingMessage");
+    if (loadingMsg) {
+  let data = {};
+      loadingMsg.style.display = "none";
+    }
+  } catch (error) {
+    console.error("Erreur d'initialisation :", error);
+    showMsg("Erreur de chargement : " + error.message, "err");
+  } finally {
+    hideLoadingOverlay();
   }
-  
-  // Cacher le message de chargement une fois que tout est prêt
-  const loadingMsg = document.getElementById("loadingMessage");
-  if (loadingMsg) {
-let data = {};
-    loadingMsg.style.display = "none";
-  }
-  hideLoadingOverlay();
 }
 
 async function loadData() {
