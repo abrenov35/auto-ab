@@ -2031,7 +2031,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.20</span>
+      <span class="version" id="appVersionBadge">v8.21</span>
     </div>
   </div>
 
@@ -3095,7 +3095,7 @@ function editDocument(docId) {
   
   editingDocId = docId;
   document.getElementById("docModalTitle").textContent = "Modifier le document";
-  document.getElementById("docCategorie").value = doc.categorie;
+  
   document.getElementById("docNom").value = doc.nom;
   document.getElementById("docDate").value = doc.date;
   document.getElementById("docDescription").value = doc.description;
@@ -3177,12 +3177,12 @@ async function submitDocument() {
   // Protection contre double-clics
   if (isSubmitting) return;
   
-  const categorie = document.getElementById("docCategorie").value;
+  const categorie = "Document";
   const nom = document.getElementById("docNom").value;
   const date = document.getElementById("docDate").value;
   const description = document.getElementById("docDescription").value;
   
-  if (!categorie || !nom) {
+  if (!nom) {
     showMsg("Remplis les champs requis", "err");
     setModalButtonsDisabled("documentModal", false); // Réactiver
     return;
@@ -5363,7 +5363,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.20';
+  const APP_VERSION = 'v8.21';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
@@ -5473,11 +5473,11 @@ async function archiveItem(action, immatriculation, label) {
   if (typeof window.submitDocument === 'function') {
     const originalSubmitDocument = window.submitDocument;
     window.submitDocument = async function () {
-      const categorie = clean(document.getElementById('docCategorie')?.value);
+      const categorie = 'Document';
       const nom = clean(document.getElementById('docNom')?.value);
       const date = clean(document.getElementById('docDate')?.value);
       const description = clean(document.getElementById('docDescription')?.value);
-      if (!editingDocId && !categorie && !nom && !date && !description && !selectedFile) {
+      if (!editingDocId && !nom && !date && !description && !selectedFile) {
         closeDocModal();
         return;
       }
