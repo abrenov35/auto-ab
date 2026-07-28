@@ -255,6 +255,19 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       color: #c62828;
     }
     
+
+    /* V8.36 — Révision en alerte rouge à partir de J-45 */
+    .alert-banner-revision h3 {
+      background: #d92d20;
+    }
+    .alert-item-revision,
+    .alert-item-revision.warning,
+    .alert-item-revision.danger {
+      border-left-color: #d92d20;
+      background: #fdecec;
+      color: #b42318;
+    }
+
     /* ===== CONTRÔLES TECHNIQUES ===== */
     .ct-table {
       width: 100%;
@@ -4299,7 +4312,7 @@ function checkRevisionAlerts() {
   
   data.revisions.forEach(rev => {
     const daysLeft = calculateDaysUntilCT(rev.prochainDate);
-    if (daysLeft !== null && daysLeft <= 30) {
+    if (daysLeft !== null && daysLeft <= 45) {
       const vehicule = data.vehicules.find(v => v.immatriculation === rev.immatriculation);
       alerts.push({
         immatriculation: rev.immatriculation,
@@ -4319,11 +4332,11 @@ function checkRevisionAlerts() {
         daysText = `🔴 DÉPASSÉE de ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
         statusClass = "danger";
       } else if (a.daysLeft === 0) {
-        daysText = `🟠 AUJOURD'HUI`;
+        daysText = `J0`;
         statusClass = "danger";
       } else {
-        daysText = `✅ Prévoir dans ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}`;
-        statusClass = "warning";
+        daysText = `J-${a.daysLeft}`;
+        statusClass = "danger";
       }
       return `
       <div class="alert-item-revision ${statusClass}">
@@ -5411,7 +5424,12 @@ function renderVehicleDetailPage(){
     <button class="vehicle-outline-action vehicle-edit-main" onclick="openEditVehiculeModal('${safeText(immat)}')" title="Modifier le véhicule"><i class="bi bi-pencil"></i> Modifier</button>
   </div>`;
   const rev=(Array.isArray(data?.revisions)?data.revisions:[]).find(r=>r.immatriculation===immat && r.statut!=='Archivé');
-  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span></div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
+  const revisionDaysLeft = rev ? calculateDaysUntilCT(rev.prochainDate) : null;
+  const revisionAlertClass = revisionDaysLeft !== null && revisionDaysLeft <= 45 ? ' vehicle-ct-alert' : '';
+  const revisionBadge = revisionDaysLeft !== null && revisionDaysLeft <= 45
+    ? `<span class="vehicle-ct-alert-days">${revisionDaysLeft < 0 ? 'J' + revisionDaysLeft : 'J-' + revisionDaysLeft}</span>`
+    : '';
+  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span></div><div class="vehicle-info-item${revisionAlertClass}"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span>${revisionBadge}</div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
   const ct=(Array.isArray(data?.controlsTk)?data.controlsTk:[]).find(c=>c.immatriculation===immat && c.statut!=='Archivé');
   const ctDaysLeft = ct ? calculateDaysUntilCT(ct.prochainDate) : null;
   const ctAlertClass = ctDaysLeft !== null && ctDaysLeft <= 30 ? ' vehicle-ct-alert' : '';
@@ -5600,7 +5618,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.35';
+  const APP_VERSION = 'v8.36';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
