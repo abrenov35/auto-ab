@@ -1419,6 +1419,44 @@
       gap: 6px;
     }
 
+  
+    /* ===== V8.1 : SUPPRESSION DÉFINITIVE + STABILITÉ PAGE VÉHICULES ===== */
+    .delete-confirm-card {
+      text-align: center;
+      border-top: 4px solid #d32f2f;
+    }
+
+    .delete-confirm-icon {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 14px;
+      border-radius: 999px;
+      background: #ffebee;
+      color: #d32f2f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .delete-warning-box {
+      padding: 13px 15px;
+      border: 1px solid #ffcdd2;
+      border-radius: 7px;
+      background: #fff5f5;
+      color: #b71c1c;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    #btnDeleteVehiculeModal,
+    #btnArchiverVehicule {
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
   </style>
 </head>
 <body>
@@ -1435,7 +1473,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.0</span>
+      <span class="version">v8.1</span>
     </div>
   </div>
 
@@ -1647,6 +1685,7 @@
       <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
       <button id="submitVehiculeBtn" class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
       <button id="btnArchiverVehicule" class="btn" title="Archiver le véhicule" style="background: transparent; color: #ef6c00; border: 1px solid #ef6c00; display: none;" onclick="archiveVehiculeFromModal()"><i class="bi bi-archive"></i> Archiver</button>
+      <button id="btnDeleteVehiculeModal" class="btn" title="Supprimer définitivement le véhicule" style="background: transparent; color: #d32f2f; border: 1px solid #d32f2f; display: none;" onclick="openDeleteVehicleConfirmModal()"><i class="bi bi-trash"></i> Supprimer</button>
     </div>
   </div>
 </div>
@@ -1933,6 +1972,36 @@
     
     <div class="form-actions">
       <button class="btn btn-success" onclick="openAddVehiculeModal()">+ Ajouter un véhicule</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL CONFIRMATION SUPPRESSION DÉFINITIVE VÉHICULE -->
+<div class="modal" id="deleteVehicleConfirmModal">
+  <div class="modal-content delete-confirm-card" style="max-width: 460px;">
+    <div class="delete-confirm-icon">
+      <i class="bi bi-exclamation-triangle"></i>
+    </div>
+
+    <div class="modal-header" style="text-align:center; margin-bottom:12px;">
+      Suppression définitive
+    </div>
+
+    <div id="deleteVehicleConfirmText" style="text-align:center; color:#475467; font-size:14px; line-height:1.55; margin-bottom:20px;">
+      Cette action est irréversible.
+    </div>
+
+    <div class="delete-warning-box">
+      Le véhicule et sa fiche seront supprimés définitivement de Google Sheets.
+      Cette action ne pourra pas être annulée.
+    </div>
+
+    <div class="form-actions" style="justify-content:center; margin-top:22px;">
+      <button class="btn btn-secondary" onclick="closeDeleteVehicleConfirmModal()">Annuler</button>
+      <button id="confirmDeleteVehicleBtn" class="btn" style="background:#d32f2f;color:white;" onclick="confirmDeleteVehiclePermanent()">
+        <i class="bi bi-trash"></i> Supprimer définitivement
+      </button>
     </div>
   </div>
 </div>
@@ -2553,23 +2622,45 @@ function openUploadCtModal() {
 
 
 async function refreshCurrentPageAfterModalClose() {
+  const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+
   try {
     await loadData();
+  } catch (error) {
+    console.error("Actualisation des données après fermeture :", error);
+  }
 
-    const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+  // Toujours restaurer explicitement la page active pour éviter un écran blanc.
+  const management = document.getElementById("management");
+  const vehiclesPage = document.getElementById("vehiclesPage");
+  const revisionPage = document.getElementById("revisionPage");
+  const ctPage = document.getElementById("ctPage");
 
-    if (activePage === "vehiclesPage") {
-      renderVehiclesPage();
-    } else if (activePage === "revisionPage") {
-      renderRevisionPage();
-    } else if (activePage === "ctPage") {
-      renderCtPage();
-    }
+  if (activePage === "vehiclesPage") {
+    if (management) management.style.display = "none";
+    if (vehiclesPage) vehiclesPage.style.display = "block";
+    if (revisionPage) revisionPage.style.display = "none";
+    if (ctPage) ctPage.style.display = "none";
+    renderVehiclesPage();
+  } else if (activePage === "revisionPage") {
+    if (management) management.style.display = "none";
+    if (vehiclesPage) vehiclesPage.style.display = "none";
+    if (revisionPage) revisionPage.style.display = "block";
+    if (ctPage) ctPage.style.display = "none";
+    renderRevisionPage();
+  } else if (activePage === "ctPage") {
+    if (management) management.style.display = "none";
+    if (vehiclesPage) vehiclesPage.style.display = "none";
+    if (revisionPage) revisionPage.style.display = "none";
+    if (ctPage) ctPage.style.display = "block";
+    renderCtPage();
+  }
 
+  try {
     checkCtAlerts();
     checkRevisionAlerts();
   } catch (error) {
-    console.error("Actualisation après fermeture :", error);
+    console.error("Actualisation des alertes :", error);
   }
 }
 
@@ -2584,23 +2675,103 @@ function openAddVehiculeModal() {
   document.getElementById("vehiculeAnnee").value = "";
   document.getElementById("vehiculeConducteur").value = "";
   document.getElementById("vehiculeStatut").value = "Actif";
+
+  const archiveBtn = document.getElementById("btnArchiverVehicule");
+  const deleteBtn = document.getElementById("btnDeleteVehiculeModal");
+  if (archiveBtn) archiveBtn.style.display = "none";
+  if (deleteBtn) deleteBtn.style.display = "none";
+
   document.getElementById("vehiculeModal").classList.add("active");
 }
 
 async function closeVehiculeModal(skipRefresh = false) {
   setModalButtonsDisabled("vehiculeModal", false);
 
-  document.getElementById("vehiculeModal").classList.remove("active");
-  document.getElementById("btnArchiverVehicule").style.display = "none";
+  const modal = document.getElementById("vehiculeModal");
+  if (modal) modal.classList.remove("active");
+
+  const archiveBtn = document.getElementById("btnArchiverVehicule");
+  const deleteBtn = document.getElementById("btnDeleteVehiculeModal");
+  if (archiveBtn) archiveBtn.style.display = "none";
+  if (deleteBtn) deleteBtn.style.display = "none";
 
   window.editingImmat = null;
   window.currentVehiculeImmatriculation = null;
+  isSubmitting = false;
 
   const submitBtn = document.getElementById("submitVehiculeBtn");
-  if (submitBtn) submitBtn.disabled = false;
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Enregistrer";
+  }
 
   if (!skipRefresh) {
     await refreshCurrentPageAfterModalClose();
+  }
+}
+
+
+function openDeleteVehicleConfirmModal() {
+  const immatriculation = window.currentVehiculeImmatriculation;
+
+  if (!immatriculation) {
+    showMsg("Aucun véhicule sélectionné", "err");
+    return;
+  }
+
+  const textElement = document.getElementById("deleteVehicleConfirmText");
+  if (textElement) {
+    textElement.innerHTML =
+      `Tu vas supprimer définitivement le véhicule <strong>${immatriculation}</strong>.`;
+  }
+
+  document.getElementById("deleteVehicleConfirmModal").classList.add("active");
+}
+
+function closeDeleteVehicleConfirmModal() {
+  document.getElementById("deleteVehicleConfirmModal").classList.remove("active");
+}
+
+async function confirmDeleteVehiclePermanent() {
+  const immatriculation = window.currentVehiculeImmatriculation;
+  const confirmBtn = document.getElementById("confirmDeleteVehicleBtn");
+
+  if (!immatriculation) {
+    showMsg("Aucun véhicule sélectionné", "err");
+    return;
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Suppression...";
+  }
+
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "deleteVehicule",
+        immatriculation
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || "Suppression impossible");
+    }
+
+    closeDeleteVehicleConfirmModal();
+    await closeVehiculeModal(true);
+    showMsg("Véhicule supprimé définitivement", "ok");
+    await refreshCurrentPageAfterModalClose();
+  } catch (error) {
+    showMsg("Erreur : " + error.message, "err");
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '<i class="bi bi-trash"></i> Supprimer définitivement';
+    }
   }
 }
 
@@ -2634,82 +2805,80 @@ async function archiveVehiculeFromModal() {
 }
 
 async function submitVehicule() {
-  // Protection contre double-clics: désactiver TOUS les boutons
-  setModalButtonsDisabled("vehiculeModal", true);
-  
-  // Protection contre double-clics
   if (isSubmitting) return;
-  
-  const immat = document.getElementById("vehiculeImmat").value;
-  const vehicule = document.getElementById("vehiculeVehicule").value;
+
+  const immat = document.getElementById("vehiculeImmat").value.trim();
+  const vehicule = document.getElementById("vehiculeVehicule").value.trim();
   const annee = document.getElementById("vehiculeAnnee").value;
-  const conducteur = document.getElementById("vehiculeConducteur").value;
+  const conducteur = document.getElementById("vehiculeConducteur").value.trim();
   const statut = document.getElementById("vehiculeStatut").value;
-  
-  // Pour la MODIFICATION: seulement valider l'immatriculation (clé unique)
-  // Pour la CRÉATION: forcer tous les champs requis
-  if (!window.editingImmat) {
-    // Création: tous les champs obligatoires
-    if (!immat || !vehicule || !annee) {
-      showMsg("Remplis tous les champs requis", "err");
-      setModalButtonsDisabled("vehiculeModal", false); // Réactiver
-      return;
-    }
-  } else {
-    // Modification: seulement immatriculation obligatoire
-    if (!immat) {
-      showMsg("L'immatriculation ne peut pas être vide", "err");
-      setModalButtonsDisabled("vehiculeModal", false); // Réactiver
-      return;
-    }
+  const wasEditing = Boolean(window.editingImmat);
+
+  if (!wasEditing && (!immat || !vehicule || !annee)) {
+    showMsg("Remplis tous les champs requis", "err");
+    return;
   }
-  
-  // Parser "Renault Clio" en marque et modèle (si fourni)
+
+  if (wasEditing && !immat) {
+    showMsg("L'immatriculation ne peut pas être vide", "err");
+    return;
+  }
+
   let marque = "";
   let modele = "";
+
   if (vehicule) {
-    const parts = vehicule.trim().split(/\s+/);
-    marque = parts[0];
-    modele = parts.slice(1).join(" ");
-    
+    const parts = vehicule.split(/\s+/);
+    marque = parts.shift() || "";
+    modele = parts.join(" ");
+
     if (!modele) {
-      showMsg("Entre marque ET modèle (ex: Renault Clio)", "err");
-      setModalButtonsDisabled("vehiculeModal", false); // Réactiver
+      showMsg("Entre la marque et le modèle, par exemple Renault Clio", "err");
       return;
     }
   }
-  
+
   isSubmitting = true;
+  setModalButtonsDisabled("vehiculeModal", true);
+
   const submitBtn = document.getElementById("submitVehiculeBtn");
-  if (submitBtn) submitBtn.disabled = true;
-  
+  if (submitBtn) submitBtn.textContent = wasEditing ? "Modification..." : "Enregistrement...";
+
   try {
     const payload = {
-      action: window.editingImmat ? "updateVehicule" : "createVehicule",
+      action: wasEditing ? "updateVehicule" : "createVehicule",
+      ancienneImmatriculation: window.editingImmat || immat,
       immatriculation: immat,
-      marque: marque,
-      modele: modele,
-      annee: annee,
-      conducteur: conducteur,
-      statut: statut
+      marque,
+      modele,
+      annee,
+      conducteur,
+      statut
     };
-    
-    console.log("Envoi au GAS:", payload);
-    
+
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify(payload)
     });
-    
-    closeVehiculeModal();
-    showMsg("Véhicule " + (window.editingImmat ? "modifié" : "ajouté") + " ✅", "ok");
-    showLoadingAndReload(); // Actualiser après 500ms
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || "Enregistrement impossible");
+    }
+
+    await closeVehiculeModal(true);
+    showMsg(`Véhicule ${wasEditing ? "modifié" : "ajouté"} ✅`, "ok");
+    await refreshCurrentPageAfterModalClose();
   } catch (err) {
-    showMsg("Erreur: " + err.message, "err");
+    showMsg("Erreur : " + err.message, "err");
     isSubmitting = false;
-    setModalButtonsDisabled("vehiculeModal", false); // Réactiver en cas d'erreur
-  } finally {
-    if (submitBtn) submitBtn.disabled = false;
+    setModalButtonsDisabled("vehiculeModal", false);
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = wasEditing ? "Modifier" : "Enregistrer";
+    }
   }
 }
 
@@ -2889,7 +3058,8 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("vehiculeModal").classList.add("active");
   
   // Afficher le bouton "Supprimer" et stocker l'immat
-  document.getElementById("btnArchiverVehicule").style.display = "block";
+  document.getElementById("btnArchiverVehicule").style.display = "inline-flex";
+  document.getElementById("btnDeleteVehiculeModal").style.display = "inline-flex";
   window.currentVehiculeImmatriculation = immatriculation;
   
   // Faire un vrai truc: si tu modifies et enregistres, ça va updater
