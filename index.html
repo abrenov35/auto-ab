@@ -2292,7 +2292,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.39</span>
+      <span class="version" id="appVersionBadge">v8.40</span>
     </div>
   </div>
 
@@ -4317,13 +4317,12 @@ function checkCtAlerts() {
   const alertBanner = document.getElementById("alertBanner");
   const alertItems = document.getElementById("alertItems");
   const alerts = [];
-  
-  // Vérification de sécurité
+
   if (!data || !data.controlsTk || data.controlsTk.length === 0) {
     alertBanner.classList.remove("active");
     return;
   }
-  
+
   data.controlsTk.forEach(ct => {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
     if (daysLeft !== null && daysLeft <= 30) {
@@ -4331,35 +4330,49 @@ function checkCtAlerts() {
       alerts.push({
         immatriculation: ct.immatriculation,
         vehicule: vehicule ? `${vehicule.marque} ${vehicule.modele}` : "Véhicule inconnu",
-        daysLeft: daysLeft,
+        daysLeft,
         prochainDate: ct.prochainDate
       });
     }
   });
-  
+
   if (alerts.length > 0) {
     alertBanner.classList.add("active");
     alertItems.innerHTML = alerts.map(a => {
       let daysText = "";
+      let actionText = "";
+      let actionColor = "#f57c00";
       let statusClass = "";
+
       if (a.daysLeft < 0) {
-        daysText = `🔴 EXPIRÉ il y a ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
+        const retard = Math.abs(a.daysLeft);
+        daysText = `J+${retard}`;
+        actionText = `❌ Expiré depuis ${retard} jour${retard > 1 ? 's' : ''}`;
+        actionColor = "#d32f2f";
         statusClass = "danger";
       } else if (a.daysLeft === 0) {
-        daysText = `🟠 EXPIRE AUJOURD'HUI`;
+        daysText = "J0";
+        actionText = "🔴 Expire aujourd'hui";
+        actionColor = "#d32f2f";
         statusClass = "danger";
       } else {
-        daysText = `⚠️ Expire dans ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}`;
+        daysText = `J-${a.daysLeft}`;
+        actionText = a.daysLeft === 1
+          ? "⚠️ Expire demain"
+          : `⚠️ Expire dans ${a.daysLeft} jours`;
         statusClass = "warning";
       }
+
       return `
       <div class="alert-item ${statusClass}">
         <strong>${a.immatriculation}</strong>
         <span class="alert-vehicle-model">${a.vehicule}</span>
-        <span style="color: #999;">|</span>
-        <span style="color: #999; font-size: 10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
-        <span style="color: #999;">|</span>
-        <span>${daysText}</span>
+        <span style="color:#999;">|</span>
+        <span style="color:#999;font-size:10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
+        <span style="color:#999;">|</span>
+        <span style="font-weight:700;">${daysText}</span>
+        <span style="color:#999;">|</span>
+        <span style="color:${actionColor};font-weight:700;white-space:nowrap;">${actionText}</span>
       </div>
     `;
     }).join("");
@@ -5706,7 +5719,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.39';
+  const APP_VERSION = 'v8.40';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
