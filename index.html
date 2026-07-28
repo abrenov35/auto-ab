@@ -808,6 +808,90 @@
       margin-bottom: 20px;
     }
     
+    /* ===== POPUP DE CONFIRMATION PERSONNALISÉ ===== */
+    .confirm-modal {
+      z-index: 3000;
+      background: rgba(15, 23, 42, 0.58);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 18px;
+    }
+
+    .confirm-card {
+      width: min(430px, 94vw);
+      max-width: 430px;
+      padding: 28px 26px 24px;
+      border-radius: 18px;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+      text-align: center;
+      overflow: visible;
+      animation: confirmPop .18s ease-out;
+    }
+
+    @keyframes confirmPop {
+      from { opacity: 0; transform: translateY(8px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .confirm-icon {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eaf2ff;
+      color: #185fa5;
+      font-size: 25px;
+    }
+
+    .confirm-icon.danger {
+      background: #fff0f0;
+      color: #d32f2f;
+    }
+
+    .confirm-title {
+      margin: 0 0 10px;
+      color: #102a43;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .confirm-message {
+      margin: 0 auto;
+      max-width: 350px;
+      color: #52606d;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .confirm-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .confirm-actions .btn {
+      width: 132px;
+      min-width: 132px;
+      height: 42px;
+      margin: 0 !important;
+      border-radius: 10px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .confirm-card { padding: 24px 18px 20px; }
+      .confirm-actions { flex-direction: column-reverse; }
+      .confirm-actions .btn { width: 100%; }
+    }
+
     .form-group {
       margin-bottom: 16px;
     }
@@ -1458,20 +1542,21 @@
     }
 
   
-    /* ===== V8.2 : BOUTONS DES POPUPS CENTRÉS ===== */
+    /* ===== V8.8 : ACTIONS DES MODALES EN GRILLE 2 × 2 ===== */
     #vehiculeModal .form-actions,
     #addRevisionModal .form-actions,
     #ctEditModal .form-actions,
     #addCtModal .form-actions,
     #docModal .form-actions,
     #deleteVehicleConfirmModal .form-actions {
-      display: flex !important;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(145px, 170px));
       justify-content: center !important;
       align-items: center !important;
-      gap: 12px !important;
-      flex-wrap: wrap !important;
+      column-gap: 16px !important;
+      row-gap: 12px !important;
       width: 100%;
-      margin-top: 24px !important;
+      margin-top: 28px !important;
     }
 
     #vehiculeModal .form-actions .btn,
@@ -1480,23 +1565,36 @@
     #addCtModal .form-actions .btn,
     #docModal .form-actions .btn,
     #deleteVehicleConfirmModal .form-actions .btn {
-      min-width: 120px;
+      width: 100%;
+      min-width: 0;
+      max-width: 170px;
       height: 42px;
       display: inline-flex !important;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 7px;
       margin: 0 !important;
+      padding: 0 12px;
+      white-space: nowrap;
     }
 
-    @media (max-width: 620px) {
+    @media (max-width: 430px) {
+      #vehiculeModal .form-actions,
+      #addRevisionModal .form-actions,
+      #ctEditModal .form-actions,
+      #addCtModal .form-actions,
+      #docModal .form-actions,
+      #deleteVehicleConfirmModal .form-actions {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
       #vehiculeModal .form-actions .btn,
       #addRevisionModal .form-actions .btn,
       #ctEditModal .form-actions .btn,
       #addCtModal .form-actions .btn,
       #docModal .form-actions .btn,
       #deleteVehicleConfirmModal .form-actions .btn {
-        min-width: calc(50% - 6px);
+        max-width: none;
       }
     }
 
@@ -1612,7 +1710,7 @@
     }
 
   
-    /* ===== V8.7 : SYNCHRONISATION SILENCIEUSE ===== */
+    /* ===== V8.8 : SYNCHRONISATION SILENCIEUSE ===== */
     .sync-indicator {
       position: fixed;
       right: 14px;
@@ -2228,10 +2326,79 @@
   </div>
 </div>
 
+<!-- POPUP DE CONFIRMATION PERSONNALISÉ -->
+<div class="modal confirm-modal" id="customConfirmModal" role="dialog" aria-modal="true" aria-labelledby="customConfirmTitle">
+  <div class="modal-content confirm-card">
+    <div class="confirm-icon" id="customConfirmIcon">
+      <i class="bi bi-question-lg"></i>
+    </div>
+    <div class="confirm-title" id="customConfirmTitle">Confirmation</div>
+    <div class="confirm-message" id="customConfirmMessage"></div>
+    <div class="confirm-actions">
+      <button type="button" class="btn btn-secondary" id="customConfirmCancel">Annuler</button>
+      <button type="button" class="btn btn-primary" id="customConfirmOk">Confirmer</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const APPS_SCRIPT_URL = "https://auto-ab-cors-proxy.onrender.com";
 
 let isSubmitting = false; // Protection contre double-clics
+
+let customConfirmResolver = null;
+
+function showConfirm(message, options = {}) {
+  const modal = document.getElementById("customConfirmModal");
+  const title = document.getElementById("customConfirmTitle");
+  const messageEl = document.getElementById("customConfirmMessage");
+  const icon = document.getElementById("customConfirmIcon");
+  const okBtn = document.getElementById("customConfirmOk");
+  const cancelBtn = document.getElementById("customConfirmCancel");
+
+  title.textContent = options.title || "Confirmation";
+  messageEl.textContent = message;
+  okBtn.textContent = options.confirmText || "Confirmer";
+  cancelBtn.textContent = options.cancelText || "Annuler";
+
+  const danger = options.danger === true;
+  icon.className = "confirm-icon" + (danger ? " danger" : "");
+  icon.innerHTML = danger
+    ? '<i class="bi bi-exclamation-triangle"></i>'
+    : '<i class="bi bi-question-lg"></i>';
+  okBtn.className = danger ? "btn btn-danger" : "btn btn-primary";
+
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden";
+
+  return new Promise(resolve => {
+    customConfirmResolver = resolve;
+    requestAnimationFrame(() => okBtn.focus());
+  });
+}
+
+function closeCustomConfirm(result) {
+  const modal = document.getElementById("customConfirmModal");
+  modal.classList.remove("active");
+  document.body.style.overflow = "";
+  if (customConfirmResolver) {
+    const resolve = customConfirmResolver;
+    customConfirmResolver = null;
+    resolve(result);
+  }
+}
+
+document.getElementById("customConfirmOk").addEventListener("click", () => closeCustomConfirm(true));
+document.getElementById("customConfirmCancel").addEventListener("click", () => closeCustomConfirm(false));
+document.getElementById("customConfirmModal").addEventListener("click", event => {
+  if (event.target.id === "customConfirmModal") closeCustomConfirm(false);
+});
+document.addEventListener("keydown", event => {
+  const modal = document.getElementById("customConfirmModal");
+  if (!modal.classList.contains("active")) return;
+  if (event.key === "Escape") closeCustomConfirm(false);
+  if (event.key === "Enter") closeCustomConfirm(true);
+});
 
 // Fonction pour désactiver/activer les boutons d'une modale
 function setModalButtonsDisabled(modalId, disabled) {
@@ -2804,7 +2971,7 @@ async function submitDocument() {
 }
 
 async function deleteDocument(docId) {
-  if (!confirm("Supprimer ce document?")) return;
+  if (!await showConfirm("Supprimer ce document ?", { title: "Supprimer le document", confirmText: "Supprimer", danger: true })) return;
   
   try {
     await fetch(APPS_SCRIPT_URL, {
@@ -3137,7 +3304,7 @@ async function archiveVehiculeFromModal() {
   const immat = window.currentVehiculeImmatriculation;
   if (!immat) return;
 
-  if (!confirm(`Archiver le véhicule ${immat} ?`)) return;
+  if (!await showConfirm(`Archiver le véhicule ${immat} ?`, { title: "Archiver le véhicule", confirmText: "Archiver" })) return;
 
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
@@ -3436,7 +3603,7 @@ async function exitVehicleFromModal() {
   const immat = window.currentVehiculeImmatriculation;
   if (!immat) return;
   
-  if (!confirm(`Marquer ${immat} comme sortie du parc ?`)) return;
+  if (!await showConfirm(`Marquer ${immat} comme sortie du parc ?`, { title: "Sortie du parc", confirmText: "Confirmer" })) return;
   
   try {
     // Envoyer au GAS pour mettre à jour le statut
@@ -3460,8 +3627,8 @@ async function exitVehicleFromModal() {
   }
 }
 
-function deleteVehicule(immatriculation) {
-  if (!confirm(`Supprimer le véhicule ${immatriculation} ?`)) return;
+async function deleteVehicule(immatriculation) {
+  if (!await showConfirm(`Supprimer le véhicule ${immatriculation} ?`, { title: "Supprimer le véhicule", confirmText: "Supprimer", danger: true })) return;
   
   data.vehicules = data.vehicules.filter(v => v.immatriculation !== immatriculation);
   renderVehicleManagement();
@@ -3965,7 +4132,7 @@ function openEditRevisionModal(immatriculation) {
 }
 
 async function deleteRevision(immatriculation) {
-  if (!confirm(`Supprimer la révision de ${immatriculation} ?`)) return;
+  if (!await showConfirm(`Supprimer la révision de ${immatriculation} ?`, { title: "Supprimer la révision", confirmText: "Supprimer", danger: true })) return;
 
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
@@ -4335,8 +4502,8 @@ function uploadDocument() {
   };
 }
 
-function deleteDocument(immat, fileName) {
-  if (!confirm("Supprimer ce document ?")) return;
+async function deleteDocument(immat, fileName) {
+  if (!await showConfirm("Supprimer ce document ?", { title: "Supprimer le document", confirmText: "Supprimer", danger: true })) return;
   
   // Pour l'instant, juste rafraîchir la liste
   // TODO: Ajouter action GAS pour supprimer du Drive
@@ -4495,8 +4662,8 @@ async function submitControleTk() {
   }
 }
 
-function deleteCt(immatriculation) {
-  if (!confirm("Supprimer ce CT?")) return;
+async function deleteCt(immatriculation) {
+  if (!await showConfirm("Supprimer ce contrôle technique ?", { title: "Supprimer le contrôle technique", confirmText: "Supprimer", danger: true })) return;
   // À implémenter
   showMsg("Suppression CT en cours de développement", "err");
 }
@@ -4630,7 +4797,7 @@ async function archiveRevisionFromModal() {
 
   const immatriculation = editingRevisionImmat;
 
-  if (!confirm(`Archiver la révision de ${immatriculation} ?`)) {
+  if (!await showConfirm(`Archiver la révision de ${immatriculation} ?`, { title: "Archiver la révision", confirmText: "Archiver" })) {
     return;
   }
 
@@ -4665,7 +4832,7 @@ async function archiveCtFromModal() {
 
   const immatriculation = editingCtImmat;
 
-  if (!confirm(`Archiver le contrôle technique de ${immatriculation} ?`)) {
+  if (!await showConfirm(`Archiver le contrôle technique de ${immatriculation} ?`, { title: "Archiver le contrôle technique", confirmText: "Archiver" })) {
     return;
   }
 
@@ -4701,7 +4868,7 @@ async function archiveItem(action, immatriculation, label) {
     return;
   }
 
-  if (!confirm(`${operationLabel} ${label.toLowerCase()} ${immatriculation} ?`)) {
+  if (!await showConfirm(`${operationLabel} ${label.toLowerCase()} ${immatriculation} ?`, { title: operationLabel, confirmText: operationLabel })) {
     return;
   }
 
