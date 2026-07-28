@@ -1974,6 +1974,81 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 }
 
 
+
+/* V8.30 — CT compact : œil seul + alerte J-30 */
+.vehicle-ct-lines{
+  position:relative;
+  grid-template-columns:1fr 1fr 36px !important;
+  align-items:stretch;
+}
+.vehicle-ct-eye{
+  width:32px;
+  height:32px;
+  align-self:center;
+  justify-self:center;
+  border:1px solid #9eb9da;
+  border-radius:7px;
+  background:#fff;
+  color:#185fa5;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  font-size:15px;
+}
+.vehicle-ct-eye:hover{
+  background:#eef5ff;
+}
+.vehicle-ct-eye.disabled{
+  color:#aab4c0;
+  border-color:#d8dee7;
+  background:#f7f9fb;
+  cursor:not-allowed;
+}
+.vehicle-ct-alert{
+  background:#fdecec !important;
+  border-color:#ef9a9a !important;
+}
+.vehicle-ct-alert .vehicle-info-label,
+.vehicle-ct-alert .vehicle-info-value{
+  color:#b42318 !important;
+}
+.vehicle-ct-alert-days{
+  display:inline-flex;
+  margin-top:4px;
+  padding:2px 7px;
+  border-radius:999px;
+  background:#d92d20;
+  color:#fff;
+  font-size:10px;
+  font-weight:700;
+  line-height:1.4;
+}
+@media(max-width:700px){
+  .vehicle-ct-lines{
+    grid-template-columns:1fr 1fr 34px !important;
+  }
+}
+
+
+/* V8.31 — œil intégré au dernier contrôle */
+.vehicle-ct-lines{
+  grid-template-columns:1fr 1fr !important;
+}
+.vehicle-ct-last{
+  position:relative;
+  padding-right:48px !important;
+}
+.vehicle-ct-last .vehicle-ct-eye{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+}
+.vehicle-ct-last .vehicle-ct-eye:hover{
+  transform:translateY(-50%);
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2032,7 +2107,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.29</span>
+      <span class="version" id="appVersionBadge">v8.31</span>
     </div>
   </div>
 
@@ -2750,30 +2825,48 @@ function writeDataCache(value) {
 
 function displayActivePage() {
   const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+  const activeVehicle = localStorage.getItem("activeVehicleAB");
 
   const management = document.getElementById("management");
   const vehiclesPage = document.getElementById("vehiclesPage");
   const revisionPage = document.getElementById("revisionPage");
   const ctPage = document.getElementById("ctPage");
+  const detailPage = document.getElementById("vehicleDetailPage");
 
-  if (management) management.style.display = "none";
+  [management, vehiclesPage, revisionPage, ctPage, detailPage].forEach(function(el) {
+    if (el) el.style.display = "none";
+  });
+
+  populateVehicleQuickSelect();
+
+  if (activePage === "vehicleDetailPage" && activeVehicle) {
+    const exists = (Array.isArray(data?.vehicules) ? data.vehicules : [])
+      .some(function(v) { return v.immatriculation === activeVehicle; });
+
+    if (exists) {
+      vehicleDetailImmat = activeVehicle;
+      selectedVehicule = activeVehicle;
+      if (detailPage) detailPage.style.display = "block";
+      renderVehicleDetailPage();
+      const selector = document.getElementById("vehicleQuickSelect");
+      if (selector) selector.value = activeVehicle;
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    localStorage.removeItem("activeVehicleAB");
+    localStorage.setItem("activePageAB", "vehiclesPage");
+  }
 
   if (activePage === "revisionPage") {
     renderRevisionPage();
-    if (vehiclesPage) vehiclesPage.style.display = "none";
     if (revisionPage) revisionPage.style.display = "block";
-    if (ctPage) ctPage.style.display = "none";
   } else if (activePage === "ctPage") {
     renderCtPage();
-    if (vehiclesPage) vehiclesPage.style.display = "none";
-    if (revisionPage) revisionPage.style.display = "none";
     if (ctPage) ctPage.style.display = "block";
   } else {
     renderVehiclesPage();
     if (vehiclesPage) vehiclesPage.style.display = "block";
-    if (revisionPage) revisionPage.style.display = "none";
-    if (ctPage) ctPage.style.display = "none";
-
     const vehicleButton = document.getElementById("btnVehicleManagement");
     if (vehicleButton) vehicleButton.classList.add("active");
   }
@@ -5164,7 +5257,10 @@ function renderVehicleDetailPage(){
   const rev=(Array.isArray(data?.revisions)?data.revisions:[]).find(r=>r.immatriculation===immat && r.statut!=='Archivé');
   document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Conducteur</span><span class="vehicle-info-value">${safeText(rev.conducteur||vehicle.conducteur||'—')}</span></div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
   const ct=(Array.isArray(data?.controlsTk)?data.controlsTk:[]).find(c=>c.immatriculation===immat && c.statut!=='Archivé');
-  document.getElementById('vehicleDetailCt').innerHTML=ct?`<div class="vehicle-info-lines vehicle-ct-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernier contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.dernierDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Prochain contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.prochainDate)}</span></div><div class="vehicle-info-item vehicle-document-item"><span class="vehicle-info-label">Document</span><span class="vehicle-info-value">${ct.lienDrive||ct.lienCt?`<button class="vehicle-view-action" onclick="viewCt('${safeText(immat)}','${safeText(ct.lienDrive||ct.lienCt)}')"><i class="bi bi-eye"></i> Voir</button>`:'<span class="vehicle-no-document">Aucun document</span>'}</span></div></div>`:'<div class="vehicle-empty">Aucun contrôle technique enregistré</div>';
+  const ctDaysLeft = ct ? calculateDaysUntilCT(ct.prochainDate) : null;
+  const ctAlertClass = ctDaysLeft !== null && ctDaysLeft <= 30 ? ' vehicle-ct-alert' : '';
+  const ctDocumentLink = ct ? (ct.lienDrive || ct.lienCt || '') : '';
+  document.getElementById('vehicleDetailCt').innerHTML=ct?`<div class="vehicle-info-lines vehicle-ct-lines"><div class="vehicle-info-item vehicle-ct-last"><span class="vehicle-info-label">Dernier contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.dernierDate)}</span>${ctDocumentLink?`<button type="button" class="vehicle-ct-eye" title="Voir le PV du contrôle technique" aria-label="Voir le PV du contrôle technique" onclick="viewCt('${safeText(immat)}','${safeText(ctDocumentLink)}')"><i class="bi bi-eye"></i></button>`:`<button type="button" class="vehicle-ct-eye disabled" title="Aucun PV disponible" aria-label="Aucun PV disponible" disabled><i class="bi bi-eye"></i></button>`}</div><div class="vehicle-info-item${ctAlertClass}"><span class="vehicle-info-label">Prochain contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.prochainDate)}</span>${ctDaysLeft !== null && ctDaysLeft <= 30 ? `<span class="vehicle-ct-alert-days">${ctDaysLeft < 0 ? 'Dépassé' : 'J-' + ctDaysLeft}</span>` : ''}</div></div>`:'<div class="vehicle-empty">Aucun contrôle technique enregistré</div>';
   renderVehicleDetailDocuments();
 }
 function renderVehicleDetailDocuments(){
@@ -5188,19 +5284,6 @@ async function deleteVehicleDetailDocument(id){
   if(!await showConfirm('Cette suppression est définitive.',{title:'Supprimer le document',confirmText:'Supprimer',danger:true}))return;
   try{const response=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteDocument',id})});if(!response.ok)throw new Error(`Erreur serveur ${response.status}`);await loadData();populateVehicleQuickSelect();renderVehicleDetailPage();showMsg('Document supprimé','ok');}catch(err){showMsg('Erreur : '+err.message,'err');}
 }
-
-// Complète les rendus existants avec le sélecteur de fiche.
-const originalDisplayActivePageV814=displayActivePage;
-displayActivePage=function(){
-  populateVehicleQuickSelect();
-  if(localStorage.getItem('activePageAB')==='vehicleDetailPage'){
-    vehicleDetailImmat=localStorage.getItem('activeVehicleAB');
-    if(vehicleDetailImmat){openVehicleDetailPage(vehicleDetailImmat);return;}
-  }
-  const detail=document.getElementById('vehicleDetailPage');if(detail)detail.style.display='none';
-  return originalDisplayActivePageV814();
-};
-
 
 init();
 async function archiveRevisionFromModal() {
@@ -5361,7 +5444,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.29';
+  const APP_VERSION = 'v8.31';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
