@@ -4986,12 +4986,129 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.12';
+  const APP_VERSION = 'v8.13';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
     document.documentElement.dataset.appVersion = APP_VERSION;
   });
 </script>
+
+<script>
+(function () {
+  const clean = value => String(value ?? '').trim();
+  const sameDate = (a, b) => clean(a).slice(0, 10) === clean(b).slice(0, 10);
+  const normalizeImmat = value => clean(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  // En création, un clic sur Enregistrer sans aucune saisie agit comme Annuler.
+  // En modification, un clic sans changement ferme simplement la fenêtre.
+
+  if (typeof window.submitVehicule === 'function') {
+    const originalSubmitVehicule = window.submitVehicule;
+    window.submitVehicule = async function () {
+      const immat = clean(document.getElementById('vehiculeImmat')?.value);
+      const vehicule = clean(document.getElementById('vehiculeVehicule')?.value);
+      const annee = clean(document.getElementById('vehiculeAnnee')?.value);
+      const conducteur = clean(document.getElementById('vehiculeConducteur')?.value);
+      const statut = clean(document.getElementById('vehiculeStatut')?.value || 'Actif');
+
+      if (!window.editingImmat && !immat && !vehicule && !annee && !conducteur) {
+        closeVehiculeModal(true);
+        return;
+      }
+
+      if (window.editingImmat) {
+        const current = (Array.isArray(data?.vehicules) ? data.vehicules : []).find(v =>
+          normalizeImmat(v.immatriculation) === normalizeImmat(window.editingImmat)
+        );
+        if (current) {
+          const currentVehicle = clean(`${current.marque || ''} ${current.modele || ''}`);
+          const unchanged =
+            normalizeImmat(immat) === normalizeImmat(current.immatriculation) &&
+            vehicule === currentVehicle &&
+            annee === clean(current.annee) &&
+            conducteur === clean(current.conducteur) &&
+            statut === clean(current.statut || 'Actif');
+          if (unchanged) {
+            closeVehiculeModal(true);
+            return;
+          }
+        }
+      }
+      return originalSubmitVehicule.apply(this, arguments);
+    };
+  }
+
+  if (typeof window.submitAddRevision === 'function') {
+    const originalSubmitAddRevision = window.submitAddRevision;
+    window.submitAddRevision = async function () {
+      const immat = clean(document.getElementById('addRevisionVehicule')?.value);
+      const dernier = clean(document.getElementById('addRevisionDernierDate')?.value);
+      const prochain = clean(document.getElementById('addRevisionProchainDate')?.value);
+
+      if (!editingRevisionImmat && !immat && !dernier && !prochain) {
+        closeAddRevisionModal(true);
+        return;
+      }
+
+      if (editingRevisionImmat) {
+        const current = (Array.isArray(data?.revisions) ? data.revisions : []).find(r =>
+          normalizeImmat(r.immatriculation) === normalizeImmat(editingRevisionImmat)
+        );
+        if (current && sameDate(dernier, current.dernierDate) && sameDate(prochain, current.prochainDate)) {
+          closeAddRevisionModal(true);
+          return;
+        }
+      }
+      return originalSubmitAddRevision.apply(this, arguments);
+    };
+  }
+
+  if (typeof window.submitAddCt === 'function') {
+    const originalSubmitAddCt = window.submitAddCt;
+    window.submitAddCt = async function () {
+      const immat = clean(document.getElementById('addCtVehicule')?.value);
+      const dernier = clean(document.getElementById('addCtDernierDate')?.value);
+      const prochain = clean(document.getElementById('addCtProchainDate')?.value);
+      if (!immat && !dernier && !prochain) {
+        closeAddCtModal();
+        return;
+      }
+      return originalSubmitAddCt.apply(this, arguments);
+    };
+  }
+
+  if (typeof window.submitControleTk === 'function') {
+    const originalSubmitControleTk = window.submitControleTk;
+    window.submitControleTk = async function () {
+      const prochain = clean(document.getElementById('ctProchainDate')?.value);
+      const current = (Array.isArray(data?.controlsTk) ? data.controlsTk : []).find(c =>
+        normalizeImmat(c.immatriculation) === normalizeImmat(editingCtImmat)
+      );
+      if (current && sameDate(prochain, current.prochainDate)) {
+        closeCtEditModal(true);
+        return;
+      }
+      return originalSubmitControleTk.apply(this, arguments);
+    };
+  }
+
+  if (typeof window.submitDocument === 'function') {
+    const originalSubmitDocument = window.submitDocument;
+    window.submitDocument = async function () {
+      const categorie = clean(document.getElementById('docCategorie')?.value);
+      const nom = clean(document.getElementById('docNom')?.value);
+      const date = clean(document.getElementById('docDate')?.value);
+      const description = clean(document.getElementById('docDescription')?.value);
+      if (!editingDocId && !categorie && !nom && !date && !description && !selectedFile) {
+        closeDocModal();
+        return;
+      }
+      return originalSubmitDocument.apply(this, arguments);
+    };
+  }
+})();
+</script>
+
 </body>
 </html>
