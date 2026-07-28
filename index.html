@@ -1611,6 +1611,32 @@
       visibility: hidden !important;
     }
 
+  
+    /* ===== V8.7 : SYNCHRONISATION SILENCIEUSE ===== */
+    .sync-indicator {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 9000;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(13,58,102,.92);
+      color: #fff;
+      font-size: 11px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+    }
+
+    .sync-indicator i {
+      animation: syncSpin .9s linear infinite;
+    }
+
+    @keyframes syncSpin {
+      to { transform: rotate(360deg); }
+    }
+
   </style>
 </head>
 <body class="app-booting is-loading">
@@ -1658,12 +1684,18 @@
   </div>
 </div>
 
+
+<div id="syncIndicator" class="sync-indicator" hidden>
+  <i class="bi bi-arrow-repeat"></i>
+  Mise à jour
+</div>
+
 <header class="app-header">
   <div class="app-header-top">
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.6</span>
+      <span class="version">v8.7</span>
     </div>
   </div>
 
@@ -2247,59 +2279,136 @@ function hideLoadingOverlay() {
   }
 }
 
-async function init() {
-  showLoadingOverlay();
 
+const DATA_CACHE_KEY = "abParcAutoDataCache";
+
+function readDataCache() {
   try {
-    await loadData();
-    checkCtAlerts();
-    checkRevisionAlerts();
-  
-    // Mettre à jour les alertes toutes les minutes
-    setInterval(() => {
-      checkCtAlerts();
-      checkRevisionAlerts();
-    
-      // Re-rendre la page active pour mettre à jour les compteurs
-      const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
-      if (activePage === "vehiclesPage") renderVehiclesPage();
-      if (activePage === "revisionPage") renderRevisionPage();
-      if (activePage === "ctPage") renderCtPage();
-    }, 60000); // 60000ms = 1 minute
-  
-    // Récupérer la page active depuis localStorage, par défaut "vehiclesPage"
-    const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
-  
-    // Afficher la page sauvegardée
-    if (activePage === "vehiclesPage") {
-      renderVehiclesPage();
-      document.getElementById("management").style.display = "none";
-      document.getElementById("vehiclesPage").style.display = "block";
-      document.getElementById("revisionPage").style.display = "none";
-      document.getElementById("ctPage").style.display = "none";
-      document.getElementById("btnVehicleManagement").classList.add("active");
-    } else if (activePage === "revisionPage") {
-      renderRevisionPage();
-      document.getElementById("management").style.display = "none";
-      document.getElementById("vehiclesPage").style.display = "none";
-      document.getElementById("revisionPage").style.display = "block";
-      document.getElementById("ctPage").style.display = "none";
-    } else if (activePage === "ctPage") {
-      renderCtPage();
-      document.getElementById("management").style.display = "none";
-      document.getElementById("vehiclesPage").style.display = "none";
-      document.getElementById("revisionPage").style.display = "none";
-      document.getElementById("ctPage").style.display = "block";
+    const cached = sessionStorage.getItem(DATA_CACHE_KEY);
+    if (!cached) return null;
+
+    const parsed = JSON.parse(cached);
+
+    if (!parsed || !parsed.data || !parsed.savedAt) {
+      return null;
     }
+
+    // Cache valable pendant 15 minutes.
+    if (Date.now() - parsed.savedAt > 15 * 60 * 1000) {
+      sessionStorage.removeItem(DATA_CACHE_KEY);
+      return null;
+    }
+
+    return parsed.data;
   } catch (error) {
-    console.error("Erreur d'initialisation :", error);
-    showMsg("Erreur de chargement : " + error.message, "err");
-  } finally {
-    hideLoadingOverlay();
+    console.warn("Cache local illisible :", error);
+    return null;
   }
 }
 
+function writeDataCache(value) {
+  try {
+    sessionStorage.setItem(
+      DATA_CACHE_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        data: value
+      })
+    );
+  } catch (error) {
+    console.warn("Cache local impossible :", error);
+  }
+}
+
+function displayActivePage() {
+  const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+
+  const management = document.getElementById("management");
+  const vehiclesPage = document.getElementById("vehiclesPage");
+  const revisionPage = document.getElementById("revisionPage");
+  const ctPage = document.getElementById("ctPage");
+
+  if (management) management.style.display = "none";
+
+  if (activePage === "revisionPage") {
+    renderRevisionPage();
+    if (vehiclesPage) vehiclesPage.style.display = "none";
+    if (revisionPage) revisionPage.style.display = "block";
+    if (ctPage) ctPage.style.display = "none";
+  } else if (activePage === "ctPage") {
+    renderCtPage();
+    if (vehiclesPage) vehiclesPage.style.display = "none";
+    if (revisionPage) revisionPage.style.display = "none";
+    if (ctPage) ctPage.style.display = "block";
+  } else {
+    renderVehiclesPage();
+    if (vehiclesPage) vehiclesPage.style.display = "block";
+    if (revisionPage) revisionPage.style.display = "none";
+    if (ctPage) ctPage.style.display = "none";
+
+    const vehicleButton = document.getElementById("btnVehicleManagement");
+    if (vehicleButton) vehicleButton.classList.add("active");
+  }
+
+  window.scrollTo(0, 0);
+}
+
+async function init() {
+  showLoadingOverlay();
+
+  const cachedData = readDataCache();
+
+  if (cachedData) {
+    data = cachedData;
+
+    // Affichage immédiat depuis le cache : pas d’attente sur Révisions/CT.
+    displayActivePage();
+    checkCtAlerts();
+    checkRevisionAlerts();
+    hideLoadingOverlay();
+
+    // Synchronisation silencieuse en arrière-plan.
+    loadData().then(() => {
+      displayActivePage();
+      checkCtAlerts();
+      checkRevisionAlerts();
+    }).catch(error => {
+      console.error("Synchronisation silencieuse :", error);
+    });
+  } else {
+    try {
+      await loadData();
+      displayActivePage();
+      checkCtAlerts();
+      checkRevisionAlerts();
+    } catch (error) {
+      console.error("Erreur d'initialisation :", error);
+      showMsg("Erreur de chargement : " + error.message, "err");
+    } finally {
+      hideLoadingOverlay();
+    }
+  }
+
+  // Mise à jour des échéances toutes les minutes sans loader.
+  setInterval(() => {
+    checkCtAlerts();
+    checkRevisionAlerts();
+
+    const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
+    if (activePage === "vehiclesPage") renderVehiclesPage();
+    if (activePage === "revisionPage") renderRevisionPage();
+    if (activePage === "ctPage") renderCtPage();
+  }, 60000);
+}
+
 async function loadData() {
+  const syncIndicator = document.getElementById("syncIndicator");
+  const isInitialBoot = document.body.classList.contains("app-booting");
+
+  if (syncIndicator && !isInitialBoot) {
+    syncIndicator.hidden = false;
+  }
+
   try {
     const response = await fetch(APPS_SCRIPT_URL + "?action=loadData", {
       method: "GET",
@@ -2333,6 +2442,8 @@ async function loadData() {
     console.log("Nombre de véhicules:", data.vehicules.length);
     console.log("Nombre de révisions:", data.revisions.length);
     console.log("Nombre de contrôles techniques:", data.controlsTk.length);
+
+    writeDataCache(data);
   } catch (err) {
     console.error("Erreur de chargement:", err);
 
@@ -2346,6 +2457,10 @@ async function loadData() {
     };
 
     showMsg("Erreur de chargement des données", "err");
+  } finally {
+    if (syncIndicator) {
+      syncIndicator.hidden = true;
+    }
   }
 }
 
@@ -2835,7 +2950,6 @@ function openUploadCtModal() {
 
 
 async function refreshCurrentPageAfterModalClose() {
-  showLoadingOverlay();
   const activePage = localStorage.getItem("activePageAB") || "vehiclesPage";
 
   try {
@@ -2875,8 +2989,6 @@ async function refreshCurrentPageAfterModalClose() {
     checkRevisionAlerts();
   } catch (error) {
     console.error("Actualisation des alertes :", error);
-  } finally {
-    hideLoadingOverlay();
   }
 }
 
