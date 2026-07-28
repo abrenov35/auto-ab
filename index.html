@@ -1793,7 +1793,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v8.7</span>
+      <span class="version" id="appVersionBadge">v8.12</span>
     </div>
   </div>
 
@@ -4983,5 +4983,15 @@ async function archiveItem(action, immatriculation, label) {
 </script>
 
   <!-- VERSION BADGE (bas droit) -->
+
+<script>
+  // Version unique de l’application : modifier uniquement cette valeur à chaque production.
+  const APP_VERSION = 'v8.12';
+  document.addEventListener('DOMContentLoaded', () => {
+    const badge = document.getElementById('appVersionBadge');
+    if (badge) badge.textContent = APP_VERSION;
+    document.documentElement.dataset.appVersion = APP_VERSION;
+  });
+</script>
 </body>
 </html>
