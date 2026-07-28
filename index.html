@@ -2031,7 +2031,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.21</span>
+      <span class="version" id="appVersionBadge">v8.22</span>
     </div>
   </div>
 
@@ -5363,7 +5363,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.21';
+  const APP_VERSION = 'v8.22';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
@@ -5483,6 +5483,85 @@ async function archiveItem(action, immatriculation, label) {
       }
       return originalSubmitDocument.apply(this, arguments);
     };
+  }
+})();
+</script>
+
+
+<script>
+/* V8.22 — Navigation toolbar indépendante et forcée */
+(function () {
+  function hideAllMainViews() {
+    ["management","vehiclesPage","revisionPage","ctPage","vehicleDetailPage"].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.style.display="none";
+    });
+  }
+
+  function resetVehicleDetailSelection() {
+    try { vehicleDetailImmat=null; } catch(e) {}
+    try { selectedVehicule=null; } catch(e) {}
+    localStorage.removeItem("activeVehicleAB");
+    var selector=document.getElementById("vehicleQuickSelect");
+    if(selector) selector.value="";
+  }
+
+  function goVehicles(event) {
+    if(event){ event.preventDefault(); event.stopImmediatePropagation(); }
+    resetVehicleDetailSelection();
+    hideAllMainViews();
+    localStorage.setItem("activePageAB","vehiclesPage");
+    if(typeof renderVehiclesPage==="function") renderVehiclesPage();
+    var page=document.getElementById("vehiclesPage");
+    if(page) page.style.display="block";
+    window.scrollTo(0,0);
+  }
+
+  function goRevisions(event) {
+    if(event){ event.preventDefault(); event.stopImmediatePropagation(); }
+    resetVehicleDetailSelection();
+    hideAllMainViews();
+    localStorage.setItem("activePageAB","revisionPage");
+    if(typeof renderRevisionPage==="function") renderRevisionPage();
+    var page=document.getElementById("revisionPage");
+    if(page) page.style.display="block";
+    window.scrollTo(0,0);
+  }
+
+  function goCt(event) {
+    if(event){ event.preventDefault(); event.stopImmediatePropagation(); }
+    resetVehicleDetailSelection();
+    hideAllMainViews();
+    localStorage.setItem("activePageAB","ctPage");
+    if(typeof renderCtPage==="function") renderCtPage();
+    var page=document.getElementById("ctPage");
+    if(page) page.style.display="block";
+    window.scrollTo(0,0);
+  }
+
+  function bindToolbar() {
+    var vehicles=document.getElementById("btnVehicleManagement");
+    var revisions=document.querySelector(".app-nav .nav-revisions");
+    var ct=document.querySelector(".app-nav .nav-ct");
+
+    if(vehicles){
+      vehicles.removeAttribute("onclick");
+      vehicles.addEventListener("click",goVehicles,true);
+    }
+    if(revisions){
+      revisions.removeAttribute("onclick");
+      revisions.addEventListener("click",goRevisions,true);
+    }
+    if(ct){
+      ct.removeAttribute("onclick");
+      ct.addEventListener("click",goCt,true);
+    }
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",bindToolbar,{once:true});
+  }else{
+    bindToolbar();
   }
 })();
 </script>
