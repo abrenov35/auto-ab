@@ -955,31 +955,14 @@
     /* ===== UI V7.1 : TABLEAUX ET ACTIONS UNIFORMES ===== */
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+      grid-template-columns: minmax(190px, 1fr) auto minmax(90px, 1fr);
       align-items: center;
       gap: 16px;
       overflow: visible;
     }
 
-    .toolbar-brand {
+    .toolbar h1 {
       justify-self: start;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-    }
-
-    .toolbar-brand h1 {
-      margin: 0;
-    }
-
-    .toolbar-brand .version {
-      font-size: 11px;
-      opacity: 0.75;
-      background: rgba(255,255,255,0.10);
-      padding: 2px 7px;
-      border-radius: 999px;
-      white-space: nowrap;
     }
 
     .toolbar-nav {
@@ -993,7 +976,10 @@
       background: rgba(255,255,255,0.08);
     }
 
-
+    .toolbar .version {
+      justify-self: end;
+      margin-left: 0;
+    }
 
     .alert-inner {
       width: 100%;
@@ -1090,8 +1076,9 @@
         gap: 8px;
       }
 
-      .toolbar-brand,
-      .toolbar-nav {
+      .toolbar h1,
+      .toolbar-nav,
+      .toolbar .version {
         justify-self: center;
       }
 
@@ -1112,6 +1099,115 @@
       }
     }
 
+  
+    /* ===== HEADER V7.4 PROPRE ===== */
+    .app-header {
+      background: #0d3a66;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.14);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .app-header-top {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px 16px 4px;
+    }
+
+    .app-brand {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .app-brand-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .app-brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      white-space: nowrap;
+    }
+
+    .app-brand .version {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 20px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      color: rgba(255,255,255,.82);
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .app-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px 8px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .app-nav .btn-toolbar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 7px 12px;
+      margin: 0;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 7px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .app-nav .btn-toolbar:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,.18);
+    }
+
+    .app-nav .nav-vehicles { background: #1976d2; }
+    .app-nav .nav-revisions { background: #2e7d46; }
+    .app-nav .nav-ct { background: #ff9800; }
+
+    /* Neutralise totalement l'ancien composant toolbar */
+    .toolbar {
+      display: none !important;
+    }
+
+    @media (max-width: 700px) {
+      .app-header-top {
+        justify-content: flex-start;
+      }
+
+      .app-nav {
+        justify-content: flex-start;
+      }
+
+      .app-brand-title {
+        font-size: 15px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1123,17 +1219,32 @@
   <div style="font-size: 13px; color: #999;">Actualisation en cours...</div>
 </div>
 
-<div class="toolbar">
-  <div class="toolbar-brand">
-    <h1>🚗 AB PARC AUTO</h1>
-</div>
-  <div class="toolbar-nav">
-    <button id="btnVehicleManagement" class="btn-toolbar" style="background: #1976d2;" onclick="openVehicleManagementModal()">📋 Gestion Véhicules</button>
-    <button class="btn-toolbar" style="background: #2e7d46;" onclick="openRevisionModal()">🔧 Révisions</button>
-    <button class="btn-toolbar" style="background: #ff9800;" onclick="openControleTkModal()">🛡️ Contrôle Technique</button>
+<header class="app-header">
+  <div class="app-header-top">
+    <div class="app-brand">
+      <span class="app-brand-icon">🚗</span>
+      <span class="app-brand-title">AB PARC AUTO</span>
+      <span class="version">v7.4</span>
+    </div>
   </div>
-  <span class="version">v7.2</span>
-</div>
+
+  <nav class="app-nav" aria-label="Navigation principale">
+    <button id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="openVehicleManagementModal()">
+      <i class="bi bi-card-list"></i>
+      <span>Gestion Véhicules</span>
+    </button>
+
+    <button class="btn-toolbar nav-revisions" onclick="openRevisionModal()">
+      <i class="bi bi-wrench-adjustable"></i>
+      <span>Révisions</span>
+    </button>
+
+    <button class="btn-toolbar nav-ct" onclick="openControleTkModal()">
+      <i class="bi bi-shield-check"></i>
+      <span>Contrôle Technique</span>
+    </button>
+  </nav>
+</header>
 
 <!-- ALERTE CT -->
 <div class="alert-banner" id="alertBanner">
