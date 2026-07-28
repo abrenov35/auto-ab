@@ -2031,22 +2031,22 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.22</span>
+      <span class="version" id="appVersionBadge">v8.23</span>
     </div>
   </div>
 
   <nav class="app-nav" aria-label="Navigation principale">
-    <button id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="openVehicleManagementModal()">
+    <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="return abGoPage('vehiclesPage')">
       <i class="bi bi-card-list"></i>
       <span>Gestion Véhicules</span>
     </button>
 
-    <button class="btn-toolbar nav-revisions" onclick="openRevisionModal()">
+    <button type="button" class="btn-toolbar nav-revisions" onclick="return abGoPage('revisionPage')">
       <i class="bi bi-wrench-adjustable"></i>
       <span>Révisions</span>
     </button>
 
-    <button class="btn-toolbar nav-ct" onclick="openControleTkModal()">
+    <button type="button" class="btn-toolbar nav-ct" onclick="return abGoPage('ctPage')">
       <i class="bi bi-shield-check"></i>
       <span>Contrôle Technique</span>
     </button>
@@ -5363,7 +5363,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.22';
+  const APP_VERSION = 'v8.23';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
@@ -5488,82 +5488,59 @@ async function archiveItem(action, immatriculation, label) {
 </script>
 
 
+
+
+
 <script>
-/* V8.22 — Navigation toolbar indépendante et forcée */
-(function () {
-  function hideAllMainViews() {
-    ["management","vehiclesPage","revisionPage","ctPage","vehicleDetailPage"].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el) el.style.display="none";
+/* V8.23 — Navigation directe, sans dépendre des anciennes fonctions */
+window.abGoPage = function(pageId) {
+  try {
+    ["management","vehiclesPage","revisionPage","ctPage","vehicleDetailPage"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = "none";
     });
-  }
 
-  function resetVehicleDetailSelection() {
-    try { vehicleDetailImmat=null; } catch(e) {}
-    try { selectedVehicule=null; } catch(e) {}
+    var selector = document.getElementById("vehicleQuickSelect");
+    if (selector) selector.value = "";
+
     localStorage.removeItem("activeVehicleAB");
-    var selector=document.getElementById("vehicleQuickSelect");
-    if(selector) selector.value="";
-  }
+    localStorage.setItem("activePageAB", pageId);
 
-  function goVehicles(event) {
-    if(event){ event.preventDefault(); event.stopImmediatePropagation(); }
-    resetVehicleDetailSelection();
-    hideAllMainViews();
-    localStorage.setItem("activePageAB","vehiclesPage");
-    if(typeof renderVehiclesPage==="function") renderVehiclesPage();
-    var page=document.getElementById("vehiclesPage");
-    if(page) page.style.display="block";
-    window.scrollTo(0,0);
-  }
+    var target = document.getElementById(pageId);
+    if (target) target.style.display = "block";
 
-  function goRevisions(event) {
-    if(event){ event.preventDefault(); event.stopImmediatePropagation(); }
-    resetVehicleDetailSelection();
-    hideAllMainViews();
-    localStorage.setItem("activePageAB","revisionPage");
-    if(typeof renderRevisionPage==="function") renderRevisionPage();
-    var page=document.getElementById("revisionPage");
-    if(page) page.style.display="block";
-    window.scrollTo(0,0);
-  }
-
-  function goCt(event) {
-    if(event){ event.preventDefault(); event.stopImmediatePropagation(); }
-    resetVehicleDetailSelection();
-    hideAllMainViews();
-    localStorage.setItem("activePageAB","ctPage");
-    if(typeof renderCtPage==="function") renderCtPage();
-    var page=document.getElementById("ctPage");
-    if(page) page.style.display="block";
-    window.scrollTo(0,0);
-  }
-
-  function bindToolbar() {
-    var vehicles=document.getElementById("btnVehicleManagement");
-    var revisions=document.querySelector(".app-nav .nav-revisions");
-    var ct=document.querySelector(".app-nav .nav-ct");
-
-    if(vehicles){
-      vehicles.removeAttribute("onclick");
-      vehicles.addEventListener("click",goVehicles,true);
+    try {
+      if (pageId === "vehiclesPage" && typeof renderVehiclesPage === "function") renderVehiclesPage();
+      if (pageId === "revisionPage" && typeof renderRevisionPage === "function") renderRevisionPage();
+      if (pageId === "ctPage" && typeof renderCtPage === "function") renderCtPage();
+    } catch (renderError) {
+      console.error("Erreur de rendu de la page :", renderError);
     }
-    if(revisions){
-      revisions.removeAttribute("onclick");
-      revisions.addEventListener("click",goRevisions,true);
-    }
-    if(ct){
-      ct.removeAttribute("onclick");
-      ct.addEventListener("click",goCt,true);
-    }
-  }
 
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",bindToolbar,{once:true});
-  }else{
-    bindToolbar();
+    document.querySelectorAll(".app-nav .btn-toolbar").forEach(function(btn) {
+      btn.classList.remove("active");
+    });
+
+    if (pageId === "vehiclesPage") {
+      var b1 = document.getElementById("btnVehicleManagement");
+      if (b1) b1.classList.add("active");
+    }
+    if (pageId === "revisionPage") {
+      var b2 = document.querySelector(".app-nav .nav-revisions");
+      if (b2) b2.classList.add("active");
+    }
+    if (pageId === "ctPage") {
+      var b3 = document.querySelector(".app-nav .nav-ct");
+      if (b3) b3.classList.add("active");
+    }
+
+    window.scrollTo(0, 0);
+  } catch (error) {
+    console.error("Erreur navigation toolbar :", error);
+    alert("Erreur de navigation : " + error.message);
   }
-})();
+  return false;
+};
 </script>
 
 </body>
