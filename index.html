@@ -1819,7 +1819,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.16</span>
+      <span class="version" id="appVersionBadge">v8.17</span>
     </div>
   </div>
 
@@ -1869,8 +1869,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
 <!-- ===== FICHE INDIVIDUELLE VEHICULE ===== -->
 <section id="vehicleDetailPage">
-  <button type="button" class="btn btn-secondary vehicle-back" onclick="openVehicleManagementModal()"><i class="bi bi-arrow-left"></i> Retour au parc</button>
-  <div id="vehicleDetailHero"></div>
+<div id="vehicleDetailHero"></div>
   <div class="vehicle-detail-grid">
     <article class="vehicle-card">
       <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-wrench-adjustable"></i> Révision</div><button class="btn btn-success" onclick="openVehicleRevisionFromDetail()">Modifier</button></div>
@@ -3469,8 +3468,23 @@ async function submitVehicule() {
   }
 }
 
+
+function closeVehicleDetailPage() {
+  const detail = document.getElementById("vehicleDetailPage");
+  if (detail) detail.style.display = "none";
+
+  vehicleDetailImmat = null;
+  selectedVehicule = null;
+
+  localStorage.removeItem("activeVehicleAB");
+
+  const selector = document.getElementById("vehicleQuickSelect");
+  if (selector) selector.value = "";
+}
+
 // ========== GESTION VÉHICULES ==========
 function openVehicleManagementModal() {
+  closeVehicleDetailPage();
   localStorage.setItem("activePageAB", "vehiclesPage");
   renderVehiclesPage();
   document.getElementById("management").style.display = "none";
@@ -3910,6 +3924,7 @@ function renderControleTk() {
 // ========== RÉVISIONS ==========
 
 function openRevisionModal() {
+  closeVehicleDetailPage();
   localStorage.setItem("activePageAB", "revisionPage");
   renderRevisionPage();
   document.getElementById("management").style.display = "none";
@@ -4249,6 +4264,7 @@ async function deleteRevisionFromModal() {
 }
 
 function openControleTkModal() {
+  closeVehicleDetailPage();
   localStorage.setItem("activePageAB", "ctPage");
   renderCtPage();
   document.getElementById("management").style.display = "none";
@@ -5125,7 +5141,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.16';
+  const APP_VERSION = 'v8.17';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
