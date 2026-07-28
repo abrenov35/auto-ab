@@ -2171,6 +2171,63 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 }
 #offlineNotice[hidden]{display:none !important;}
 
+
+    /* ===== V8.39 : ALERTE RÉVISION AVEC MESSAGE PRÉVENTIF ===== */
+    #vehiclesPageList {
+      grid-template-columns:
+        minmax(125px, .9fr)
+        minmax(150px, 1.05fr)
+        minmax(145px, .95fr)
+        minmax(150px, 1fr)
+        minmax(100px, .65fr)
+        132px !important;
+    }
+
+    #revisionPageList,
+    #ctPageList {
+      grid-template-columns:
+        minmax(125px, .85fr)
+        minmax(150px, 1fr)
+        minmax(130px, .9fr)
+        minmax(130px, .9fr)
+        minmax(130px, 1fr)
+        220px
+        132px !important;
+    }
+
+    .vehicle-brand,
+    .vehicle-model {
+      font-weight: 700 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    @media (max-width: 900px) {
+      #vehiclesPageList {
+        grid-template-columns:
+          minmax(110px, .85fr)
+          minmax(135px, 1fr)
+          minmax(125px, .9fr)
+          minmax(130px, .95fr)
+          minmax(90px, .65fr)
+          116px !important;
+      }
+
+      #revisionPageList,
+      #ctPageList {
+        grid-template-columns:
+          minmax(110px, .8fr)
+          minmax(135px, .95fr)
+          minmax(120px, .85fr)
+          minmax(120px, .85fr)
+          minmax(120px, .95fr)
+          190px
+          116px !important;
+      }
+    }
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2235,7 +2292,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.37</span>
+      <span class="version" id="appVersionBadge">v8.39</span>
     </div>
   </div>
 
@@ -4034,7 +4091,8 @@ function renderVehiclesPage() {
   );
 
   const header = `
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div class="ab-table-head" style="font-weight:700;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque</div>
+    <div class="ab-table-head" style="font-weight:700;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Modèle</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Statut</div>
@@ -4042,7 +4100,8 @@ function renderVehiclesPage() {
   `;
 
   const activeRows = actifs.map(v => `
-    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #2e7d46;padding-left:8px;font-weight:600;">${v.marque || ""} ${v.modele || ""}</div>
+    <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #2e7d46;padding-left:8px;font-weight:700;">${v.marque || ""}</div>
+    <div class="ab-table-cell vehicle-model" style="padding:10px 6px;border-bottom:1px solid #eef1f5;font-weight:700;color:#1d2939;">${v.modele || ""}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.immatriculation}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.conducteur || "—"}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"}</div>
@@ -4052,7 +4111,8 @@ function renderVehiclesPage() {
   `).join("");
 
   const archiveRows = archives.map(v => `
-    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #98a2b3;padding-left:8px;font-weight:600;color:#667085;">${v.marque || ""} ${v.modele || ""}</div>
+    <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid #98a2b3;padding-left:8px;font-weight:700;color:#667085;">${v.marque || ""}</div>
+    <div class="ab-table-cell vehicle-model" style="padding:10px 6px;border-bottom:1px solid #eef1f5;font-weight:700;color:#667085;">${v.modele || ""}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.immatriculation}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">${v.conducteur || "—"}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#667085;">Archivé</div>
@@ -4336,17 +4396,29 @@ function checkRevisionAlerts() {
     alertBanner.classList.add("active");
     alertItems.innerHTML = alerts.map(a => {
       let daysText = "";
+      let actionText = "";
+      let actionColor = "#f57c00";
       let statusClass = "";
+
       if (a.daysLeft < 0) {
-        daysText = `🔴 DÉPASSÉE de ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
+        const retard = Math.abs(a.daysLeft);
+        daysText = `DÉPASSÉE de ${retard} jour${retard > 1 ? 's' : ''}`;
+        actionText = `❌ Révision en retard de ${retard} jour${retard > 1 ? 's' : ''}`;
+        actionColor = "#d32f2f";
         statusClass = "danger";
       } else if (a.daysLeft === 0) {
         daysText = `J0`;
+        actionText = `🔴 Révision aujourd'hui`;
+        actionColor = "#d32f2f";
         statusClass = "danger";
       } else {
         daysText = `J-${a.daysLeft}`;
-        statusClass = "danger";
+        actionText = a.daysLeft === 1
+          ? `⚠️ Prévoir demain`
+          : `⚠️ Prévoir dans ${a.daysLeft} jours`;
+        statusClass = "warning";
       }
+
       return `
       <div class="alert-item-revision ${statusClass}">
         <strong>${a.immatriculation}</strong>
@@ -4354,7 +4426,9 @@ function checkRevisionAlerts() {
         <span style="color: #999;">|</span>
         <span style="color: #999; font-size: 10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
         <span style="color: #999;">|</span>
-        <span>${daysText}</span>
+        <span style="font-weight:700;">${daysText}</span>
+        <span style="color: #999;">|</span>
+        <span style="color:${actionColor};font-weight:700;white-space:nowrap;">${actionText}</span>
       </div>
     `;
     }).join("");
@@ -4444,7 +4518,8 @@ function renderRevisionPage() {
   const archives = sortRows(complete.filter(r => r.statut === "Archivé"));
 
   const header = `
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div class="ab-table-head" style="font-weight:700;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque</div>
+    <div class="ab-table-head" style="font-weight:700;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Modèle</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernière Révision</div>
@@ -4463,7 +4538,8 @@ function renderRevisionPage() {
       : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>`;
 
     return `
-      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${r.marque} ${r.modele}</div>
+      <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${r.marque}</div>
+      <div class="ab-table-cell vehicle-model" style="padding:10px 6px;border-bottom:1px solid #eef1f5;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${r.modele}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.immatriculation}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.conducteur || "—"}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
@@ -4789,7 +4865,8 @@ function renderCtPage() {
   const archives = sortRows(complete.filter(ct => ct.statut === "Archivé"));
 
   const header = `
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque Modèle</div>
+    <div class="ab-table-head" style="font-weight:700;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Marque</div>
+    <div class="ab-table-head" style="font-weight:700;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Modèle</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernier CT</div>
@@ -4806,7 +4883,8 @@ function renderCtPage() {
          <button type="button" class="ab-icon-btn view" title="Voir" aria-label="Voir" onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')"><i class="bi bi-eye"></i></button>`;
 
     return `
-      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:600;color:${archived ? "#667085" : "#1d2939"};">${ct.marque} ${ct.modele}</div>
+      <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${ct.marque}</div>
+      <div class="ab-table-cell vehicle-model" style="padding:10px 6px;border-bottom:1px solid #eef1f5;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${ct.modele}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.immatriculation}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.conducteur || "—"}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
@@ -5628,7 +5706,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.36';
+  const APP_VERSION = 'v8.39';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
