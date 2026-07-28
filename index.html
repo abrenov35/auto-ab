@@ -1208,6 +1208,90 @@
       }
     }
 
+  
+    /* ===== AJUSTEMENTS V7.5 : ACTIONS + ÉCHÉANCES ===== */
+
+    /* Même largeur et même centrage pour la colonne Actions */
+    #vehiclesPageList,
+    #revisionPageList,
+    #ctPageList {
+      grid-template-columns:
+        minmax(180px, 1.35fr)
+        minmax(130px, 0.9fr)
+        minmax(130px, 0.9fr)
+        minmax(130px, 1fr)
+        minmax(180px, 1.15fr)
+        132px !important;
+    }
+
+    .ab-table-head:last-child {
+      justify-content: center !important;
+      text-align: center !important;
+    }
+
+    .ab-actions {
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 8px !important;
+      padding-left: 6px !important;
+      padding-right: 6px !important;
+    }
+
+    .ab-icon-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      flex: 0 0 30px;
+    }
+
+    /* Plus d'espace entre la date et la pastille d'échéance */
+    .ab-date-cell {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 12px !important;
+      white-space: nowrap;
+    }
+
+    .ab-days-badge {
+      margin-left: 0 !important;
+      min-width: 46px;
+      height: 22px;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px !important;
+      border-radius: 999px;
+      font-size: 11px !important;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 900px) {
+      #vehiclesPageList,
+      #revisionPageList,
+      #ctPageList {
+        grid-template-columns:
+          minmax(150px, 1.3fr)
+          minmax(120px, .9fr)
+          minmax(120px, .9fr)
+          minmax(120px, 1fr)
+          minmax(165px, 1.15fr)
+          116px !important;
+      }
+
+      .ab-actions {
+        gap: 6px !important;
+      }
+
+      .ab-date-cell {
+        gap: 9px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1224,7 +1308,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v7.4</span>
+      <span class="version">v7.5</span>
     </div>
   </div>
 
@@ -2558,7 +2642,7 @@ function renderVehiclesPage() {
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Statut</div>
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Actions</div>
   `;
 
   const activeRows = actifs.map(v => `
@@ -2966,7 +3050,7 @@ function renderRevisionPage() {
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernière Révision</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochaine Révision</div>
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Actions</div>
   `;
 
   const makeRows = (rows, archived) => rows.map(r => {
@@ -2985,7 +3069,7 @@ function renderRevisionPage() {
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.immatriculation}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.conducteur || "—"}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.dernierDate ? new Date(r.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.prochainDate ? new Date(r.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
+      <div class="ab-table-cell ab-date-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${r.prochainDate ? new Date(r.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span class="ab-days-badge" style="border:1px solid ${color};color:${color};">${days} j</span>`}</div>
       <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
@@ -3257,7 +3341,7 @@ function renderCtPage() {
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernier CT</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochain CT</div>
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;text-align:right;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Actions</div>
   `;
 
   const makeRows = (rows, archived) => rows.map(ct => {
@@ -3274,7 +3358,7 @@ function renderCtPage() {
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.immatriculation}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.conducteur || "—"}</div>
       <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.dernierDate ? new Date(ct.dernierDate).toLocaleDateString("fr-FR") : "—"}</div>
-      <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span style="margin-left:7px;border:1px solid ${color};border-radius:999px;padding:1px 7px;color:${color};font-size:10px;">${days} j</span>`}</div>
+      <div class="ab-table-cell ab-date-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${ct.prochainDate ? new Date(ct.prochainDate).toLocaleDateString("fr-FR") : "—"} ${days === null ? "" : `<span class="ab-days-badge" style="border:1px solid ${color};color:${color};">${days} j</span>`}</div>
       <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">${action}</div>
     `;
   }).join("");
