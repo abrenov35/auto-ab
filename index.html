@@ -1973,6 +1973,33 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
  color:#0d47a1!important;
 }
 
+
+/* V8.24 — La toolbar reste toujours au premier plan et cliquable */
+.app-header{
+  position:sticky !important;
+  top:0 !important;
+  z-index:999999 !important;
+  pointer-events:auto !important;
+}
+.app-header *,
+.app-nav,
+.app-nav .btn-toolbar{
+  pointer-events:auto !important;
+}
+.app-nav .btn-toolbar{
+  position:relative !important;
+  z-index:1000000 !important;
+  cursor:pointer !important;
+}
+#vehicleDetailPage,
+#vehiclesPage,
+#revisionPage,
+#ctPage,
+#management{
+  position:relative;
+  z-index:1;
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2031,7 +2058,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.23</span>
+      <span class="version" id="appVersionBadge">v8.24</span>
     </div>
   </div>
 
@@ -5363,7 +5390,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.23';
+  const APP_VERSION = 'v8.24';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
@@ -5541,6 +5568,64 @@ window.abGoPage = function(pageId) {
   }
   return false;
 };
+</script>
+
+
+<script>
+/* V8.24 — Interception globale avant tout autre gestionnaire */
+(function(){
+  function navigate(pageId){
+    ["management","vehiclesPage","revisionPage","ctPage","vehicleDetailPage"].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.style.display="none";
+    });
+
+    var selector=document.getElementById("vehicleQuickSelect");
+    if(selector) selector.value="";
+
+    try{ vehicleDetailImmat=null; }catch(e){}
+    try{ selectedVehicule=null; }catch(e){}
+
+    localStorage.removeItem("activeVehicleAB");
+    localStorage.setItem("activePageAB",pageId);
+
+    if(pageId==="vehiclesPage" && typeof renderVehiclesPage==="function") renderVehiclesPage();
+    if(pageId==="revisionPage" && typeof renderRevisionPage==="function") renderRevisionPage();
+    if(pageId==="ctPage" && typeof renderCtPage==="function") renderCtPage();
+
+    var page=document.getElementById(pageId);
+    if(page) page.style.display="block";
+
+    document.querySelectorAll(".app-nav .btn-toolbar").forEach(function(b){b.classList.remove("active");});
+    var active =
+      pageId==="vehiclesPage" ? document.getElementById("btnVehicleManagement") :
+      pageId==="revisionPage" ? document.querySelector(".app-nav .nav-revisions") :
+      document.querySelector(".app-nav .nav-ct");
+    if(active) active.classList.add("active");
+
+    window.scrollTo(0,0);
+  }
+
+  function handler(e){
+    var button=e.target.closest && e.target.closest(".app-nav .btn-toolbar");
+    if(!button) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    if(button.id==="btnVehicleManagement" || button.classList.contains("nav-vehicles")){
+      navigate("vehiclesPage");
+    }else if(button.classList.contains("nav-revisions")){
+      navigate("revisionPage");
+    }else if(button.classList.contains("nav-ct")){
+      navigate("ctPage");
+    }
+  }
+
+  document.addEventListener("pointerdown",handler,true);
+  document.addEventListener("click",handler,true);
+})();
 </script>
 
 </body>
