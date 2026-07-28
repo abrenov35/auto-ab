@@ -1,5 +1,12 @@
 <!-- AB PARC AUTO v3 -->
 <!DOCTYPE html>
+<!--
+AB PARC AUTO — GOOGLE SHEETS
+Feuille : Documents
+Headers :
+ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille | Extension | DateAjout | DateModification | Archive
+-->
+
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -1735,7 +1742,26 @@
       to { transform: rotate(360deg); }
     }
 
-  </style>
+  
+
+/* ===== V8.14 - FICHE INDIVIDUELLE VEHICULE ===== */
+.vehicle-picker-wrap{display:flex;align-items:center;gap:8px;margin-left:auto;padding-left:12px;border-left:1px solid rgba(255,255,255,.22)}
+.vehicle-picker-wrap label{font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
+.vehicle-picker{min-width:230px;height:38px;border:1px solid rgba(255,255,255,.45);border-radius:8px;background:#fff;color:#1f2937;padding:0 34px 0 11px;font-size:13px;font-weight:600;cursor:pointer}
+#vehicleDetailPage{display:none;padding:22px;max-width:1440px;margin:0 auto}
+.vehicle-detail-hero{display:flex;justify-content:space-between;gap:20px;align-items:center;background:linear-gradient(135deg,#0d3a66,#185fa5);color:#fff;border-radius:16px;padding:24px 28px;box-shadow:0 12px 30px rgba(13,58,102,.18);margin-bottom:18px}
+.vehicle-detail-title{font-size:27px;font-weight:800;margin:0 0 7px}.vehicle-detail-immat{display:inline-flex;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);padding:6px 12px;border-radius:8px;font-size:17px;font-weight:800;letter-spacing:.7px}
+.vehicle-detail-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}.vehicle-detail-chip{background:rgba(255,255,255,.12);padding:7px 10px;border-radius:7px;font-size:13px}
+.vehicle-detail-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.vehicle-detail-actions button{min-width:112px}
+.vehicle-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px}
+.vehicle-card{background:#fff;border:1px solid #e1e7ef;border-radius:14px;box-shadow:0 7px 20px rgba(15,43,73,.08);overflow:hidden}
+.vehicle-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #edf0f4}.vehicle-card-title{font-size:16px;font-weight:800;color:#0d3a66;display:flex;align-items:center;gap:9px}.vehicle-card-body{padding:18px}
+.vehicle-info-lines{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.vehicle-info-item{background:#f7f9fc;border:1px solid #e7ebf1;border-radius:9px;padding:12px}.vehicle-info-label{display:block;color:#667085;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px}.vehicle-info-value{color:#1f2937;font-size:14px;font-weight:700}
+.vehicle-docs-card{grid-column:1/-1}.vehicle-docs-table{width:100%;border-collapse:collapse}.vehicle-docs-table th,.vehicle-docs-table td{padding:12px 10px;border-bottom:1px solid #edf0f4;text-align:left;font-size:13px}.vehicle-docs-table th{color:#667085;font-size:11px;text-transform:uppercase;background:#f8fafc}.vehicle-doc-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}.vehicle-doc-actions .ab-icon-btn{width:34px;height:34px}
+.vehicle-empty{padding:26px;text-align:center;color:#98a2b3;background:#fafbfc;border-radius:9px}.vehicle-back{margin-bottom:14px}
+@media(max-width:900px){.vehicle-picker-wrap{width:100%;border-left:0;padding-left:0}.vehicle-picker{flex:1;min-width:0}.vehicle-detail-grid{grid-template-columns:1fr}.vehicle-detail-hero{align-items:flex-start;flex-direction:column}.vehicle-detail-actions{justify-content:flex-start}.vehicle-info-lines{grid-template-columns:1fr}}
+
+</style>
 </head>
 <body class="app-booting is-loading">
 
@@ -1793,7 +1819,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.12</span>
+      <span class="version" id="appVersionBadge">v8.16</span>
     </div>
   </div>
 
@@ -1812,6 +1838,12 @@
       <i class="bi bi-shield-check"></i>
       <span>Contrôle Technique</span>
     </button>
+
+    <div class="vehicle-picker-wrap">
+      <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="Sélectionner un véhicule" onchange="openVehicleDetailPage(this.value)">
+        <option value="">Sélectionner un véhicule</option>
+      </select>
+    </div>
   </nav>
 </header>
 
@@ -1833,6 +1865,27 @@
 
 <!-- TABS NAVIGATION -->
 <!-- SUPPRIMÉ - Plus de tabs, seulement la gestion du parc -->
+
+
+<!-- ===== FICHE INDIVIDUELLE VEHICULE ===== -->
+<section id="vehicleDetailPage">
+  <button type="button" class="btn btn-secondary vehicle-back" onclick="openVehicleManagementModal()"><i class="bi bi-arrow-left"></i> Retour au parc</button>
+  <div id="vehicleDetailHero"></div>
+  <div class="vehicle-detail-grid">
+    <article class="vehicle-card">
+      <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-wrench-adjustable"></i> Révision</div><button class="btn btn-success" onclick="openVehicleRevisionFromDetail()">Modifier</button></div>
+      <div class="vehicle-card-body" id="vehicleDetailRevision"></div>
+    </article>
+    <article class="vehicle-card">
+      <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-shield-check"></i> Contrôle technique</div><button class="btn btn-success" onclick="openVehicleCtFromDetail()">Modifier</button></div>
+      <div class="vehicle-card-body" id="vehicleDetailCt"></div>
+    </article>
+    <article class="vehicle-card vehicle-docs-card">
+      <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-folder2-open"></i> Documents</div><button class="btn btn-success" onclick="openAddDocumentFromDetail()"><i class="bi bi-plus-lg"></i> Ajouter</button></div>
+      <div class="vehicle-card-body" id="vehicleDetailDocuments"></div>
+    </article>
+  </div>
+</section>
 
 <!-- ===== MANAGEMENT TAB ===== (PAGE UNIQUE) -->
 <div id="management">
@@ -4827,6 +4880,92 @@ function showLoadingAndReload() {
 }
 
 // Initialiser l'app au chargement
+
+// ===== V8.14 - FICHE INDIVIDUELLE VEHICULE =====
+let vehicleDetailImmat = null;
+
+function safeText(value){
+  return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+function formatFrDate(value){
+  if(!value) return '—';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime()) ? safeText(value) : d.toLocaleDateString('fr-FR');
+}
+function populateVehicleQuickSelect(){
+  const select=document.getElementById('vehicleQuickSelect');
+  if(!select) return;
+  const keep=vehicleDetailImmat || select.value;
+  const vehicles=(Array.isArray(data?.vehicules)?data.vehicules:[])
+    .filter(v => (v.statut || 'Actif') !== 'Archivé')
+    .sort((a,b)=>`${a.marque||''} ${a.modele||''}`.localeCompare(`${b.marque||''} ${b.modele||''}`,'fr'));
+  select.innerHTML='<option value="">Sélectionner un véhicule</option>'+vehicles.map(v=>`<option value="${safeText(v.immatriculation)}">${safeText(v.marque||'')} ${safeText(v.modele||'')} — ${safeText(v.immatriculation)}</option>`).join('');
+  if(keep && vehicles.some(v=>v.immatriculation===keep)) select.value=keep;
+}
+function hideMainPages(){
+  ['management','vehiclesPage','revisionPage','ctPage'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+}
+function openVehicleDetailPage(immatriculation){
+  if(!immatriculation) return;
+  vehicleDetailImmat=immatriculation;
+  selectedVehicule=immatriculation;
+  localStorage.setItem('activePageAB','vehicleDetailPage');
+  localStorage.setItem('activeVehicleAB',immatriculation);
+  hideMainPages();
+  const page=document.getElementById('vehicleDetailPage');
+  if(page) page.style.display='block';
+  populateVehicleQuickSelect();
+  renderVehicleDetailPage();
+  window.scrollTo(0,0);
+}
+function renderVehicleDetailPage(){
+  const immat=vehicleDetailImmat || localStorage.getItem('activeVehicleAB');
+  const vehicle=(Array.isArray(data?.vehicules)?data.vehicules:[]).find(v=>v.immatriculation===immat);
+  if(!vehicle) return;
+  vehicleDetailImmat=immat; selectedVehicule=immat;
+  const hero=document.getElementById('vehicleDetailHero');
+  hero.innerHTML=`<div class="vehicle-detail-hero"><div><h1 class="vehicle-detail-title">${safeText(`${vehicle.marque||''} ${vehicle.modele||''}`.trim() || 'Véhicule')}</h1><span class="vehicle-detail-immat">${safeText(immat)}</span><div class="vehicle-detail-meta"><span class="vehicle-detail-chip">Année : ${safeText(vehicle.annee||'—')}</span><span class="vehicle-detail-chip">Conducteur : ${safeText(vehicle.conducteur||'—')}</span><span class="vehicle-detail-chip">Statut : ${safeText(vehicle.statut||'Actif')}</span></div></div><div class="vehicle-detail-actions"><button class="btn btn-success" onclick="openEditVehiculeModal('${safeText(immat)}')"><i class="bi bi-pencil"></i> Modifier</button></div></div>`;
+  const rev=(Array.isArray(data?.revisions)?data.revisions:[]).find(r=>r.immatriculation===immat && r.statut!=='Archivé');
+  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Conducteur</span><span class="vehicle-info-value">${safeText(rev.conducteur||vehicle.conducteur||'—')}</span></div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
+  const ct=(Array.isArray(data?.controlsTk)?data.controlsTk:[]).find(c=>c.immatriculation===immat && c.statut!=='Archivé');
+  document.getElementById('vehicleDetailCt').innerHTML=ct?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernier contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.dernierDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Prochain contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.prochainDate)}</span></div><div class="vehicle-info-item"><span class="vehicle-info-label">Document</span><span class="vehicle-info-value">${ct.lienDrive||ct.lienCt?`<button class="btn btn-secondary" onclick="viewCt('${safeText(immat)}','${safeText(ct.lienDrive||ct.lienCt)}')">Télécharger</button>`:'—'}</span></div></div>`:'<div class="vehicle-empty">Aucun contrôle technique enregistré</div>';
+  renderVehicleDetailDocuments();
+}
+function renderVehicleDetailDocuments(){
+  const box=document.getElementById('vehicleDetailDocuments'); if(!box)return;
+  const docs=(Array.isArray(data?.documents)?data.documents:[]).filter(d=>d.immatriculation===vehicleDetailImmat);
+  const active=docs.filter(d=>(d.statut||'Actif')!=='Archivé');
+  const archived=docs.filter(d=>d.statut==='Archivé');
+  const rows=list=>list.map(doc=>`<tr><td><strong>${safeText(doc.nom||'Sans nom')}</strong></td><td>${safeText(doc.categorie||doc.type||'—')}</td><td>${safeText(doc.description||'—')}</td><td>${formatFrDate(doc.date)}</td><td><div class="vehicle-doc-actions"><button class="ab-icon-btn" title="Voir" onclick="viewDocument('${safeText(doc.nom||'Document')}','${safeText(doc.lienDrive||'')}')"><i class="bi bi-eye"></i></button><button class="ab-icon-btn edit" title="Modifier" onclick="editDocument(${JSON.stringify(doc.id)})"><i class="bi bi-pencil"></i></button>${doc.lienDrive?`<button class="ab-icon-btn" title="Télécharger" onclick="window.open('${safeText(doc.lienDrive)}','_blank')"><i class="bi bi-download"></i></button>`:''}${doc.statut==='Archivé'?`<button class="ab-icon-btn restore" title="Restaurer" onclick="changeVehicleDocumentStatus(${JSON.stringify(doc.id)},'restoreDocument')"><i class="bi bi-arrow-counterclockwise"></i></button>`:`<button class="ab-icon-btn archive" title="Archiver" onclick="changeVehicleDocumentStatus(${JSON.stringify(doc.id)},'archiveDocument')"><i class="bi bi-archive"></i></button>`}<button class="ab-icon-btn delete" title="Supprimer" onclick="deleteVehicleDetailDocument(${JSON.stringify(doc.id)})"><i class="bi bi-trash"></i></button></div></td></tr>`).join('');
+  box.innerHTML=active.length?`<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead><tbody>${rows(active)}</tbody></table>`:'<div class="vehicle-empty">Aucun document enregistré</div>';
+  if(archived.length) box.innerHTML+=`<details style="margin-top:18px"><summary style="cursor:pointer;font-weight:800;color:#667085">Documents archivés (${archived.length})</summary><table class="vehicle-docs-table" style="margin-top:10px"><tbody>${rows(archived)}</tbody></table></details>`;
+}
+function openAddDocumentFromDetail(){ selectedVehicule=vehicleDetailImmat; openAddDocumentModal(); }
+function openVehicleRevisionFromDetail(){ selectedVehicule=vehicleDetailImmat; const rev=(data.revisions||[]).find(r=>r.immatriculation===vehicleDetailImmat); rev?openEditRevisionModal(vehicleDetailImmat):openAddRevisionModal(); }
+function openVehicleCtFromDetail(){ selectedVehicule=vehicleDetailImmat; const ct=(data.controlsTk||[]).find(c=>c.immatriculation===vehicleDetailImmat); ct?openCtEditModal(vehicleDetailImmat):openAddCtModal(); }
+async function changeVehicleDocumentStatus(id,action){
+  const label=action==='archiveDocument'?'Archiver ce document ?':'Restaurer ce document ?';
+  if(!await showConfirm(label,{title:action==='archiveDocument'?'Archiver le document':'Restaurer le document',confirmText:action==='archiveDocument'?'Archiver':'Restaurer'}))return;
+  try{const response=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action,id})});if(!response.ok)throw new Error(`Erreur serveur ${response.status}`);await loadData();populateVehicleQuickSelect();renderVehicleDetailPage();showMsg(action==='archiveDocument'?'Document archivé':'Document restauré','ok');}catch(err){showMsg('Erreur : '+err.message,'err');}
+}
+async function deleteVehicleDetailDocument(id){
+  if(!await showConfirm('Cette suppression est définitive.',{title:'Supprimer le document',confirmText:'Supprimer',danger:true}))return;
+  try{const response=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteDocument',id})});if(!response.ok)throw new Error(`Erreur serveur ${response.status}`);await loadData();populateVehicleQuickSelect();renderVehicleDetailPage();showMsg('Document supprimé','ok');}catch(err){showMsg('Erreur : '+err.message,'err');}
+}
+
+// Complète les rendus existants avec le sélecteur de fiche.
+const originalDisplayActivePageV814=displayActivePage;
+displayActivePage=function(){
+  populateVehicleQuickSelect();
+  if(localStorage.getItem('activePageAB')==='vehicleDetailPage'){
+    vehicleDetailImmat=localStorage.getItem('activeVehicleAB');
+    if(vehicleDetailImmat){openVehicleDetailPage(vehicleDetailImmat);return;}
+  }
+  const detail=document.getElementById('vehicleDetailPage');if(detail)detail.style.display='none';
+  return originalDisplayActivePageV814();
+};
+
+
 init();
 async function archiveRevisionFromModal() {
   if (!editingRevisionImmat) {
@@ -4986,7 +5125,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.13';
+  const APP_VERSION = 'v8.16';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
