@@ -1360,6 +1360,51 @@
       }
     }
 
+  
+    /* ===== V7.7 : CORRECTION PAGE GESTION DES VÉHICULES ===== */
+
+    /* Page Véhicules : 5 colonnes uniquement */
+    #vehiclesPageList {
+      grid-template-columns:
+        minmax(220px, 1.45fr)
+        minmax(150px, .95fr)
+        minmax(160px, 1fr)
+        minmax(100px, .65fr)
+        132px !important;
+      column-gap: 12px !important;
+      row-gap: 0 !important;
+      align-items: stretch !important;
+    }
+
+    /* Pages Révisions et CT : 6 colonnes */
+    #revisionPageList,
+    #ctPageList {
+      grid-template-columns:
+        minmax(180px, 1.35fr)
+        minmax(130px, .9fr)
+        minmax(130px, .9fr)
+        minmax(130px, 1fr)
+        220px
+        132px !important;
+    }
+
+    #vehiclesPageList .ab-table-head:last-child,
+    #vehiclesPageList .ab-actions {
+      justify-content: center !important;
+      text-align: center !important;
+    }
+
+    @media (max-width: 900px) {
+      #vehiclesPageList {
+        grid-template-columns:
+          minmax(170px, 1.35fr)
+          minmax(125px, .9fr)
+          minmax(135px, .95fr)
+          minmax(90px, .65fr)
+          116px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1376,7 +1421,7 @@
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version">v7.6</span>
+      <span class="version">v7.7</span>
     </div>
   </div>
 
