@@ -2049,6 +2049,74 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   transform:translateY(-50%);
 }
 
+
+/* V8.32 — Badge CT sans chevauchement + boutons plus lisibles */
+.vehicle-info-item.vehicle-ct-alert{
+  display:grid !important;
+  grid-template-columns:1fr auto !important;
+  grid-template-rows:auto auto !important;
+  column-gap:10px !important;
+  align-items:center !important;
+}
+
+.vehicle-info-item.vehicle-ct-alert .vehicle-info-label{
+  grid-column:1 / -1;
+}
+
+.vehicle-info-item.vehicle-ct-alert .vehicle-info-value{
+  grid-column:1;
+  white-space:nowrap;
+}
+
+.vehicle-info-item.vehicle-ct-alert .vehicle-ct-alert-days{
+  grid-column:2;
+  grid-row:2;
+  margin:0 !important;
+  align-self:center;
+  justify-self:end;
+  min-width:40px;
+  text-align:center;
+}
+
+.vehicle-icon-action,
+.vehicle-ct-eye{
+  opacity:1 !important;
+  color:#0d5aa8 !important;
+  border-color:#7fa8d8 !important;
+  background:#f8fbff !important;
+  box-shadow:0 1px 3px rgba(13,90,168,.12) !important;
+}
+
+.vehicle-icon-action:hover,
+.vehicle-ct-eye:hover{
+  color:#083b73 !important;
+  border-color:#4f87c8 !important;
+  background:#eaf3ff !important;
+}
+
+.vehicle-icon-action i,
+.vehicle-ct-eye i{
+  opacity:1 !important;
+  font-weight:700 !important;
+}
+
+.vehicle-ct-eye.disabled{
+  color:#7d8da3 !important;
+  border-color:#b8c4d3 !important;
+  background:#f3f6f9 !important;
+  opacity:1 !important;
+}
+
+@media(max-width:700px){
+  .vehicle-info-item.vehicle-ct-alert{
+    column-gap:6px !important;
+  }
+  .vehicle-info-item.vehicle-ct-alert .vehicle-ct-alert-days{
+    min-width:36px;
+    padding:2px 6px !important;
+  }
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2107,7 +2175,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.31</span>
+      <span class="version" id="appVersionBadge">v8.32</span>
     </div>
   </div>
 
@@ -5444,7 +5512,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.31';
+  const APP_VERSION = 'v8.32';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
