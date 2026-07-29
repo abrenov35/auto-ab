@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.59 - fiche véhicule et historique documentaire par année -->
+<!-- AB PARC AUTO v8.60 - fiche véhicule et historique documentaire par année -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -6230,7 +6230,7 @@ function renderVehicleDetailPage(){
   const revisionEye = latestRevisionUrl
     ? `<button type="button" class="vehicle-ct-eye" title="Voir le document de la dernière révision" aria-label="Voir le document de la dernière révision" onclick='viewDocument(${JSON.stringify(latestRevisionName)}, ${JSON.stringify(latestRevisionUrl)})'><i class="bi bi-eye"></i></button>`
     : `<button type="button" class="vehicle-ct-eye disabled" title="Aucun document de révision disponible" aria-label="Aucun document de révision disponible" disabled><i class="bi bi-eye"></i></button>`;
-  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item vehicle-ct-last"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span>${revisionEye}</div><div class="vehicle-info-item${revisionAlertClass}"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span>${revisionBadge}</div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
+  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines vehicle-ct-lines"><div class="vehicle-info-item vehicle-ct-last"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span>${revisionEye}</div><div class="vehicle-info-item${revisionAlertClass}"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span>${revisionBadge}</div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
   const ct=(Array.isArray(data?.controlsTk)?data.controlsTk:[]).find(c=>c.immatriculation===immat && c.statut!=='Archivé');
   const ctDaysLeft = ct ? calculateDaysUntilCT(ct.prochainDate) : null;
   const ctAlertClass = ctDaysLeft !== null && ctDaysLeft <= 30 ? ' vehicle-ct-alert' : '';
