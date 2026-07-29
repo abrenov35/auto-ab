@@ -1,3 +1,4 @@
+<!-- AB PARC AUTO v6.3.43 - Cache + Debounce optimisation performance -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -3225,6 +3226,144 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 <script>
 const APPS_SCRIPT_URL = "https://auto-ab-cors-proxy.onrender.com";
 
+// ===== 🚀 CACHE MANAGER v6.3.43 =====
+// Cache en mémoire avec TTL (30 secondes) pour éviter les fetches répétés
+const DataCacheManager = (() => {
+  let cache = null;
+  let lastFetchTime = 0;
+  const CACHE_TTL = 30000; // 30 secondes
+  let isFetching = false;
+  let fetchPromise = null;
+
+  return {
+    async getData() {
+      const now = Date.now();
+      
+      // 1. Si cache valide, le retourner immédiatement
+      if (cache && now - lastFetchTime < CACHE_TTL) {
+        console.log('✅ Cache valide (' + (CACHE_TTL - (now - lastFetchTime)).toFixed(0) + 'ms restants)');
+        return cache;
+      }
+      
+      // 2. Si fetch déjà en cours, attendre la promesse existante
+      if (isFetching && fetchPromise) {
+        console.log('⏳ Fetch en cours, utiliser promesse existante');
+        return fetchPromise;
+      }
+      
+      // 3. Sinon, fetch les données
+      isFetching = true;
+      fetchPromise = (async () => {
+        try {
+          console.log('🔄 Fetch données depuis API...');
+          cache = await fetchDataFromServer();
+          lastFetchTime = now;
+          console.log('✅ Données chargées du serveur');
+          return cache;
+        } finally {
+          isFetching = false;
+          fetchPromise = null;
+        }
+      })();
+      
+      return fetchPromise;
+    },
+
+    invalidate() {
+      console.log('🔄 Cache invalidé');
+      cache = null;
+      lastFetchTime = 0;
+    },
+
+    getStats() {
+      const now = Date.now();
+      const age = now - lastFetchTime;
+      return {
+        isCached: !!cache,
+        age: age + 'ms',
+        isValid: age < CACHE_TTL,
+        isFetching: isFetching,
+        cacheSize: cache ? JSON.stringify(cache).length : 0
+      };
+    }
+  };
+})();
+
+// Fonction pour fetcher depuis le serveur (ancienne loadData logic)
+async function fetchDataFromServer() {
+  const syncIndicator = document.getElementById("syncIndicator");
+  const isInitialBoot = document.body.classList.contains("app-booting");
+
+  if (syncIndicator && !isInitialBoot) {
+    syncIndicator.hidden = false;
+  }
+
+  try {
+    const response = await fetchWithRetry(APPS_SCRIPT_URL + "?action=loadData", {
+      method: "GET",
+      cache: "no-store"
+    }, 2);
+
+    if (!response.ok) {
+      throw new Error(`Erreur serveur ${response.status}`);
+    }
+
+    const backendData = await response.json();
+
+    if (!backendData || backendData.ok !== true) {
+      throw new Error(backendData?.error || "Réponse invalide du backend");
+    }
+
+    const newData = {
+      ...backendData,
+      vehicules: Array.isArray(backendData.vehicules) ? backendData.vehicules : [],
+      documents: Array.isArray(backendData.documents) ? backendData.documents : [],
+      categories: Array.isArray(backendData.categories) ? backendData.categories : [],
+      revisions: Array.isArray(backendData.revisions) ? backendData.revisions : [],
+      controlsTk: Array.isArray(backendData.controlsTk)
+        ? backendData.controlsTk
+        : (Array.isArray(backendData.controls) ? backendData.controls : [])
+    };
+
+    console.log("Données du backend reçues:", newData);
+    console.log("Nombre de véhicules:", newData.vehicules.length);
+    console.log("Nombre de révisions:", newData.revisions.length);
+    console.log("Nombre de contrôles techniques:", newData.controlsTk.length);
+
+    writeDataCache(newData);
+    hideOfflineNotice();
+    return newData;
+  } catch (err) {
+    console.error("Erreur de chargement:", err);
+
+    const cachedData = readDataCache();
+    if (cachedData) {
+      showOfflineNotice("Serveur indisponible : affichage des dernières données enregistrées");
+      return cachedData;
+    } else {
+      showOfflineNotice("Serveur indisponible et aucune donnée locale disponible");
+      throw err;
+    }
+  } finally {
+    if (syncIndicator) {
+      syncIndicator.hidden = true;
+    }
+  }
+}
+
+// ===== DEBOUNCE POUR loadData =====
+function debounce(fn, delay) {
+  let timeoutId = null;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    return new Promise((resolve) => {
+      timeoutId = setTimeout(() => {
+        resolve(fn.apply(this, args));
+      }, delay);
+    });
+  };
+}
+
 let isSubmitting = false; // Protection contre double-clics
 let vehiculeModalReturnView = "vehiclesPage";
 
@@ -3581,62 +3720,18 @@ async function fetchWithRetry(url, options = {}, retries = 2) {
   throw lastError || new Error("Serveur momentanément indisponible");
 }
 
-let loadDataInFlight = null;
-
+// ===== loadData() v6.3.43 : Cache + Debounce optimisé =====
 async function loadData() {
-  // Empêche plusieurs chargements identiques de partir simultanément vers Apps Script.
-  if (loadDataInFlight) return loadDataInFlight;
-
-  loadDataInFlight = (async () => {
-  const syncIndicator = document.getElementById("syncIndicator");
-  const isInitialBoot = document.body.classList.contains("app-booting");
-
-  if (syncIndicator && !isInitialBoot) {
-    syncIndicator.hidden = false;
-  }
-
   try {
-    const response = await fetchWithRetry(APPS_SCRIPT_URL + "?action=loadData", {
-      method: "GET",
-      cache: "no-store"
-    }, 2);
-
-    if (!response.ok) {
-      throw new Error(`Erreur serveur ${response.status}`);
-    }
-
-    const backendData = await response.json();
-
-    if (!backendData || backendData.ok !== true) {
-      throw new Error(backendData?.error || "Réponse invalide du backend");
-    }
-
-    // Source unique : Google Sheets via le GAS.
-    // Aucun véhicule, aucune révision et aucun CT de démonstration.
-    data = {
-      ...backendData,
-      vehicules: Array.isArray(backendData.vehicules) ? backendData.vehicules : [],
-      documents: Array.isArray(backendData.documents) ? backendData.documents : [],
-      categories: Array.isArray(backendData.categories) ? backendData.categories : [],
-      revisions: Array.isArray(backendData.revisions) ? backendData.revisions : [],
-      controlsTk: Array.isArray(backendData.controlsTk)
-        ? backendData.controlsTk
-        : (Array.isArray(backendData.controls) ? backendData.controls : [])
-    };
-
-    console.log("Données du backend reçues:", data);
-    console.log("Nombre de véhicules:", data.vehicules.length);
-    console.log("Nombre de révisions:", data.revisions.length);
-    console.log("Nombre de contrôles techniques:", data.controlsTk.length);
-
-    writeDataCache(data);
-    hideOfflineNotice();
+    // Récupérer les données du cache (avec TTL de 30s)
+    const freshData = await DataCacheManager.getData();
+    data = freshData;
+    return freshData;
   } catch (err) {
-    console.error("Erreur de chargement:", err);
-
-    // Ne jamais effacer les données affichées en cas de panne du proxy.
+    console.error("Erreur loadData:", err);
+    
+    // Fallback: utiliser le cache localStorage ou les données existantes
     const cachedData = readDataCache();
-
     if (cachedData) {
       data = cachedData;
       showOfflineNotice("Serveur indisponible : affichage des dernières données enregistrées");
@@ -3649,27 +3744,21 @@ async function loadData() {
         controlsTk: []
       };
       showOfflineNotice("Serveur indisponible et aucune donnée locale disponible");
-    } else {
-      showOfflineNotice("Serveur indisponible : les données affichées sont conservées");
     }
-
-    // Propager l'erreur uniquement si aucune donnée n'est disponible.
+    
+    // Propager l'erreur uniquement si aucune donnée n'est disponible
     if (!cachedData && (!data.vehicules || data.vehicules.length === 0)) {
       throw err;
     }
-  } finally {
-    if (syncIndicator) {
-      syncIndicator.hidden = true;
-    }
-  }
-  })();
-
-  try {
-    return await loadDataInFlight;
-  } finally {
-    loadDataInFlight = null;
   }
 }
+
+// Version debounced de loadData (appelée lors des events rapides)
+const debouncedLoadData = debounce(async () => {
+  console.log('⏱️ Appel debounced à loadData()');
+  DataCacheManager.invalidate(); // Invalider le cache avant de recharger
+  return await loadData();
+}, 500); // 500ms de délai
 
 // ========== AFFICHAGE VÉHICULES ==========
 function renderVehicules() {
