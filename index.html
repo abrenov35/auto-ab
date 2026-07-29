@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v6.3.48 - Cache Local Only (Offline Ready) -->
+<!-- AB PARC AUTO v6.3.49 - Cache Local + Silent Server Connection for Downloads/Uploads -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -3229,13 +3229,44 @@ let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G
 let USE_CORS_PROXY = false; // Flag pour savoir si on utilise le proxy
 
 // Fonction pour tester le GAS et détecter les erreurs CORS
+// v6.3.49: Essayer silencieusement de se connecter au serveur pour uploads/downloads
+let SERVER_BACKUP_URL = "https://auto-ab-cors-proxy.onrender.com";
+
+async function tryQuietServerConnection() {
+  // Essayer de se connecter au serveur sans afficher d'erreur
+  try {
+    const response = await fetch(
+      SERVER_BACKUP_URL + "?action=loadData",
+      { 
+        method: "GET",
+        cache: "no-store",
+        signal: AbortSignal.timeout(3000) // Timeout 3 secondes
+      }
+    );
+    
+    if (response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        // Serveur marche! Réactiver pour cette requête
+        APPS_SCRIPT_URL = SERVER_BACKUP_URL;
+        console.log("✅ Serveur disponible - téléchargement activé");
+        return true;
+      }
+    }
+  } catch (error) {
+    // Silencieux - pas d'erreur affichée
+  }
+  
+  return false;
+}
+
 // v6.3.48: Stratégie simplifiée - Utiliser le cache local directement
 // (GAS et Proxy ne sont pas fiables, donc on désactive les requêtes réseau)
 async function initializeURLStrategy() {
   console.log("📦 AB PARC AUTO fonctionne en mode CACHE LOCAL");
   console.log("Les données sont sauvegardées localement et se synchronisent quand le serveur est accessible");
   
-  // Désactiver les requêtes réseau
+  // Désactiver les requêtes réseau par défaut
   APPS_SCRIPT_URL = null;
   USE_CORS_PROXY = false;
   
@@ -5544,9 +5575,31 @@ async function uploadRevisionDocument(input) {
       button.innerHTML = '<i class="bi bi-hourglass-split"></i> Chargement…';
     }
     if (message) {
+      message.textContent = "Vérification de la connexion…";
+      message.style.color = "#ff9800";
+      message.style.display = "block";
+    }
+
+    // v6.3.49: Essayer de se connecter au serveur
+    const serverAvailable = await tryQuietServerConnection();
+    
+    if (!serverAvailable) {
+      showMsg("Serveur indisponible - Les téléchargements ne sont pas disponibles pour le moment", "err");
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-cloud-upload"></i> Uploader';
+      }
+      if (message) {
+        message.textContent = "Serveur indisponible";
+        message.style.color = "#d32f2f";
+      }
+      input.value = "";
+      return;
+    }
+
+    if (message) {
       message.textContent = "Envoi vers Google Drive…";
       message.style.color = "#1976d2";
-      message.style.display = "block";
     }
 
     const base64 = await fileToBase64(file);
@@ -5772,6 +5825,9 @@ async function downloadLatestRevisionDocument() {
 
   if (!doc && typeof loadData === "function") {
     try {
+      // v6.3.49: Essayer silencieusement de se connecter au serveur
+      await tryQuietServerConnection();
+      
       await loadData();
       doc = getLatestRevisionDocument(immatriculation);
     } catch (error) {
