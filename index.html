@@ -2514,8 +2514,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
         animation:loadingHourglass 1.2s ease-in-out infinite;
       "
     >⌛</div>
-    <div style="font-size:14px;font-weight:700;color:#0d3a66;">
-      Chargement en cours
+    <div id="loadingText" style="font-size:14px;font-weight:700;color:#0d3a66;">
+      Chargement en cours…
+    </div>
+    <div id="loadingSubtext" style="margin-top:5px;font-size:11px;color:#667085;">
+      Veuillez patienter
     </div>
   </div>
 </div>
@@ -2537,7 +2540,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.47</span>
+      <span class="version" id="appVersionBadge">v8.48</span>
     </div>
   </div>
 
@@ -3218,16 +3221,36 @@ let editingCtImmat = null;
 let editingRevisionImmat = null;
 
 // ========== INIT ==========
-function showLoadingOverlay() {
+let globalLoadingCount = 1;
+
+function showLoadingOverlay(message = "Chargement en cours…", subtext = "Veuillez patienter") {
+  globalLoadingCount += 1;
+
   const overlay = document.getElementById("loadingMessage");
+  const text = document.getElementById("loadingText");
+  const secondaryText = document.getElementById("loadingSubtext");
+
+  if (text) text.textContent = message;
+  if (secondaryText) secondaryText.textContent = subtext;
+
   if (overlay) {
     overlay.hidden = false;
     overlay.style.display = "flex";
+    overlay.style.background = document.body.classList.contains("app-booting")
+      ? "#f5f7fa"
+      : "rgba(15, 23, 42, 0.38)";
+    overlay.style.backdropFilter = document.body.classList.contains("app-booting")
+      ? "none"
+      : "blur(2px)";
   }
+
   document.body.classList.add("is-loading");
 }
 
-function hideLoadingOverlay() {
+function hideLoadingOverlay(force = false) {
+  globalLoadingCount = force ? 0 : Math.max(0, globalLoadingCount - 1);
+  if (globalLoadingCount > 0) return;
+
   const overlay = document.getElementById("loadingMessage");
 
   document.body.classList.remove("app-booting");
@@ -3238,6 +3261,42 @@ function hideLoadingOverlay() {
     overlay.style.display = "none";
   }
 }
+
+function getLoadingMessageFromFetch(input, init = {}) {
+  const method = String(init.method || "GET").toUpperCase();
+  if (method === "GET") return "Chargement des données…";
+
+  try {
+    const payload = typeof init.body === "string" ? JSON.parse(init.body) : {};
+    const action = String(payload.action || "").toLowerCase();
+
+    if (action.includes("upload")) return "Envoi du document…";
+    if (action.includes("delete") || action.includes("supprim")) return "Suppression en cours…";
+    if (action.includes("archive")) return "Archivage en cours…";
+    if (action.includes("restore")) return "Restauration en cours…";
+    if (action.includes("create") || action.includes("update") || action.includes("save")) {
+      return "Enregistrement en cours…";
+    }
+    if (action.includes("load")) return "Chargement des données…";
+  } catch (error) {
+    // Corps non JSON : message générique.
+  }
+
+  return "Traitement en cours…";
+}
+
+/* Sablier automatique pour toutes les communications avec Apps Script. */
+const nativeFetch = window.fetch.bind(window);
+window.fetch = async function(input, init = {}) {
+  const message = getLoadingMessageFromFetch(input, init);
+  showLoadingOverlay(message);
+
+  try {
+    return await nativeFetch(input, init);
+  } finally {
+    hideLoadingOverlay();
+  }
+};
 
 
 const DATA_CACHE_KEY = "abParcAutoDataCache";
