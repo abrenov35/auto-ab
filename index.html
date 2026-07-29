@@ -3038,7 +3038,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
       <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
       <button id="btnArchiveRevisionModal" class="btn" title="Archiver la révision" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveRevisionFromModal()"><i class="bi bi-archive"></i> Archiver</button>
-      <button type="button" id="btnDownloadRevisionModal" class="btn" title="Télécharger le dernier document de révision" style="display:none; background:#1976d2; color:#fff; border:1px solid #1976d2;" onclick="downloadLatestRevisionDocument()"><i class="bi bi-download"></i> Télécharger</button>
+      <button type="button" id="btnDownloadRevisionModal" class="btn" title="Gérer les documents de révision" style="display:none; background:#1976d2; color:#fff; border:1px solid #1976d2;" onclick="openRevisionDocumentsModal()"><i class="bi bi-folder2-open"></i> Documents</button>
     </div>
   </div>
 </div>
@@ -3046,7 +3046,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 <!-- MODAL DOCUMENTS CT -->
 <div class="modal" id="documentsModal">
   <div class="modal-content" style="max-width: 600px;">
-    <div class="modal-header">📋 Documents CT - <span id="docModalImmat"></span></div>
+    <div class="modal-header"><span id="documentsModalTitle">📋 Documents CT</span> - <span id="docModalImmat"></span></div>
     
     <div style="padding: 20px;">
       <!-- Zone upload -->
@@ -3065,7 +3065,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       
       <!-- Liste des documents -->
       <div style="margin-bottom: 20px;">
-        <div style="font-weight: 600; margin-bottom: 12px;">📂 Pièces existantes</div>
+        <div style="font-weight: 600; margin-bottom: 12px;" id="documentsExistingTitle">📂 Pièces existantes</div>
         <div id="documentsList" style="max-height: 300px; overflow-y: auto;">
           <div style="color: #999; text-align: center; padding: 20px;">Aucun document pour ce CT</div>
         </div>
@@ -6164,7 +6164,38 @@ async function closeCtEditModal(skipRefresh = true) {
   }
 }
 
-// ========== DOCUMENTS CT ==========
+// ========== DOCUMENTS CT / RÉVISIONS ==========
+
+let currentDocumentsMode = "ct";
+
+function configureDocumentsModal(mode, immatriculation) {
+  currentDocumentsMode = mode === "revision" ? "revision" : "ct";
+  if (currentDocumentsMode === "revision") {
+    window.currentRevisionImmatriculation = immatriculation;
+    document.getElementById("documentsModalTitle").textContent = "📋 Documents Révision";
+  } else {
+    window.currentCtImmatriculation = immatriculation;
+    document.getElementById("documentsModalTitle").textContent = "📋 Documents CT";
+  }
+  document.getElementById("docModalImmat").textContent = immatriculation;
+  const input = document.getElementById("documentFileInput");
+  if (input) input.value = "";
+  const message = document.getElementById("uploadCtMessage");
+  if (message) { message.textContent = ""; message.style.display = "none"; }
+  const submit = document.getElementById("submitUploadCtBtn");
+  if (submit) submit.disabled = true;
+  loadDocumentsList(immatriculation);
+  document.getElementById("documentsModal").classList.add("active");
+}
+
+function openRevisionDocumentsModal() {
+  const immat = editingRevisionImmat || document.getElementById("addRevisionVehicule")?.value || selectedVehicule || vehicleDetailImmat;
+  if (!immat) {
+    showMsg("Aucune révision sélectionnée", "err");
+    return;
+  }
+  configureDocumentsModal("revision", immat);
+}
 
 function openDocumentsModal() {
   const immat = window.currentCtImmatriculation;
@@ -6172,18 +6203,7 @@ function openDocumentsModal() {
     showMsg("Aucun CT sélectionné", "err");
     return;
   }
-  
-  // Afficher l'immatriculation dans le header
-  document.getElementById("docModalImmat").textContent = immat;
-  
-  // Réinitialiser l'input file
-  document.getElementById("documentFileInput").value = "";
-  
-  // Charger la liste des documents
-  loadDocumentsList(immat);
-  
-  // Ouvrir le modal
-  document.getElementById("documentsModal").classList.add("active");
+  configureDocumentsModal("ct", immat);
 }
 
 function closeDocumentsModal() {
@@ -6225,7 +6245,7 @@ async function submitUploadCtLegacy() {
       const response = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         body: JSON.stringify({
-          action: "uploadCtFile",
+          action: isRevision ? "uploadRevisionFile" : "uploadCtFile",
           immatriculation: immat,
           fileName: file.name,
           fileBase64: fileBase64
@@ -6822,10 +6842,11 @@ function downloadCtDocs(immatriculation) {
   else openDocumentsModal();
 }
 async function submitUploadCt() {
-  const immat = window.currentCtImmatriculation;
+  const isRevision = currentDocumentsMode === "revision";
+  const immat = isRevision ? window.currentRevisionImmatriculation : window.currentCtImmatriculation;
   const input = document.getElementById("documentFileInput");
   const message = document.getElementById("uploadCtMessage");
-  if (!immat) return showMsg("Aucun contrôle technique sélectionné", "err");
+  if (!immat) return showMsg(isRevision ? "Aucune révision sélectionnée" : "Aucun contrôle technique sélectionné", "err");
   if (!input?.files?.length) return showMsg("Sélectionnez un document", "err");
   const file = input.files[0];
   const allowed = ["application/pdf", "image/jpeg", "image/png"];
@@ -6876,17 +6897,23 @@ async function submitUploadCt() {
       message.style.display = "block";
     }
     await loadDocumentsList(immat);
-    showMsg("Contrôle technique enregistré", "ok");
+    showMsg(isRevision ? "Document de révision enregistré" : "Contrôle technique enregistré", "ok");
     ctSetUploadBusy(false);
     setTimeout(async () => {
       closeDocumentsModal();
 
       // Fermer aussi les éventuelles fenêtres CT restées ouvertes derrière
-      const ctEditModal = document.getElementById("ctEditModal");
-      if (ctEditModal) ctEditModal.classList.remove("active");
+      if (!isRevision) {
+        const ctEditModal = document.getElementById("ctEditModal");
+        if (ctEditModal) ctEditModal.classList.remove("active");
 
-      const viewCtModal = document.getElementById("viewCtModal");
-      if (viewCtModal) viewCtModal.classList.remove("active");
+        const viewCtModal = document.getElementById("viewCtModal");
+        if (viewCtModal) viewCtModal.classList.remove("active");
+      } else {
+        const revisionModal = document.getElementById("addRevisionModal");
+        if (revisionModal) revisionModal.classList.remove("active");
+        editingRevisionImmat = null;
+      }
 
       if (message) message.style.display = "none";
       const submit = document.getElementById("submitUploadCtBtn");
@@ -6914,19 +6941,19 @@ async function loadDocumentsList(immat) {
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "loadDocumentsCt", immatriculation: immat })
+      body: JSON.stringify({ action: currentDocumentsMode === "revision" ? "loadDocumentsRevision" : "loadDocumentsCt", immatriculation: immat })
     });
     if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
     const result = await response.json();
     const documents = Array.isArray(result) ? result : (Array.isArray(result?.documents) ? result.documents : []);
     currentCtDocuments = documents;
     if (!documents.length) {
-      list.innerHTML = '<div style="padding:20px;text-align:center;color:#98a2b3;">Aucun document pour ce contrôle technique</div>';
+      list.innerHTML = `<div style="padding:20px;text-align:center;color:#98a2b3;">Aucun document pour ${currentDocumentsMode === "revision" ? "cette révision" : "ce contrôle technique"}</div>`;
       return;
     }
     const sorted = [...documents].sort((a, b) => new Date(b.dateUpload || b.date || 0) - new Date(a.dateUpload || a.date || 0));
     list.innerHTML = sorted.map(doc => {
-      const name = safeText(doc.nom || doc.nomFichier || "Contrôle technique");
+      const name = safeText(doc.nom || doc.nomFichier || (currentDocumentsMode === "revision" ? "Révision" : "Contrôle technique"));
       const url = safeText(doc.lienDrive || doc.lien || "");
       const date = formatFrDate(doc.dateUpload || doc.date);
       const docId = JSON.stringify(doc.id || doc.idDocument || "");
