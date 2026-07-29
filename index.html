@@ -5959,11 +5959,22 @@ async function submitUploadCt() {
     await loadDocumentsList(immat);
     showMsg("Contrôle technique enregistré", "ok");
     ctSetUploadBusy(false);
-    setTimeout(() => {
+    setTimeout(async () => {
       closeDocumentsModal();
+
+      // Fermer aussi les éventuelles fenêtres CT restées ouvertes derrière
+      const ctEditModal = document.getElementById("ctEditModal");
+      if (ctEditModal) ctEditModal.classList.remove("active");
+
+      const viewCtModal = document.getElementById("viewCtModal");
+      if (viewCtModal) viewCtModal.classList.remove("active");
+
       if (message) message.style.display = "none";
       const submit = document.getElementById("submitUploadCtBtn");
       if (submit) submit.disabled = true;
+
+      // Revenir directement sur la page CT mise à jour
+      await refreshCurrentPageAfterModalClose();
     }, 700);
   } catch (error) {
     ctSetUploadBusy(false);
