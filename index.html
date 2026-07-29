@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v6.3.49 - Cache Local + Silent Server Connection for Downloads/Uploads -->
+<!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -4297,6 +4297,14 @@ async function submitDocument() {
 async function deleteDocument(docId) {
   if (!await showConfirm("Supprimer ce document ?", { title: "Supprimer le document", confirmText: "Supprimer", danger: true })) return;
   
+  // v6.3.50: Essayer de se connecter au serveur
+  const serverAvailable = await tryQuietServerConnection();
+  
+  if (!serverAvailable) {
+    showMsg("Serveur indisponible - Suppression non disponible", "err");
+    return;
+  }
+  
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
@@ -6787,10 +6795,26 @@ function openVehicleCtFromDetail(){ selectedVehicule=vehicleDetailImmat; const c
 async function changeVehicleDocumentStatus(id,action){
   const label=action==='archiveDocument'?'Archiver ce document ?':'Restaurer ce document ?';
   if(!await showConfirm(label,{title:action==='archiveDocument'?'Archiver le document':'Restaurer le document',confirmText:action==='archiveDocument'?'Archiver':'Restaurer'}))return;
+  
+  // v6.3.50: Essayer serveur
+  const serverAvailable = await tryQuietServerConnection();
+  if (!serverAvailable) {
+    showMsg("Serveur indisponible - " + (action==='archiveDocument'?'Archivage':'Restauration') + " non disponible", "err");
+    return;
+  }
+  
   try{const response=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action,id})});if(!response.ok)throw new Error(`Erreur serveur ${response.status}`);await loadData();populateVehicleQuickSelect();renderVehicleDetailPage();showMsg(action==='archiveDocument'?'Document archivé':'Document restauré','ok');}catch(err){showMsg('Erreur : '+err.message,'err');}
 }
 async function deleteVehicleDetailDocument(id){
   if(!await showConfirm('Cette suppression est définitive.',{title:'Supprimer le document',confirmText:'Supprimer',danger:true}))return;
+  
+  // v6.3.50: Essayer serveur
+  const serverAvailable = await tryQuietServerConnection();
+  if (!serverAvailable) {
+    showMsg("Serveur indisponible - Suppression non disponible", "err");
+    return;
+  }
+  
   try{const response=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteDocument',id})});if(!response.ok)throw new Error(`Erreur serveur ${response.status}`);await loadData();populateVehicleQuickSelect();renderVehicleDetailPage();showMsg('Document supprimé','ok');}catch(err){showMsg('Erreur : '+err.message,'err');}
 }
 
@@ -7542,6 +7566,13 @@ async function archiveItem(action, immatriculation, label) {
       { title: 'Supprimer le document', confirmText: 'Supprimer', danger: true }
     );
     if (!confirmed) return;
+
+    // v6.3.50: Essayer serveur
+    const serverAvailable = await tryQuietServerConnection();
+    if (!serverAvailable) {
+      showMsg("Serveur indisponible - Suppression non disponible", "err");
+      return;
+    }
 
     try {
       if (typeof showLoadingOverlay === 'function') showLoadingOverlay('Suppression du document…');
