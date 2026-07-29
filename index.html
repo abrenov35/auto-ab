@@ -6619,8 +6619,15 @@ async function archiveItem(action, immatriculation, label) {
     const box = document.getElementById('vehicleDetailDocuments');
     if (!box) return;
 
+    const currentImmat = String(
+      (typeof vehicleDetailImmat !== 'undefined' && vehicleDetailImmat) ||
+      (typeof selectedVehicule !== 'undefined' && selectedVehicule) ||
+      localStorage.getItem('activeVehicleAB') ||
+      ''
+    ).trim();
+
     const docs = (Array.isArray(window.data?.documents) ? window.data.documents : [])
-      .filter(d => d.immatriculation === window.vehicleDetailImmat && (d.statut || 'Actif') !== 'Archivé');
+      .filter(d => String(d.immatriculation || '').trim() === currentImmat && (d.statut || 'Actif') !== 'Archivé');
 
     if (!docs.length) {
       box.innerHTML = '<div class="vehicle-empty">Aucun document enregistré</div>';
@@ -6646,6 +6653,27 @@ async function archiveItem(action, immatriculation, label) {
 
     box.innerHTML = `<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
   };
+
+  const vehicleSelector = document.getElementById('vehicleQuickSelect');
+  if (vehicleSelector && !vehicleSelector.dataset.documentsRefreshBound) {
+    vehicleSelector.dataset.documentsRefreshBound = '1';
+    vehicleSelector.addEventListener('change', async function () {
+      const immatriculation = this.value;
+      if (!immatriculation) return;
+
+      try {
+        await loadData();
+        vehicleDetailImmat = immatriculation;
+        selectedVehicule = immatriculation;
+        localStorage.setItem('activeVehicleAB', immatriculation);
+        populateVehicleQuickSelect();
+        this.value = immatriculation;
+        renderVehicleDetailPage();
+      } catch (error) {
+        console.error('Actualisation des documents impossible :', error);
+      }
+    });
+  }
 
   document.addEventListener('click', function (event) {
     const button = event.target.closest('.js-doc-view, .js-doc-edit, .js-doc-delete');
