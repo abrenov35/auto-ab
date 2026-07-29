@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v3 -->
+<!-- AB PARC AUTO - boutons documents corrigés -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -2820,6 +2820,12 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <label>Prochain Contrôle Technique *</label>
       <input type="date" id="ctProchainDate" required>
     </div>
+
+    <div class="form-group">
+      <label>Nom du document</label>
+      <input type="text" id="ctDocumentName" maxlength="120" placeholder="Ex. Contrôle technique 2027 - Berlingo">
+      <div style="margin-top:5px;font-size:11px;color:#667085;">Ce nom sera utilisé lors du prochain chargement de pièce.</div>
+    </div>
     
     <div id="ctDocumentsSection" style="border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; display: none;">
       <h3 style="margin-top: 0; font-size: 14px; color: #0d3a66;">📋 Pièces jointes</h3>
@@ -2972,11 +2978,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
 <!-- MODAL VISUALISATION DOCUMENT -->
 <div class="modal" id="viewDocModal">
-  <div class="modal-content" style="max-width: 500px;">
+  <div class="modal-content" style="max-width: 980px; width:min(980px,96vw);">
     <div class="modal-header" id="viewDocTitle">Visualiser le document</div>
     
     <div style="padding: 20px; text-align: center;">
-      <div id="viewDocContent" style="min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+      <div id="viewDocContent" style="min-height: 460px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <!-- Contenu dynamique: soit lien, soit "Pas de pièce" -->
       </div>
     </div>
@@ -3806,25 +3812,35 @@ let currentViewDocLink = null;
 
 function viewDocument(docName, lienDrive) {
   const url = String(lienDrive || "").trim();
-
-  // Ouvre directement le document : aucune fenêtre intermédiaire.
-  if (url) {
-    window.open(url, "_blank", "noopener");
-    return;
-  }
-
-  // Fenêtre uniquement lorsqu'aucune pièce n'est disponible.
   const viewDocContent = document.getElementById("viewDocContent");
   const viewDocTitle = document.getElementById("viewDocTitle");
-  if (viewDocTitle) viewDocTitle.textContent = `Visualiser - ${docName || "Document"}`;
-  if (viewDocContent) {
-    viewDocContent.innerHTML = `
-      <div style="text-align:center;">
-        <div style="font-size:48px;margin-bottom:20px;">📋</div>
-        <div style="font-size:18px;font-weight:600;margin-bottom:12px;color:#d32f2f;">Pas de pièce disponible</div>
-        <div style="color:#666;font-size:14px;">Aucun fichier n'est associé à ce document.</div>
-      </div>`;
+
+  if (viewDocTitle) {
+    viewDocTitle.textContent = `Visualiser - ${docName || "Document"}`;
   }
+
+  currentViewDocLink = url || null;
+
+  if (viewDocContent) {
+    if (url) {
+      const previewUrl = ctPreviewUrl(url);
+      viewDocContent.innerHTML = `
+        <iframe
+          src="${safeText(previewUrl)}"
+          title="${safeText(docName || "Document")}"
+          style="width:100%;height:68vh;min-height:460px;border:1px solid #dfe5ec;border-radius:8px;background:#fff;"
+          allow="autoplay"
+        ></iframe>`;
+    } else {
+      viewDocContent.innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-size:48px;margin-bottom:20px;">📋</div>
+          <div style="font-size:18px;font-weight:600;margin-bottom:12px;color:#d32f2f;">Pas de pièce disponible</div>
+          <div style="color:#666;font-size:14px;">Aucun fichier n'est associé à ce document.</div>
+        </div>`;
+    }
+  }
+
   document.getElementById("viewDocModal")?.classList.add("active");
 }
 
@@ -5261,6 +5277,14 @@ function openCtEditModal(immatriculation) {
   }
   
   document.getElementById("ctProchainDate").value = ct.prochainDate || "";
+
+  const documentNameInput = document.getElementById("ctDocumentName");
+  if (documentNameInput) {
+    const year = ct.prochainDate ? String(ct.prochainDate).slice(0, 4) : "";
+    const model = vehicule ? [vehicule.marque, vehicule.modele].filter(Boolean).join(" ") : immatriculation;
+    documentNameInput.value = `Contrôle technique${year ? " " + year : ""} - ${model}`;
+  }
+
   document.getElementById("ctEditModal").classList.add("active");
   
   // Afficher le bouton "Voir pièces"
@@ -5811,13 +5835,35 @@ function renderVehicleDetailPage(){
   renderVehicleDetailDocuments();
 }
 function renderVehicleDetailDocuments(){
-  const box=document.getElementById('vehicleDetailDocuments'); if(!box)return;
-  const docs=(Array.isArray(data?.documents)?data.documents:[]).filter(d=>d.immatriculation===vehicleDetailImmat);
-  const active=docs.filter(d=>(d.statut||'Actif')!=='Archivé');
-  const archived=docs.filter(d=>d.statut==='Archivé');
-  const rows=list=>list.map(doc=>`<tr><td><strong>${safeText(doc.nom||'Sans nom')}</strong></td><td>${safeText(doc.categorie||doc.type||'—')}</td><td>${safeText(doc.description||'—')}</td><td>${formatFrDate(doc.date)}</td><td><div class="vehicle-doc-actions"><button class="ab-icon-btn" title="Voir" onclick="viewDocument('${safeText(doc.nom||'Document')}','${safeText(doc.lienDrive||'')}')"><i class="bi bi-eye"></i></button><button class="ab-icon-btn edit" title="Modifier" onclick="editDocument(${JSON.stringify(doc.id)})"><i class="bi bi-pencil"></i></button>${doc.lienDrive?`<button class="ab-icon-btn" title="Télécharger" onclick="window.open('${safeText(doc.lienDrive)}','_blank')"><i class="bi bi-download"></i></button>`:''}${doc.statut==='Archivé'?`<button class="ab-icon-btn restore" title="Restaurer" onclick="changeVehicleDocumentStatus(${JSON.stringify(doc.id)},'restoreDocument')"><i class="bi bi-arrow-counterclockwise"></i></button>`:`<button class="ab-icon-btn archive" title="Archiver" onclick="changeVehicleDocumentStatus(${JSON.stringify(doc.id)},'archiveDocument')"><i class="bi bi-archive"></i></button>`}<button class="ab-icon-btn delete" title="Supprimer" onclick="deleteVehicleDetailDocument(${JSON.stringify(doc.id)})"><i class="bi bi-trash"></i></button></div></td></tr>`).join('');
-  box.innerHTML=active.length?`<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead><tbody>${rows(active)}</tbody></table>`:'<div class="vehicle-empty">Aucun document enregistré</div>';
-  if(archived.length) box.innerHTML+=`<details style="margin-top:18px"><summary style="cursor:pointer;font-weight:800;color:#667085">Documents archivés (${archived.length})</summary><table class="vehicle-docs-table" style="margin-top:10px"><tbody>${rows(archived)}</tbody></table></details>`;
+  const box=document.getElementById('vehicleDetailDocuments');
+  if(!box)return;
+
+  const docs=(Array.isArray(data?.documents)?data.documents:[])
+    .filter(d=>d.immatriculation===vehicleDetailImmat && (d.statut||'Actif')!=='Archivé');
+
+  const rows=docs.map(doc=>`<tr>
+    <td><strong>${safeText(doc.nom||'Sans nom')}</strong></td>
+    <td>${safeText(doc.categorie||doc.type||'—')}</td>
+    <td>${safeText(doc.description||'—')}</td>
+    <td>${formatFrDate(doc.date)}</td>
+    <td>
+      <div class="vehicle-doc-actions">
+        <button type="button" class="ab-icon-btn view" title="Visualiser" aria-label="Visualiser" onclick="viewDocument('${safeText(doc.nom||'Document')}','${safeText(doc.lienDrive||'')}')">
+          <i class="bi bi-eye"></i>
+        </button>
+        <button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="editDocument(${JSON.stringify(doc.id)})">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button type="button" class="ab-icon-btn delete" title="Supprimer" aria-label="Supprimer" onclick="deleteVehicleDetailDocument(${JSON.stringify(doc.id)})">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </td>
+  </tr>`).join('');
+
+  box.innerHTML=docs.length
+    ? `<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead><tbody>${rows}</tbody></table>`
+    : '<div class="vehicle-empty">Aucun document enregistré</div>';
 }
 function openAddDocumentFromDetail(){ selectedVehicule=vehicleDetailImmat; openAddDocumentModal(); }
 function openVehicleRevisionFromDetail(){ selectedVehicule=vehicleDetailImmat; const rev=(data.revisions||[]).find(r=>r.immatriculation===vehicleDetailImmat); rev?openEditRevisionModal(vehicleDetailImmat):openAddRevisionModal(); }
@@ -5914,13 +5960,21 @@ async function submitUploadCt() {
     if (!base64 || base64.length < 20) {
       throw new Error("Lecture du fichier incomplète");
     }
+    const customNameInput = document.getElementById("ctDocumentName");
+    const customName = String(customNameInput?.value || "").trim();
+    const originalExtension = file.name.includes(".") ? "." + file.name.split(".").pop() : "";
+    const hasExtension = customName && /\.[a-z0-9]{2,5}$/i.test(customName);
+    const uploadedFileName = customName
+      ? (hasExtension ? customName : customName + originalExtension)
+      : file.name;
+
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         action: "uploadCtFile",
         immatriculation: immat,
-        fileName: file.name,
+        fileName: uploadedFileName,
         mimeType: file.type || "application/octet-stream",
         fileBase64: base64
       })
