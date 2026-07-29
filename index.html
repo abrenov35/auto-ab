@@ -1299,17 +1299,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
     .app-nav .nav-vehicles { background: #1976d2; }
     .app-nav .nav-revisions { background: #2e7d46; }
-    .app-nav .nav-ct {
-      background: #00c853;
-      color: #ffffff;
-      box-shadow: 0 3px 10px rgba(0, 200, 83, 0.38);
-    }
-    .app-nav .nav-ct:hover,
-    .app-nav .nav-ct.active {
-      background: #00e676;
-      color: #073b1c;
-      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.48);
-    }
+    .app-nav .nav-ct { background: #ff9800; }
 
     /* Neutralise totalement l'ancien composant toolbar */
     .toolbar {
@@ -2182,7 +2172,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 #offlineNotice[hidden]{display:none !important;}
 
 
-    /* ===== V8.39 : ALERTE RÉVISION AVEC MESSAGE PRÉVENTIF ===== */
+    /* ===== V8.38 : MARQUE ET MODÈLE EN DEUX COLONNES ===== */
     #vehiclesPageList {
       grid-template-columns:
         minmax(125px, .9fr)
@@ -2237,241 +2227,6 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
           116px !important;
       }
     }
-
-
-/* ===== V8.43 : AFFICHAGE IPHONE / MOBILE ===== */
-@media (max-width: 700px) {
-  html,
-  body {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  body {
-    font-size: 14px;
-  }
-
-  .app-header {
-    width: 100%;
-    max-width: 100vw;
-  }
-
-  .app-header-top {
-    padding: 7px 10px 3px;
-  }
-
-  .app-nav {
-    width: 100%;
-    max-width: 100vw;
-    justify-content: flex-start;
-    gap: 6px;
-    padding: 4px 8px 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .app-nav .btn-toolbar {
-    flex: 0 0 auto;
-    min-height: 34px;
-    padding: 6px 9px;
-    font-size: 11px;
-  }
-
-  .vehicle-picker-wrap {
-    flex: 0 0 210px;
-    width: 210px;
-  }
-
-  .vehicle-picker {
-    width: 100%;
-    min-width: 0;
-    font-size: 12px;
-  }
-
-  .alert-banner,
-  .alert-banner-revision {
-    width: 100%;
-    max-width: 100vw;
-  }
-
-  .alert-inner {
-    width: 100%;
-    padding: 5px 7px;
-    gap: 5px;
-  }
-
-  .alert-banner h3,
-  .alert-banner-revision h3 {
-    width: 100%;
-    min-width: 0;
-    padding: 5px 8px;
-    font-size: 13px;
-    line-height: 1.2;
-  }
-
-  .alert-items,
-  .alert-items-revision {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .alert-item,
-  .alert-item-revision {
-    min-width: max-content;
-    min-height: 30px;
-    padding: 5px 8px;
-    font-size: 10px;
-  }
-
-  .home-container,
-  .management-container {
-    width: 100%;
-    max-width: 100%;
-    margin: 6px 0;
-    padding: 0 7px;
-  }
-
-  #vehiclesPage,
-  #revisionPage,
-  #ctPage {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 12px 8px !important;
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  #vehiclesPage h2,
-  #revisionPage h2,
-  #ctPage h2 {
-    position: sticky;
-    left: 0;
-    width: max-content;
-    max-width: calc(100vw - 30px);
-    font-size: 20px !important;
-  }
-
-  /* La page reste à la largeur de l'iPhone.
-     Seul le tableau se déplace horizontalement avec le doigt. */
-  #vehiclesPageList {
-    width: 760px !important;
-    min-width: 760px !important;
-    grid-template-columns:
-      115px
-      135px
-      125px
-      130px
-      90px
-      65px !important;
-    column-gap: 8px !important;
-  }
-
-  #revisionPageList,
-  #ctPageList {
-    width: 920px !important;
-    min-width: 920px !important;
-  }
-
-  .ab-table-head {
-    min-height: 38px;
-    height: 38px;
-    font-size: 11px;
-  }
-
-  .ab-table-cell {
-    min-height: 42px;
-    height: auto;
-    font-size: 12px;
-  }
-
-  .ab-actions {
-    min-width: 0;
-  }
-
-  .ab-icon-btn {
-    width: 31px;
-    height: 31px;
-  }
-
-  .sync-indicator {
-    right: 8px;
-    bottom: 8px;
-  }
-}
-
-
-/* ===== V8.44 : BOUTONS TOUJOURS DANS LE CADRE ===== */
-@media (max-width: 700px) {
-  .app-nav {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 7px !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-    padding: 6px 8px 8px !important;
-    overflow: visible !important;
-  }
-
-  .app-nav .btn-toolbar {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    min-height: 36px;
-    padding: 7px 6px !important;
-    font-size: 11px !important;
-    line-height: 1.15;
-    white-space: normal !important;
-    text-align: center;
-    justify-content: center;
-    overflow-wrap: anywhere;
-  }
-
-  .vehicle-picker-wrap {
-    grid-column: 1 / -1;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    flex: none !important;
-  }
-
-  .vehicle-picker {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    box-sizing: border-box;
-  }
-}
-
-@media (max-width: 380px) {
-  .app-nav {
-    grid-template-columns: 1fr !important;
-  }
-
-  .vehicle-picker-wrap {
-    grid-column: 1;
-  }
-}
-
-
-/* ===== V8.45 : DOCUMENTS CONTRÔLE TECHNIQUE ===== */
-.ct-upload-spinner{
-  width:18px;height:18px;border:3px solid #b8d4f0;border-top-color:#1976d2;
-  border-radius:50%;display:inline-block;animation:ctUploadSpin .8s linear infinite;flex:0 0 auto;
-}
-@keyframes ctUploadSpin{to{transform:rotate(360deg)}}
-.ct-preview-frame{
-  width:100%;height:min(68vh,720px);border:1px solid #d0d5dd;border-radius:8px;background:#f8fafc;
-}
-@media(max-width:700px){
-  .ct-preview-frame{height:62vh;}
-  #viewCtModal .modal-content{width:96vw!important;max-width:96vw!important;}
-}
 
 </style>
 </head>
@@ -2537,7 +2292,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.45</span>
+      <span class="version" id="appVersionBadge">v8.38</span>
     </div>
   </div>
 
@@ -2917,7 +2672,6 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     </div>
 <div class="form-group">
       <label>Dernière Révision</label>
-      <div id="addRevisionDernierDateReadonly" style="display:none; padding:8px 10px; border:1px solid #d9dee7; border-radius:4px; background:#f5f7fa; color:#475467; font-weight:600;">—</div>
       <input type="date" id="addRevisionDernierDate">
     </div>
     
@@ -2944,18 +2698,12 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <!-- Zone upload -->
       <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 20px; border: 2px dashed #1976d2;">
         <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce</div>
-        <input type="file" id="documentFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+        <input type="file" id="documentFileInput" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
         <div style="display: flex; gap: 8px;">
-          <button class="btn" style="background: #1976d2; color: white; flex: 1; padding: 10px;" onclick="uploadDocument()">📁 Choisir un fichier</button>
-          <button class="btn btn-success" style="flex: 1; padding: 10px;" id="submitUploadCtBtn" onclick="submitUploadCt()">📤 Charger et enregistrer</button>
+          <button class="btn" style="background: #1976d2; color: white; flex: 1; padding: 10px;" onclick="uploadDocument()">Choisir un fichier</button>
+          <button class="btn btn-success" style="flex: 1; padding: 10px;" id="submitUploadCtBtn" onclick="submitUploadCt()">✅ Enregistrer</button>
         </div>
         <div id="uploadCtMessage" style="margin-top: 8px; font-size: 12px; text-align: center; display: none;"></div>
-        <div id="uploadCtProgress" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#eef6ff; color:#0d3a66; font-size:12px; font-weight:600; text-align:left;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span class="ct-upload-spinner" aria-hidden="true"></span>
-            <span id="uploadCtProgressText">Document en cours de chargement…</span>
-          </div>
-        </div>
       </div>
       
       <!-- Liste des documents -->
@@ -2993,19 +2741,19 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
 <!-- MODAL VISUALISATION CONTRÔLE TECHNIQUE -->
 <div class="modal" id="viewCtModal">
-  <div class="modal-content" style="max-width: 920px; width:min(920px,96vw);">
+  <div class="modal-content" style="max-width: 500px;">
     <div class="modal-header" id="viewCtTitle">Visualiser le Contrôle Technique</div>
     
     <div style="padding: 20px; text-align: center;">
-      <div id="viewCtContent" style="min-height: 420px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+      <div id="viewCtContent" style="min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <!-- Contenu dynamique: soit lien, soit "Pas de pièce" -->
       </div>
     </div>
     
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeViewCtModal()">Fermer</button>
-      <button id="viewCtLinkBtn" class="btn" style="background: #1976d2; color: white; display: none;" onclick="openViewCtLink()">📥 Télécharger</button>
-      <button id="uploadCtBtn" class="btn" style="background: #4caf50; color: white; display: none;" onclick="openUploadCtModal()">📤 Ajouter / remplacer</button>
+      <button id="viewCtLinkBtn" class="btn" style="background: #1976d2; color: white; display: none;" onclick="openViewCtLink()">Télécharger le CT</button>
+      <button id="uploadCtBtn" class="btn" style="background: #4caf50; color: white; display: none;" onclick="openUploadCtModal()">📤 Charger une pièce</button>
     </div>
   </div>
 </div>
@@ -4569,12 +4317,13 @@ function checkCtAlerts() {
   const alertBanner = document.getElementById("alertBanner");
   const alertItems = document.getElementById("alertItems");
   const alerts = [];
-
+  
+  // Vérification de sécurité
   if (!data || !data.controlsTk || data.controlsTk.length === 0) {
     alertBanner.classList.remove("active");
     return;
   }
-
+  
   data.controlsTk.forEach(ct => {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
     if (daysLeft !== null && daysLeft <= 30) {
@@ -4582,49 +4331,35 @@ function checkCtAlerts() {
       alerts.push({
         immatriculation: ct.immatriculation,
         vehicule: vehicule ? `${vehicule.marque} ${vehicule.modele}` : "Véhicule inconnu",
-        daysLeft,
+        daysLeft: daysLeft,
         prochainDate: ct.prochainDate
       });
     }
   });
-
+  
   if (alerts.length > 0) {
     alertBanner.classList.add("active");
     alertItems.innerHTML = alerts.map(a => {
       let daysText = "";
-      let actionText = "";
-      let actionColor = "#f57c00";
       let statusClass = "";
-
       if (a.daysLeft < 0) {
-        const retard = Math.abs(a.daysLeft);
-        daysText = `J+${retard}`;
-        actionText = `❌ Expiré depuis ${retard} jour${retard > 1 ? 's' : ''}`;
-        actionColor = "#d32f2f";
+        daysText = `🔴 EXPIRÉ il y a ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
         statusClass = "danger";
       } else if (a.daysLeft === 0) {
-        daysText = "J0";
-        actionText = "🔴 Expire aujourd'hui";
-        actionColor = "#d32f2f";
+        daysText = `🟠 EXPIRE AUJOURD'HUI`;
         statusClass = "danger";
       } else {
-        daysText = `J-${a.daysLeft}`;
-        actionText = a.daysLeft === 1
-          ? "⚠️ Expire demain"
-          : `⚠️ Expire dans ${a.daysLeft} jours`;
+        daysText = `⚠️ Expire dans ${a.daysLeft} jour${a.daysLeft > 1 ? 's' : ''}`;
         statusClass = "warning";
       }
-
       return `
       <div class="alert-item ${statusClass}">
         <strong>${a.immatriculation}</strong>
         <span class="alert-vehicle-model">${a.vehicule}</span>
-        <span style="color:#999;">|</span>
-        <span style="color:#999;font-size:10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
-        <span style="color:#999;">|</span>
-        <span style="font-weight:700;">${daysText}</span>
-        <span style="color:#999;">|</span>
-        <span style="color:${actionColor};font-weight:700;white-space:nowrap;">${actionText}</span>
+        <span style="color: #999;">|</span>
+        <span style="color: #999; font-size: 10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
+        <span style="color: #999;">|</span>
+        <span>${daysText}</span>
       </div>
     `;
     }).join("");
@@ -4646,7 +4381,7 @@ function checkRevisionAlerts() {
   
   data.revisions.forEach(rev => {
     const daysLeft = calculateDaysUntilCT(rev.prochainDate);
-    if (daysLeft !== null && daysLeft <= 30) {
+    if (daysLeft !== null && daysLeft <= 45) {
       const vehicule = data.vehicules.find(v => v.immatriculation === rev.immatriculation);
       alerts.push({
         immatriculation: rev.immatriculation,
@@ -4661,29 +4396,17 @@ function checkRevisionAlerts() {
     alertBanner.classList.add("active");
     alertItems.innerHTML = alerts.map(a => {
       let daysText = "";
-      let actionText = "";
-      let actionColor = "#f57c00";
       let statusClass = "";
-
       if (a.daysLeft < 0) {
-        const retard = Math.abs(a.daysLeft);
-        daysText = `DÉPASSÉE de ${retard} jour${retard > 1 ? 's' : ''}`;
-        actionText = `❌ Révision en retard de ${retard} jour${retard > 1 ? 's' : ''}`;
-        actionColor = "#d32f2f";
+        daysText = `🔴 DÉPASSÉE de ${Math.abs(a.daysLeft)} jour${Math.abs(a.daysLeft) > 1 ? 's' : ''}`;
         statusClass = "danger";
       } else if (a.daysLeft === 0) {
         daysText = `J0`;
-        actionText = `🔴 Révision aujourd'hui`;
-        actionColor = "#d32f2f";
         statusClass = "danger";
       } else {
         daysText = `J-${a.daysLeft}`;
-        actionText = a.daysLeft === 1
-          ? `⚠️ Prévoir demain`
-          : `⚠️ Prévoir dans ${a.daysLeft} jours`;
-        statusClass = "warning";
+        statusClass = "danger";
       }
-
       return `
       <div class="alert-item-revision ${statusClass}">
         <strong>${a.immatriculation}</strong>
@@ -4691,9 +4414,7 @@ function checkRevisionAlerts() {
         <span style="color: #999;">|</span>
         <span style="color: #999; font-size: 10px;">${new Date(a.prochainDate).toLocaleDateString('fr-FR')}</span>
         <span style="color: #999;">|</span>
-        <span style="font-weight:700;">${daysText}</span>
-        <span style="color: #999;">|</span>
-        <span style="color:${actionColor};font-weight:700;white-space:nowrap;">${actionText}</span>
+        <span>${daysText}</span>
       </div>
     `;
     }).join("");
@@ -4873,17 +4594,7 @@ function openAddRevisionModal() {
       '<option value="">Aucun véhicule disponible</option>';
   }
 
-  const revisionDernierInput = document.getElementById("addRevisionDernierDate");
-  const revisionDernierReadonly = document.getElementById("addRevisionDernierDateReadonly");
-  if (revisionDernierInput) {
-    revisionDernierInput.style.display = "block";
-    revisionDernierInput.disabled = false;
-    revisionDernierInput.value = "";
-  }
-  if (revisionDernierReadonly) {
-    revisionDernierReadonly.style.display = "none";
-    revisionDernierReadonly.textContent = "—";
-  }
+  document.getElementById("addRevisionDernierDate").value = "";
   document.getElementById("addRevisionProchainDate").value = "";
 
   setModalButtonsDisabled("addRevisionModal", false);
@@ -4915,26 +4626,8 @@ async function submitAddRevision() {
   if (isSubmitting) return;
 
   const immatriculation = document.getElementById("addRevisionVehicule").value;
+  const dernierDate = document.getElementById("addRevisionDernierDate").value;
   const prochainDate = document.getElementById("addRevisionProchainDate").value;
-
-  // Même logique que le contrôle technique :
-  // lors d'une modification, l'ancienne prochaine révision devient la dernière révision.
-  let dernierDate = document.getElementById("addRevisionDernierDate").value;
-  if (editingRevisionImmat) {
-    const normalizeImmatForUpdate = value =>
-      String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-
-    const currentRevision = (Array.isArray(data.revisions) ? data.revisions : []).find(r =>
-      normalizeImmatForUpdate(r.immatriculation) === normalizeImmatForUpdate(editingRevisionImmat)
-    );
-
-    if (!currentRevision) {
-      showMsg("Révision introuvable", "err");
-      return;
-    }
-
-    dernierDate = currentRevision.prochainDate || currentRevision.dernierDate || "";
-  }
 
   if (!immatriculation) {
     showMsg("Sélectionne un véhicule", "err");
@@ -5024,8 +4717,8 @@ function openEditRevisionModal(immatriculation) {
   const submitBtn = document.getElementById("submitAddRevisionBtn");
   const vehiculeSelect = document.getElementById("addRevisionVehicule");
 
-  if (title) title.textContent = "Enregistrer la nouvelle Révision";
-  if (submitBtn) submitBtn.textContent = "Enregistrer";
+  if (title) title.textContent = "Modifier la Révision";
+  if (submitBtn) submitBtn.textContent = "Modifier";
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "inline-flex";
@@ -5041,25 +4734,10 @@ function openEditRevisionModal(immatriculation) {
   vehiculeSelect.value = revision.immatriculation;
   vehiculeSelect.disabled = true;
 
-  const revisionDernierInput = document.getElementById("addRevisionDernierDate");
-  const revisionDernierReadonly = document.getElementById("addRevisionDernierDateReadonly");
-
-  if (revisionDernierInput) {
-    revisionDernierInput.value = revision.dernierDate || "";
-    revisionDernierInput.disabled = true;
-    revisionDernierInput.style.display = "none";
-  }
-
-  if (revisionDernierReadonly) {
-    const dateReference = revision.prochainDate || revision.dernierDate || "";
-    revisionDernierReadonly.textContent = dateReference
-      ? new Date(dateReference + "T00:00:00").toLocaleDateString("fr-FR")
-      : "—";
-    revisionDernierReadonly.style.display = "block";
-  }
-
-  // Seule la nouvelle date de prochaine révision reste modifiable.
-  document.getElementById("addRevisionProchainDate").value = "";
+  document.getElementById("addRevisionDernierDate").value =
+    revision.dernierDate || "";
+  document.getElementById("addRevisionProchainDate").value =
+    revision.prochainDate || "";
 
   setModalButtonsDisabled("addRevisionModal", false);
   document.getElementById("addRevisionModal").classList.add("active");
@@ -5855,167 +5533,6 @@ async function deleteVehicleDetailDocument(id){
   try{const response=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteDocument',id})});if(!response.ok)throw new Error(`Erreur serveur ${response.status}`);await loadData();populateVehicleQuickSelect();renderVehicleDetailPage();showMsg('Document supprimé','ok');}catch(err){showMsg('Erreur : '+err.message,'err');}
 }
 
-
-/* ===== V8.45 : GESTION DOCUMENTAIRE CT ===== */
-function ctGetDriveFileId(url) {
-  const value = String(url || "");
-  const match = value.match(/\/d\/([a-zA-Z0-9_-]+)/) || value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  return match ? match[1] : "";
-}
-function ctPreviewUrl(url) {
-  const id = ctGetDriveFileId(url);
-  return id ? `https://drive.google.com/file/d/${id}/preview` : String(url || "");
-}
-function ctDownloadUrl(url) {
-  const id = ctGetDriveFileId(url);
-  return id ? `https://drive.google.com/uc?export=download&id=${id}` : String(url || "");
-}
-function ctSetUploadBusy(isBusy, text) {
-  const progress = document.getElementById("uploadCtProgress");
-  const progressText = document.getElementById("uploadCtProgressText");
-  const submit = document.getElementById("submitUploadCtBtn");
-  const close = document.querySelector("#documentsModal .form-actions .btn");
-  const chooser = document.querySelector("#documentsModal button[onclick='uploadDocument()']");
-  const input = document.getElementById("documentFileInput");
-  if (progress) progress.style.display = isBusy ? "block" : "none";
-  if (progressText && text) progressText.textContent = text;
-  [submit, close, chooser, input].forEach(el => { if (el) el.disabled = !!isBusy; });
-}
-function viewCt(ctImmat, lienCt) {
-  window.currentCtImmatriculation = ctImmat;
-  currentViewCtLink = lienCt || "";
-  const content = document.getElementById("viewCtContent");
-  const title = document.getElementById("viewCtTitle");
-  const download = document.getElementById("viewCtLinkBtn");
-  const upload = document.getElementById("uploadCtBtn");
-  title.textContent = `Contrôle technique – ${ctImmat}`;
-  upload.style.display = "inline-flex";
-  if (!lienCt) {
-    content.innerHTML = `<div style="text-align:center;padding:28px;"><div style="font-size:46px;margin-bottom:12px;">📄</div><div style="font-size:18px;font-weight:700;color:#344054;margin-bottom:8px;">Aucun document enregistré</div><div style="color:#667085;">Utilisez « Ajouter / remplacer » pour charger le contrôle technique.</div></div>`;
-    download.style.display = "none";
-  } else {
-    content.innerHTML = `<iframe class="ct-preview-frame" src="${ctPreviewUrl(lienCt)}" title="Aperçu du contrôle technique ${ctImmat}" loading="lazy" allow="autoplay"></iframe>`;
-    download.style.display = "inline-flex";
-  }
-  document.getElementById("viewCtModal").classList.add("active");
-}
-function openViewCtLink() {
-  if (currentViewCtLink) window.open(ctDownloadUrl(currentViewCtLink), "_blank", "noopener");
-}
-function openUploadCtModal() {
-  closeViewCtModal();
-  openDocumentsModal();
-}
-function downloadCtDocs(immatriculation) {
-  const ct = (Array.isArray(data?.controlsTk) ? data.controlsTk : []).find(
-    item => String(item.immatriculation || "") === String(immatriculation || "")
-  );
-  window.currentCtImmatriculation = immatriculation;
-  if (ct?.lienCt) viewCt(immatriculation, ct.lienCt);
-  else openDocumentsModal();
-}
-async function submitUploadCt() {
-  const immat = window.currentCtImmatriculation;
-  const input = document.getElementById("documentFileInput");
-  const message = document.getElementById("uploadCtMessage");
-  if (!immat) return showMsg("Aucun contrôle technique sélectionné", "err");
-  if (!input?.files?.length) return showMsg("Sélectionnez un document", "err");
-  const file = input.files[0];
-  const allowed = ["application/pdf", "image/jpeg", "image/png"];
-  const maxBytes = 10 * 1024 * 1024;
-  if (!allowed.includes(file.type)) return showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
-  if (file.size > maxBytes) return showMsg("Le document dépasse 10 Mo", "err");
-  try {
-    ctSetUploadBusy(true, "Préparation du document…");
-    if (message) message.style.display = "none";
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
-      reader.onload = () => resolve(String(reader.result || "").split(",").pop());
-      reader.readAsDataURL(file);
-    });
-    ctSetUploadBusy(true, "Envoi vers Google Drive…");
-    const response = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "uploadCtFile",
-        immatriculation: immat,
-        fileName: file.name,
-        mimeType: file.type,
-        fileBase64: base64
-      })
-    });
-    if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
-    const result = await response.json();
-    if (!result?.ok && !result?.success) throw new Error(result?.error || result?.message || "Enregistrement impossible");
-    ctSetUploadBusy(true, "Enregistrement du lien…");
-    await loadData();
-    input.value = "";
-    if (message) {
-      message.textContent = "✅ Document chargé et enregistré avec succès.";
-      message.style.color = "#2e7d46";
-      message.style.display = "block";
-    }
-    await loadDocumentsList(immat);
-    showMsg("Contrôle technique enregistré", "ok");
-    setTimeout(() => ctSetUploadBusy(false), 500);
-  } catch (error) {
-    ctSetUploadBusy(false);
-    if (message) {
-      message.textContent = "❌ " + error.message;
-      message.style.color = "#d32f2f";
-      message.style.display = "block";
-    }
-    showMsg("Erreur : " + error.message, "err");
-  }
-}
-async function loadDocumentsList(immat) {
-  const list = document.getElementById("documentsList");
-  if (!list) return;
-  list.innerHTML = '<div style="padding:20px;text-align:center;color:#667085;">Chargement des documents…</div>';
-  try {
-    const response = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "loadDocumentsCt", immatriculation: immat })
-    });
-    if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
-    const result = await response.json();
-    const documents = Array.isArray(result) ? result : (Array.isArray(result?.documents) ? result.documents : []);
-    if (!documents.length) {
-      list.innerHTML = '<div style="padding:20px;text-align:center;color:#98a2b3;">Aucun document pour ce contrôle technique</div>';
-      return;
-    }
-    const sorted = [...documents].sort((a, b) => new Date(b.dateUpload || b.date || 0) - new Date(a.dateUpload || a.date || 0));
-    list.innerHTML = sorted.map(doc => {
-      const name = safeText(doc.nom || doc.nomFichier || "Contrôle technique");
-      const url = safeText(doc.lienDrive || doc.lien || "");
-      const date = formatFrDate(doc.dateUpload || doc.date);
-      return `<div style="background:#fff;border:1px solid #e4e7ec;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;justify-content:space-between;align-items:center;"><div style="min-width:0;"><div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ${name}</div><div style="font-size:11px;color:#667085;margin-top:3px;">${date}</div></div><div style="display:flex;gap:6px;flex:0 0 auto;"><button type="button" class="ab-icon-btn view" title="Voir" onclick="viewCt('${safeText(immat)}','${url}')"><i class="bi bi-eye"></i></button><button type="button" class="ab-icon-btn edit" title="Télécharger" onclick="window.open(ctDownloadUrl('${url}'),'_blank','noopener')"><i class="bi bi-download"></i></button></div></div>`;
-    }).join("");
-  } catch (error) {
-    list.innerHTML = `<div style="padding:20px;text-align:center;color:#d32f2f;">${safeText(error.message)}</div>`;
-  }
-}
-function uploadDocument() {
-  const input = document.getElementById("documentFileInput");
-  if (!input) return;
-  input.click();
-  input.onchange = () => {
-    const message = document.getElementById("uploadCtMessage");
-    const submit = document.getElementById("submitUploadCtBtn");
-    if (input.files?.length) {
-      const file = input.files[0];
-      if (submit) submit.style.display = "inline-flex";
-      if (message) {
-        message.textContent = `✓ ${file.name} sélectionné (${Math.ceil(file.size / 1024)} Ko)`;
-        message.style.color = "#2e7d46";
-        message.style.display = "block";
-      }
-    }
-  };
-}
-
-
 init();
 async function archiveRevisionFromModal() {
   if (!editingRevisionImmat) {
@@ -6175,7 +5692,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.45';
+  const APP_VERSION = 'v8.38';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
