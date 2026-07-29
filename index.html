@@ -5112,19 +5112,45 @@ async function submitAddRevision() {
       throw new Error(result.error || "Erreur lors de l'enregistrement");
     }
 
-    closeAddRevisionModal();
+    const wasEditing = Boolean(editingRevisionImmat);
+
+    // Recharge les données sans recharger toute la page.
+    await loadData();
+
+    // Réinitialise impérativement l'état de soumission avant de fermer la fenêtre.
+    isSubmitting = false;
+    setModalButtonsDisabled("addRevisionModal", false);
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Enregistrer";
+    }
+
+    await closeAddRevisionModal(true);
+
+    // Actualise immédiatement les vues concernées.
+    if (typeof renderRevisionPage === "function") renderRevisionPage();
+    if (typeof renderVehicleDetail === "function" && selectedVehicule) {
+      renderVehicleDetail(selectedVehicule);
+    }
+
     showMsg(
-      editingRevisionImmat
+      wasEditing
         ? "Révision modifiée ✅"
         : "Révision ajoutée ✅",
       "ok"
     );
-    showLoadingAndReload();
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
+  } finally {
+    // Empêche le bouton Enregistrer de rester figé après succès ou erreur.
     isSubmitting = false;
     setModalButtonsDisabled("addRevisionModal", false);
-    if (submitBtn) submitBtn.textContent = editingRevisionImmat ? "Modifier" : "Enregistrer";
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Enregistrer";
+    }
+    if (typeof hideGlobalLoader === "function") hideGlobalLoader();
+    if (typeof hideLoader === "function") hideLoader();
   }
 }
 
@@ -5261,7 +5287,7 @@ function openEditRevisionModal(immatriculation) {
   const submitBtn = document.getElementById("submitAddRevisionBtn");
   const vehiculeSelect = document.getElementById("addRevisionVehicule");
 
-  if (title) title.textContent = "Enregistrer la nouvelle Révision";
+  if (title) title.textContent = "Modifier la Révision";
   if (submitBtn) submitBtn.textContent = "Enregistrer";
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
