@@ -2540,7 +2540,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.48</span>
+      <span class="version" id="appVersionBadge">v8.49</span>
     </div>
   </div>
 
@@ -5232,8 +5232,9 @@ function openEditRevisionModal(immatriculation) {
   if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
   const revisionDocumentName = document.getElementById("revisionDocumentName");
   if (revisionDocumentName) {
-    const year = revision.prochainDate ? String(revision.prochainDate).slice(0,4) : new Date().getFullYear();
-    revisionDocumentName.value = `Révision ${year} - ${vehicule?.marque || ""} ${vehicule?.modele || ""}`.trim();
+    // Champ volontairement vide : le nom du document est saisi librement par l'utilisateur.
+    revisionDocumentName.value = "";
+    revisionDocumentName.placeholder = "Saisir librement le nom du document";
   }
 
   vehiculeSelect.innerHTML = "";
