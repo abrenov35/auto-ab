@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.60 - fiche véhicule et historique documentaire par année -->
+<!-- AB PARC AUTO v8.61 - fiche véhicule et historique documentaire par année -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -4561,7 +4561,7 @@ function renderVehiclesPage() {
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Immatriculation</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Statut</div>
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Nouveau</div>
   `;
 
   const activeRows = actifs.map(v => `
@@ -5002,7 +5002,7 @@ function renderRevisionPage() {
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernière Révision</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochaine Révision</div>
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Nouveau</div>
   `;
 
   const makeRows = (rows, archived) => rows.map(r => {
@@ -5552,7 +5552,7 @@ function renderCtPage() {
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Conducteur</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Dernier CT</div>
     <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Prochain CT</div>
-    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Actions</div>
+    <div class="ab-table-head" style="font-weight:600;color:#667085;border-bottom:1px solid #d9dee7;padding:8px 6px 10px;">Nouveau</div>
   `;
 
   const makeRows = (rows, archived) => rows.map(ct => {
@@ -6275,7 +6275,7 @@ function renderVehicleDetailDocuments(){
   </tr>`).join('');
 
   box.innerHTML=docs.length
-    ? `<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead><tbody>${rows}</tbody></table>`
+    ? `<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Nouveau</th></tr></thead><tbody>${rows}</tbody></table>`
     : '<div class="vehicle-empty">Aucun document enregistré</div>';
 }
 function openAddDocumentFromDetail(){ selectedVehicule=vehicleDetailImmat; openAddDocumentModal(); }
@@ -6920,7 +6920,7 @@ async function archiveItem(action, immatriculation, label) {
       </tr>`;
     }).join('');
 
-    box.innerHTML = `<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+    box.innerHTML = `<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Nouveau</th></tr></thead><tbody>${rows}</tbody></table>`;
   };
 
   const vehicleSelector = document.getElementById('vehicleQuickSelect');
@@ -7186,7 +7186,7 @@ async function archiveItem(action, immatriculation, label) {
       return `<details class="vehicle-doc-year" ${isOpen ? 'open' : ''}>
         <summary><span>Archives ${safeText(year)}</span><span class="vehicle-doc-year-count">${groups[year].length}</span></summary>
         <table class="vehicle-docs-table">
-          <thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead>
+          <thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Nouveau</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </details>`;
