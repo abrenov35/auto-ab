@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.58 - sans sablier et uploads libres -->
+<!-- AB PARC AUTO v8.59 - fiche véhicule et historique documentaire par année -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -2473,6 +2473,67 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   #viewCtModal .modal-content{width:96vw!important;max-width:96vw!important;}
 }
 
+
+    /* ===== V8.59 : NOUVELLES OPERATIONS + DOCUMENTS PAR ANNEE ===== */
+    .ab-new-entry-btn {
+      min-width: 92px;
+      height: 32px;
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      border-radius: 7px;
+      white-space: nowrap;
+    }
+    .vehicle-doc-year {
+      border: 1px solid #e1e7ef;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+    .vehicle-doc-year summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      background: #f8fafc;
+      color: #0d3a66;
+      font-size: 14px;
+      font-weight: 800;
+      user-select: none;
+    }
+    .vehicle-doc-year summary::-webkit-details-marker { display:none; }
+    .vehicle-doc-year summary::before {
+      content: "▸";
+      margin-right: 8px;
+      transition: transform .15s ease;
+    }
+    .vehicle-doc-year[open] summary::before { transform: rotate(90deg); }
+    .vehicle-doc-year-count {
+      margin-left: auto;
+      min-width: 28px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eaf2ff;
+      color: #185fa5;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .vehicle-doc-year .vehicle-docs-table { margin:0; }
+    @media (max-width: 760px) {
+      .vehicle-doc-year { overflow-x:auto; }
+      .vehicle-docs-table { min-width:720px; }
+    }
 </style>
 </head>
 <body>
@@ -2540,7 +2601,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.49</span>
+      <span class="version" id="appVersionBadge">v8.59</span>
     </div>
   </div>
 
@@ -2593,11 +2654,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 <div id="vehicleDetailHero"></div>
   <div class="vehicle-detail-grid">
     <article class="vehicle-card">
-      <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-wrench-adjustable"></i> Révision</div><button class="vehicle-icon-action" title="Modifier la révision" aria-label="Modifier la révision" onclick="openVehicleRevisionFromDetail()"><i class="bi bi-pencil"></i></button></div>
+      <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-wrench-adjustable"></i> Révision</div></div>
       <div class="vehicle-card-body" id="vehicleDetailRevision"></div>
     </article>
     <article class="vehicle-card">
-      <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-shield-check"></i> Contrôle technique</div><button class="vehicle-icon-action" title="Modifier le contrôle technique" aria-label="Modifier le contrôle technique" onclick="openVehicleCtFromDetail()"><i class="bi bi-pencil"></i></button></div>
+      <div class="vehicle-card-head"><div class="vehicle-card-title"><i class="bi bi-shield-check"></i> Contrôle technique</div></div>
       <div class="vehicle-card-body" id="vehicleDetailCt"></div>
     </article>
     <article class="vehicle-card vehicle-docs-card">
@@ -2844,7 +2905,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">✅ Contrôles Techniques</h2>
   <div id="ctPageList" style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1.2fr; gap: 8px; font-size: 12px; margin-bottom: 16px;"></div>
   <div style="margin-top: 16px;">
-    <button class="btn btn-success" onclick="openAddCtModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter un Contrôle Technique</button>
+    <button class="btn btn-success" onclick="openAddCtModal()" style="padding: 8px 16px; font-size: 14px;"><i class="bi bi-plus-lg"></i> Nouveau contrôle technique</button>
   </div>
 </div>
 
@@ -2853,7 +2914,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">🔧 Maintenance - Révision</h2>
   <div id="revisionPageList" style="display: grid; grid-template-columns: 1.35fr 0.9fr 0.9fr 1fr 1.15fr 1.05fr; column-gap: 14px; row-gap: 0; font-size: 12px; margin-bottom: 16px; align-items: center;"></div>
   <div style="margin-top: 16px;">
-    <button class="btn btn-success" onclick="openAddRevisionModal()" style="padding: 8px 16px; font-size: 14px;">+ Ajouter une Révision</button>
+    <button class="btn btn-success" onclick="openAddRevisionModal()" style="padding: 8px 16px; font-size: 14px;"><i class="bi bi-plus-lg"></i> Nouvelle révision</button>
   </div>
 </div>
 
@@ -4952,7 +5013,7 @@ function renderRevisionPage() {
     const color = days !== null && days < 0 ? "#d32f2f" : days !== null && days < 30 ? "#f57c00" : "#2e7d46";
     const action = archived
       ? `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`
-      : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>`;
+      : `<button type="button" class="btn btn-success ab-new-entry-btn" title="Enregistrer une nouvelle révision" aria-label="Nouvelle révision" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-plus-lg"></i> Nouveau</button>`;
 
     return `
       <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${r.marque}</div>
@@ -5499,8 +5560,8 @@ function renderCtPage() {
     const color = days !== null && days <= 0 ? "#d32f2f" : days !== null && days <= 30 ? "#f57c00" : "#2e7d46";
     const action = archived
       ? `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreControleTk','${ct.immatriculation}','Contrôle technique')"><i class="bi bi-arrow-counterclockwise"></i></button>`
-      : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openCtEditModal('${ct.immatriculation}')"><i class="bi bi-pencil"></i></button>
-         <button type="button" class="ab-icon-btn view" title="Voir" aria-label="Voir" onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')"><i class="bi bi-eye"></i></button>`;
+      : `<button type="button" class="btn btn-success ab-new-entry-btn" title="Enregistrer un nouveau contrôle technique" aria-label="Nouveau contrôle technique" onclick="openCtEditModal('${ct.immatriculation}')"><i class="bi bi-plus-lg"></i> Nouveau</button>
+         <button type="button" class="ab-icon-btn view" title="Voir le dernier contrôle" aria-label="Voir le dernier contrôle" onclick="viewCt('${ct.immatriculation}','${ct.lienCt || ""}')"><i class="bi bi-eye"></i></button>`;
 
     return `
       <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${ct.marque}</div>
@@ -7050,5 +7111,88 @@ async function archiveItem(action, immatriculation, label) {
 })();
 </script>
 
+
+<script>
+/* ===== V8.59 — HISTORIQUE DOCUMENTAIRE PAR ANNEE ===== */
+(function () {
+  function getDocumentYear(doc) {
+    const raw = doc.date || doc.dateUpload || doc.dateAjout || doc.dateModification || '';
+    if (!raw) return 'À classer';
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) return String(parsed.getFullYear());
+    const match = String(raw).match(/(?:19|20)\d{2}/);
+    return match ? match[0] : 'À classer';
+  }
+
+  function getDocumentTimestamp(doc) {
+    const raw = doc.date || doc.dateUpload || doc.dateAjout || doc.dateModification || '';
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+  }
+
+  window.renderVehicleDetailDocuments = function renderVehicleDetailDocumentsByYear() {
+    const box = document.getElementById('vehicleDetailDocuments');
+    if (!box) return;
+
+    const currentImmat = String(
+      (typeof vehicleDetailImmat !== 'undefined' && vehicleDetailImmat) ||
+      (typeof selectedVehicule !== 'undefined' && selectedVehicule) ||
+      localStorage.getItem('activeVehicleAB') || ''
+    ).trim();
+
+    const docs = (Array.isArray(data?.documents) ? data.documents : [])
+      .filter(d => String(d.immatriculation || '').trim() === currentImmat && (d.statut || 'Actif') !== 'Archivé')
+      .sort((a, b) => getDocumentTimestamp(b) - getDocumentTimestamp(a));
+
+    if (!docs.length) {
+      box.innerHTML = '<div class="vehicle-empty">Aucun document enregistré</div>';
+      return;
+    }
+
+    const groups = docs.reduce((acc, doc) => {
+      const year = getDocumentYear(doc);
+      (acc[year] ||= []).push(doc);
+      return acc;
+    }, {});
+
+    const years = Object.keys(groups).sort((a, b) => {
+      if (a === 'À classer') return 1;
+      if (b === 'À classer') return -1;
+      return Number(b) - Number(a);
+    });
+
+    const currentYear = String(new Date().getFullYear());
+    const firstYear = years[0];
+
+    box.innerHTML = years.map(year => {
+      const rows = groups[year].map(doc => {
+        const id = String(doc.id ?? doc.idDocument ?? '');
+        return `<tr>
+          <td><strong>${safeText(doc.nom || doc.nomFichier || 'Sans nom')}</strong></td>
+          <td>${safeText(doc.categorie || doc.type || '—')}</td>
+          <td>${safeText(doc.description || '—')}</td>
+          <td>${formatFrDate(doc.date || doc.dateUpload || doc.dateAjout)}</td>
+          <td>
+            <div class="vehicle-doc-actions">
+              <button type="button" class="ab-icon-btn view js-doc-view" data-doc-id="${safeText(id)}" title="Visualiser" aria-label="Visualiser"><i class="bi bi-eye"></i></button>
+              <button type="button" class="ab-icon-btn edit js-doc-edit" data-doc-id="${safeText(id)}" title="Modifier les informations" aria-label="Modifier les informations"><i class="bi bi-pencil"></i></button>
+              <button type="button" class="ab-icon-btn delete js-doc-delete" data-doc-id="${safeText(id)}" title="Supprimer" aria-label="Supprimer"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      const isOpen = year === currentYear || year === firstYear;
+      return `<details class="vehicle-doc-year" ${isOpen ? 'open' : ''}>
+        <summary><span>Archives ${safeText(year)}</span><span class="vehicle-doc-year-count">${groups[year].length}</span></summary>
+        <table class="vehicle-docs-table">
+          <thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </details>`;
+    }).join('');
+  };
+})();
+</script>
 </body>
 </html>
