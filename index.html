@@ -2238,6 +2238,226 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       }
     }
 
+
+/* ===== V8.43 : AFFICHAGE IPHONE / MOBILE ===== */
+@media (max-width: 700px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .app-header {
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .app-header-top {
+    padding: 7px 10px 3px;
+  }
+
+  .app-nav {
+    width: 100%;
+    max-width: 100vw;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 4px 8px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-nav .btn-toolbar {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+
+  .vehicle-picker-wrap {
+    flex: 0 0 210px;
+    width: 210px;
+  }
+
+  .vehicle-picker {
+    width: 100%;
+    min-width: 0;
+    font-size: 12px;
+  }
+
+  .alert-banner,
+  .alert-banner-revision {
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .alert-inner {
+    width: 100%;
+    padding: 5px 7px;
+    gap: 5px;
+  }
+
+  .alert-banner h3,
+  .alert-banner-revision h3 {
+    width: 100%;
+    min-width: 0;
+    padding: 5px 8px;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .alert-items,
+  .alert-items-revision {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .alert-item,
+  .alert-item-revision {
+    min-width: max-content;
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .home-container,
+  .management-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 6px 0;
+    padding: 0 7px;
+  }
+
+  #vehiclesPage,
+  #revisionPage,
+  #ctPage {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 12px 8px !important;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #vehiclesPage h2,
+  #revisionPage h2,
+  #ctPage h2 {
+    position: sticky;
+    left: 0;
+    width: max-content;
+    max-width: calc(100vw - 30px);
+    font-size: 20px !important;
+  }
+
+  /* La page reste à la largeur de l'iPhone.
+     Seul le tableau se déplace horizontalement avec le doigt. */
+  #vehiclesPageList {
+    width: 760px !important;
+    min-width: 760px !important;
+    grid-template-columns:
+      115px
+      135px
+      125px
+      130px
+      90px
+      65px !important;
+    column-gap: 8px !important;
+  }
+
+  #revisionPageList,
+  #ctPageList {
+    width: 920px !important;
+    min-width: 920px !important;
+  }
+
+  .ab-table-head {
+    min-height: 38px;
+    height: 38px;
+    font-size: 11px;
+  }
+
+  .ab-table-cell {
+    min-height: 42px;
+    height: auto;
+    font-size: 12px;
+  }
+
+  .ab-actions {
+    min-width: 0;
+  }
+
+  .ab-icon-btn {
+    width: 31px;
+    height: 31px;
+  }
+
+  .sync-indicator {
+    right: 8px;
+    bottom: 8px;
+  }
+}
+
+
+/* ===== V8.44 : BOUTONS TOUJOURS DANS LE CADRE ===== */
+@media (max-width: 700px) {
+  .app-nav {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 6px 8px 8px !important;
+    overflow: visible !important;
+  }
+
+  .app-nav .btn-toolbar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 36px;
+    padding: 7px 6px !important;
+    font-size: 11px !important;
+    line-height: 1.15;
+    white-space: normal !important;
+    text-align: center;
+    justify-content: center;
+    overflow-wrap: anywhere;
+  }
+
+  .vehicle-picker-wrap {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
+  .vehicle-picker {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-nav {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vehicle-picker-wrap {
+    grid-column: 1;
+  }
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2302,7 +2522,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.42</span>
+      <span class="version" id="appVersionBadge">v8.44</span>
     </div>
   </div>
 
@@ -5773,7 +5993,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.42';
+  const APP_VERSION = 'v8.44';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
