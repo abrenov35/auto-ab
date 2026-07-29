@@ -2944,11 +2944,8 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <!-- Zone upload -->
       <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 20px; border: 2px dashed #1976d2;">
         <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce</div>
-        <input type="file" id="documentFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
-        <div style="display: flex; gap: 8px;">
-          <button class="btn" style="background: #1976d2; color: white; flex: 1; padding: 10px;" onclick="uploadDocument()">📁 Choisir un fichier</button>
-          <button class="btn btn-success" style="flex: 1; padding: 10px;" id="submitUploadCtBtn" onclick="submitUploadCt()">📤 Charger et enregistrer</button>
-        </div>
+        <input type="file" id="documentFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;" onchange="handleCtFileSelection(this)">
+        <button class="btn btn-success" style="width:100%; padding:10px;" id="submitUploadCtBtn" onclick="submitUploadCt()" disabled>📤 Charger et enregistrer</button>
         <div id="uploadCtMessage" style="margin-top: 8px; font-size: 12px; text-align: center; display: none;"></div>
         <div id="uploadCtProgress" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#eef6ff; color:#0d3a66; font-size:12px; font-weight:600; text-align:left;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -5875,11 +5872,10 @@ function ctSetUploadBusy(isBusy, text) {
   const progressText = document.getElementById("uploadCtProgressText");
   const submit = document.getElementById("submitUploadCtBtn");
   const close = document.querySelector("#documentsModal .form-actions .btn");
-  const chooser = document.querySelector("#documentsModal button[onclick='uploadDocument()']");
   const input = document.getElementById("documentFileInput");
   if (progress) progress.style.display = isBusy ? "block" : "none";
   if (progressText && text) progressText.textContent = text;
-  [submit, close, chooser, input].forEach(el => { if (el) el.disabled = !!isBusy; });
+  [submit, close, input].forEach(el => { if (el) el.disabled = !!isBusy; });
 }
 function viewCt(ctImmat, lienCt) {
   window.currentCtImmatriculation = ctImmat;
@@ -5962,7 +5958,13 @@ async function submitUploadCt() {
     }
     await loadDocumentsList(immat);
     showMsg("Contrôle technique enregistré", "ok");
-    setTimeout(() => ctSetUploadBusy(false), 500);
+    ctSetUploadBusy(false);
+    setTimeout(() => {
+      closeDocumentsModal();
+      if (message) message.style.display = "none";
+      const submit = document.getElementById("submitUploadCtBtn");
+      if (submit) submit.disabled = true;
+    }, 700);
   } catch (error) {
     ctSetUploadBusy(false);
     if (message) {
@@ -6000,23 +6002,27 @@ async function loadDocumentsList(immat) {
     list.innerHTML = `<div style="padding:20px;text-align:center;color:#d32f2f;">${safeText(error.message)}</div>`;
   }
 }
+function handleCtFileSelection(input) {
+  const message = document.getElementById("uploadCtMessage");
+  const submit = document.getElementById("submitUploadCtBtn");
+  const hasFile = !!input?.files?.length;
+  if (submit) submit.disabled = !hasFile;
+  if (!message) return;
+  if (hasFile) {
+    const file = input.files[0];
+    message.textContent = `✓ ${file.name} sélectionné (${Math.ceil(file.size / 1024)} Ko)`;
+    message.style.color = "#2e7d46";
+    message.style.display = "block";
+  } else {
+    message.textContent = "";
+    message.style.display = "none";
+  }
+}
+
+// Compatibilité avec d'anciens appels éventuels.
 function uploadDocument() {
   const input = document.getElementById("documentFileInput");
-  if (!input) return;
-  input.click();
-  input.onchange = () => {
-    const message = document.getElementById("uploadCtMessage");
-    const submit = document.getElementById("submitUploadCtBtn");
-    if (input.files?.length) {
-      const file = input.files[0];
-      if (submit) submit.style.display = "inline-flex";
-      if (message) {
-        message.textContent = `✓ ${file.name} sélectionné (${Math.ceil(file.size / 1024)} Ko)`;
-        message.style.color = "#2e7d46";
-        message.style.display = "block";
-      }
-    }
-  };
+  if (input) input.click();
 }
 
 
