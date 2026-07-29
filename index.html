@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v6.3.46 - Cache + Debounce + AUTO CORS Fallback -->
+<!-- AB PARC AUTO v6.3.47 - Cache + Debounce + Smart Server Detection -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -3229,45 +3229,66 @@ let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G
 let USE_CORS_PROXY = false; // Flag pour savoir si on utilise le proxy
 
 // Fonction pour tester le GAS et détecter les erreurs CORS
-async function testGASConnection() {
-  console.log("🔍 Test connexion GAS direct...");
+// v6.3.47: Test GAS ET Proxy, utiliser le proxy seulement si ça marche
+async function testConnection(url, name) {
+  console.log(`🔍 Test ${name}...`);
   try {
     const response = await fetch(
-      APPS_SCRIPT_URL + "?action=loadData",
+      url + "?action=loadData",
       { 
         method: "GET",
-        cache: "no-store"
+        cache: "no-store",
+        timeout: 5000 // Timeout 5 secondes
       }
     );
     
-    if (response.ok) {
-      console.log("✅ GAS direct fonctionne!");
-      return true;
-    } else {
-      console.warn("⚠️ GAS retourne:", response.status);
+    if (!response.ok) {
+      console.warn(`⚠️ ${name} retourne: ${response.status}`);
       return false;
     }
-  } catch (error) {
-    console.error("❌ Erreur de connexion GAS:", error.message);
     
-    if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
-      console.warn("🔄 Problème CORS détecté - Basculer au proxy...");
+    // Vérifier que c'est du JSON, pas du HTML
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.warn(`⚠️ ${name} ne retourne pas du JSON`);
       return false;
     }
+    
+    console.log(`✅ ${name} fonctionne!`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Erreur ${name}:`, error.message);
     return false;
   }
 }
 
-// Au démarrage, tester et basculer au proxy si nécessaire
+// Au démarrage, tester GAS puis proxy
 async function initializeURLStrategy() {
-  const gasWorks = await testGASConnection();
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G2j4z5BxaxKe99QDCpHJm3Dl94Qgksk0i6RBRlGP2RXSCOCwsWg/exec";
+  const PROXY_URL = "https://auto-ab-cors-proxy.onrender.com";
   
-  if (!gasWorks) {
-    console.warn("⚠️ GAS direct ne fonctionne pas");
-    console.log("🔄 Utilisation du proxy comme fallback...");
-    APPS_SCRIPT_URL = "https://auto-ab-cors-proxy.onrender.com";
-    USE_CORS_PROXY = true;
-    console.log("✅ Proxy activé:", APPS_SCRIPT_URL);
+  // Tester GAS direct
+  const gasWorks = await testConnection(GAS_URL, "GAS direct");
+  
+  if (gasWorks) {
+    console.log("✅ Utilisation du GAS direct");
+    APPS_SCRIPT_URL = GAS_URL;
+    USE_CORS_PROXY = false;
+  } else {
+    // GAS ne marche pas, tester le proxy
+    console.log("🔄 GAS ne fonctionne pas, test du proxy...");
+    const proxyWorks = await testConnection(PROXY_URL, "Proxy");
+    
+    if (proxyWorks) {
+      console.log("✅ Proxy activé et fonctionnel");
+      APPS_SCRIPT_URL = PROXY_URL;
+      USE_CORS_PROXY = true;
+    } else {
+      console.error("❌ Ni GAS ni Proxy ne fonctionnent");
+      console.warn("⚠️ Utilisation du cache local uniquement");
+      APPS_SCRIPT_URL = null; // Désactiver les requêtes réseau
+      USE_CORS_PROXY = false;
+    }
   }
 }
 
@@ -3341,6 +3362,18 @@ async function fetchDataFromServer() {
 
   if (syncIndicator && !isInitialBoot) {
     syncIndicator.hidden = false;
+  }
+
+  // v6.3.47: Si pas de serveur disponible, utiliser le cache local
+  if (!APPS_SCRIPT_URL) {
+    console.warn("⚠️ Pas de serveur disponible (GAS + Proxy down)");
+    const cachedData = readDataCache();
+    if (cachedData) {
+      console.log("📦 Utilisation du cache local");
+      return cachedData;
+    } else {
+      throw new Error("Aucun serveur disponible et pas de cache local");
+    }
   }
 
   try {
