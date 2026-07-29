@@ -5972,9 +5972,24 @@ function showMsg(text, type) {
 function showLoadingAndReload() {
   showLoadingOverlay();
 
-  window.setTimeout(() => {
-    window.location.reload();
-  }, 120);
+  Promise.resolve()
+    .then(() => loadData())
+    .then(() => {
+      if (typeof populateVehicleQuickSelect === "function") populateVehicleQuickSelect();
+      if (typeof displayActivePage === "function") displayActivePage();
+      if (typeof renderVehicleDetailPage === "function" && vehicleDetailImmat) {
+        renderVehicleDetailPage();
+      }
+      if (typeof checkCtAlerts === "function") checkCtAlerts();
+      if (typeof checkRevisionAlerts === "function") checkRevisionAlerts();
+    })
+    .catch(error => {
+      console.error("Actualisation sans rechargement :", error);
+      showMsg("Erreur d’actualisation : " + (error?.message || String(error)), "err");
+    })
+    .finally(() => {
+      hideLoadingOverlay();
+    });
 }
 
 // Initialiser l'app au chargement
@@ -6635,7 +6650,8 @@ async function archiveItem(action, immatriculation, label) {
       return;
     }
 
-    window.editingDocId = doc.id ?? doc.idDocument;
+    editingDocId = doc.id ?? doc.idDocument;
+    window.editingDocId = editingDocId;
     const title = document.getElementById('docModalTitle');
     const nom = document.getElementById('docNom');
     const date = document.getElementById('docDate');
