@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
+<!-- AB PARC AUTO v9.0 - API Centralisée sur Google Apps Script uniquement -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -3225,98 +3225,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
 <script>
 // 🚀 v6.3.46: Auto-detect CORS issues et fallback au proxy si nécessaire
-let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYI7rCqLhrf1lErQvAjBkalYTYKFSKXHFgi6h0qiD9z37uIKdz0USXfm_iU81OXIMo/exec";
-let USE_CORS_PROXY = false; // Flag pour savoir si on utilise le proxy
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYI7rCqLhrf1lErQvAjBkalYTYKFSKXHFgi6h0qiD9z37uIKdz0USXfm_iU81OXIMo/exec";
 
-// Fonction pour tester le GAS et détecter les erreurs CORS
-// v6.3.49: Essayer silencieusement de se connecter au serveur pour uploads/downloads
-let SERVER_BACKUP_URL = "https://auto-ab-cors-proxy.onrender.com";
 
-async function tryQuietServerConnection() {
-  // Essayer de se connecter au serveur sans afficher d'erreur
-  try {
-    const response = await fetch(
-      SERVER_BACKUP_URL + "?action=loadData",
-      { 
-        method: "GET",
-        cache: "no-store",
-        signal: AbortSignal.timeout(3000) // Timeout 3 secondes
-      }
-    );
-    
-    if (response.ok) {
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        // Serveur marche! Réactiver pour cette requête
-        APPS_SCRIPT_URL = SERVER_BACKUP_URL;
-        console.log("✅ Serveur disponible - téléchargement activé");
-        return true;
-      }
-    }
-  } catch (error) {
-    // Silencieux - pas d'erreur affichée
-  }
-  
-  return false;
-}
 
-// v6.3.48: Stratégie simplifiée - Utiliser le cache local directement
-// (GAS et Proxy ne sont pas fiables, donc on désactive les requêtes réseau)
-async function initializeURLStrategy() {
-  console.log("📦 AB PARC AUTO fonctionne en mode CACHE LOCAL");
-  console.log("Les données sont sauvegardées localement et se synchronisent quand le serveur est accessible");
-  
-  // Désactiver les requêtes réseau par défaut
-  APPS_SCRIPT_URL = null;
-  USE_CORS_PROXY = false;
-  
-  const cachedData = readDataCache();
-  if (cachedData) {
-    console.log("✅ Cache local disponible avec", cachedData.vehicules?.length || 0, "véhicules");
-  } else {
-    console.log("⚠️ Pas encore de données en cache");
-  }
-}
 
-// ===== 🚀 CACHE MANAGER v6.3.43 =====
-// Cache en mémoire avec TTL (30 secondes) pour éviter les fetches répétés
-const DataCacheManager = (() => {
-  let cache = null;
-  let lastFetchTime = 0;
-  const CACHE_TTL = 30000; // 30 secondes
-  let isFetching = false;
-  let fetchPromise = null;
-
-  return {
-    async getData() {
-      const now = Date.now();
-      
-      // 1. Si cache valide, le retourner immédiatement
-      if (cache && now - lastFetchTime < CACHE_TTL) {
-        console.log('✅ Cache valide (' + (CACHE_TTL - (now - lastFetchTime)).toFixed(0) + 'ms restants)');
-        return cache;
-      }
-      
-      // 2. Si fetch déjà en cours, attendre la promesse existante
-      if (isFetching && fetchPromise) {
-        console.log('⏳ Fetch en cours, utiliser promesse existante');
-        return fetchPromise;
-      }
-      
-      // 3. Sinon, fetch les données
-      isFetching = true;
-      fetchPromise = (async () => {
-        try {
-          console.log('🔄 Fetch données depuis API...');
-          cache = await fetchDataFromServer();
-          lastFetchTime = now;
-          console.log('✅ Données chargées du serveur');
-          return cache;
-        } finally {
-          isFetching = false;
-          fetchPromise = null;
-        }
-      })();
       
       return fetchPromise;
     },
@@ -3341,97 +3254,7 @@ const DataCacheManager = (() => {
   };
 })();
 
-// Fonction pour fetcher depuis le serveur (avec meilleure gestion d'erreur v6.3.44)
-async function fetchDataFromServer() {
-  const syncIndicator = document.getElementById("syncIndicator");
-  const isInitialBoot = document.body.classList.contains("app-booting");
 
-  if (syncIndicator && !isInitialBoot) {
-    syncIndicator.hidden = false;
-  }
-
-  // v6.3.47: Si pas de serveur disponible, utiliser le cache local
-  if (!APPS_SCRIPT_URL) {
-    console.warn("⚠️ Pas de serveur disponible (GAS + Proxy down)");
-    const cachedData = readDataCache();
-    if (cachedData) {
-      console.log("📦 Utilisation du cache local");
-      return cachedData;
-    } else {
-      throw new Error("Aucun serveur disponible et pas de cache local");
-    }
-  }
-
-  try {
-    const response = await fetchWithRetry(APPS_SCRIPT_URL + "?action=loadData", {
-      method: "GET",
-      cache: "no-store"
-    }, 2);
-
-    if (!response.ok) {
-      throw new Error(`Erreur serveur ${response.status}`);
-    }
-
-    const responseText = await response.text();
-
-    // Détection: si ça commence par <, c'est du HTML (erreur 404, 500, etc)
-    if (responseText.trim().startsWith('<')) {
-      console.error("❌ Le serveur a retourné du HTML au lieu de JSON");
-      console.error("Réponse reçue:", responseText.substring(0, 200));
-      throw new Error("Le serveur n'a pas retourné de données valides. Vérifiez que le GAS est déployé et accessible.");
-    }
-
-    let backendData;
-    try {
-      backendData = JSON.parse(responseText);
-    } catch (parseErr) {
-      console.error("❌ Erreur parsing JSON:", parseErr);
-      console.error("Réponse reçue:", responseText.substring(0, 200));
-      throw new Error("Les données reçues du serveur ne sont pas du JSON valide.");
-    }
-
-    if (!backendData || backendData.ok !== true) {
-      throw new Error(backendData?.error || "Réponse invalide du backend");
-    }
-
-    const newData = {
-      ...backendData,
-      vehicules: Array.isArray(backendData.vehicules) ? backendData.vehicules : [],
-      documents: Array.isArray(backendData.documents) ? backendData.documents : [],
-      categories: Array.isArray(backendData.categories) ? backendData.categories : [],
-      revisions: Array.isArray(backendData.revisions) ? backendData.revisions : [],
-      controlsTk: Array.isArray(backendData.controlsTk)
-        ? backendData.controlsTk
-        : (Array.isArray(backendData.controls) ? backendData.controls : [])
-    };
-
-    console.log("✅ Données du backend reçues:", newData);
-    console.log("  Véhicules:", newData.vehicules.length);
-    console.log("  Révisions:", newData.revisions.length);
-    console.log("  Contrôles techniques:", newData.controlsTk.length);
-
-    writeDataCache(newData);
-    hideOfflineNotice();
-    return newData;
-  } catch (err) {
-    console.error("❌ Erreur de chargement:", err.message);
-
-    const cachedData = readDataCache();
-    if (cachedData) {
-      console.log("💾 Utilisation des données du cache local");
-      showOfflineNotice("Serveur indisponible : affichage des dernières données enregistrées");
-      return cachedData;
-    } else {
-      console.error("❌ Aucune donnée en cache disponible");
-      showOfflineNotice("Serveur indisponible et aucune donnée locale disponible");
-      throw err;
-    }
-  } finally {
-    if (syncIndicator) {
-      syncIndicator.hidden = true;
-    }
-  }
-}
 
 // ===== DEBOUNCE POUR loadData =====
 function debounce(fn, delay) {
@@ -3586,97 +3409,13 @@ function hideLoadingOverlay(force = false) {
   }
 }
 
-function getLoadingMessageFromFetch(input, init = {}) {
-  const method = String(init.method || "GET").toUpperCase();
 
-  try {
-    const payload = typeof init.body === "string" ? JSON.parse(init.body) : {};
-    const action = String(payload.action || "").toLowerCase();
-
-    if (action.includes("upload")) return "Envoi du document…";
-    if (action.includes("delete") || action.includes("supprim")) return "Suppression en cours…";
-    if (action.includes("archive")) return "Archivage en cours…";
-    if (action.includes("restore")) return "Restauration en cours…";
-    if (action.includes("create") || action.includes("update") || action.includes("save")) {
-      return "Enregistrement en cours…";
-    }
-  } catch (error) {}
-
-  return method === "GET" ? "Chargement des données…" : "Traitement en cours…";
-}
 
 /*
   Loader automatique uniquement pour les écritures utilisateur.
   Les GET de synchronisation et de rafraîchissement restent silencieux :
   ils ne doivent plus maintenir le sablier à l'écran.
 */
-const nativeFetch = window.fetch.bind(window);
-
-// ===== v6.3.45: Wrapper global pour TOUS les fetch =====
-// Intercepte GET et POST pour détecter les erreurs HTML
-window.fetch = async function(input, init = {}) {
-  const method = String(init.method || "GET").toUpperCase();
-  let action = "";
-  try {
-    const payload = typeof init.body === "string" ? JSON.parse(init.body) : {};
-    action = String(payload.action || "").toLowerCase();
-  } catch (error) {}
-
-  const isBackgroundLoad = method === "GET" || action === "loaddata" || action.startsWith("load");
-  const useLoader = !isBackgroundLoad;
-
-  if (useLoader) showLoadingOverlay(getLoadingMessageFromFetch(input, init));
-
-  try {
-    const response = await nativeFetch(input, init);
-    
-    // ===== v6.3.45: Détection d'erreur HTML pour TOUTES les réponses =====
-    // Si Content-Type est application/json, on s'attend à du JSON, pas du HTML
-    if (response.status === 200 || response.status === 201) {
-      const contentType = response.headers.get('content-type') || '';
-      
-      // Si c'est supposé être du JSON
-      if (contentType.includes('application/json')) {
-        // Cloner la réponse car on ne peut lire body qu'une fois
-        const responseClone = response.clone();
-        const text = await responseClone.text();
-        
-        // Vérifier si c'est du HTML
-        if (text.trim().startsWith('<')) {
-          console.error(`❌ ERREUR: Le serveur a retourné du HTML au lieu de JSON`);
-          console.error(`Méthode: ${method}`);
-          console.error(`Action: ${action}`);
-          console.error(`URL: ${input}`);
-          console.error(`Réponse HTML:`, text.substring(0, 300));
-          
-          // Retourner une réponse fake avec erreur
-          const errorResponse = {
-            ok: false,
-            status: 200,
-            statusText: 'HTML Response When JSON Expected',
-            clone: () => ({ text: async () => text }),
-            text: async () => text,
-            json: async () => {
-              throw new Error(
-                `Réponse serveur invalide. Le serveur a retourné du HTML au lieu de JSON.\\n` +
-                `Vérifiez que le GAS est bien configuré et déployé.`
-              );
-            }
-          };
-          return errorResponse;
-        }
-        
-        // C'est du JSON valide, retourner la réponse originale
-        return response;
-      }
-    }
-    
-    return response;
-  } finally {
-    if (useLoader) hideLoadingOverlay();
-  }
-};
-
 
 const DATA_CACHE_KEY = "abParcAutoDataCache";
 
@@ -3767,7 +3506,7 @@ async function init() {
   showLoadingOverlay();
   
   // v6.3.46: Tester le GAS et basculer au proxy si nécessaire
-  await initializeURLStrategy();
+  // Initialization: API centralisée sur APPS_SCRIPT_URL uniquement
 
   const cachedData = readDataCache();
 
@@ -3828,28 +3567,7 @@ function hideOfflineNotice() {
 }
 
 
-async function fetchWithRetry(url, options = {}, retries = 2) {
-  let lastError;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      // Ne plus interrompre artificiellement la requête : Apps Script peut répondre lentement.
-      const response = await fetch(url, options);
-      if (![502, 503, 504].includes(response.status)) return response;
-      lastError = new Error(`Erreur serveur ${response.status}`);
-    } catch (error) {
-      // Un AbortError provoqué par une ancienne requête ne doit plus bloquer l'application.
-      if (error?.name === "AbortError") {
-        lastError = new Error("La requête a été interrompue. Nouvelle tentative…");
-      } else {
-        lastError = error;
-      }
-    }
-    if (attempt < retries) {
-      await new Promise(resolve => setTimeout(resolve, 1200 * (attempt + 1)));
-    }
-  }
-  throw lastError || new Error("Serveur momentanément indisponible");
-}
+
 
 // ===== loadData() v6.3.43 : Cache + Debounce optimisé =====
 async function loadData() {
@@ -5623,7 +5341,7 @@ async function uploadRevisionDocument(input) {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
-        action: "uploadDocument",
+        action: "uploadFile",
         immatriculation,
         categorie: "Révision",
         nom: finalName,
@@ -6521,12 +6239,6 @@ async function submitControleTk() {
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
-}
-
-async function deleteCt(immatriculation) {
-  if (!await showConfirm("Supprimer ce contrôle technique ?", { title: "Supprimer le contrôle technique", confirmText: "Supprimer", danger: true })) return;
-  // À implémenter
-  showMsg("Suppression CT en cours de développement", "err");
 }
 
 // ========== UTILITAIRES ==========
