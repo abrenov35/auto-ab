@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.53 - enregistrement document stable - upload document diagnostic corrigé -->
+<!-- AB PARC AUTO v8.56 - loader et uploads optimisés -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -3222,37 +3222,54 @@ let editingRevisionImmat = null;
 
 // ========== INIT ==========
 let globalLoadingCount = 0;
+let globalLoadingTimer = null;
+let globalLoadingSafetyTimer = null;
 
 function showLoadingOverlay(message = "Chargement en cours…", subtext = "Veuillez patienter") {
   globalLoadingCount += 1;
 
-  const overlay = document.getElementById("loadingMessage");
   const text = document.getElementById("loadingText");
   const secondaryText = document.getElementById("loadingSubtext");
-
   if (text) text.textContent = message;
   if (secondaryText) secondaryText.textContent = subtext;
 
-  if (overlay) {
-    overlay.hidden = false;
-    overlay.style.display = "flex";
-    overlay.style.background = document.body.classList.contains("app-booting")
-      ? "#f5f7fa"
-      : "rgba(15, 23, 42, 0.38)";
-    overlay.style.backdropFilter = document.body.classList.contains("app-booting")
-      ? "none"
-      : "blur(2px)";
+  // N'affiche le sablier que si l'opération dépasse 250 ms.
+  // Les actions rapides restent instantanées et l'interface ne clignote plus.
+  if (!globalLoadingTimer) {
+    globalLoadingTimer = setTimeout(() => {
+      globalLoadingTimer = null;
+      if (globalLoadingCount <= 0) return;
+
+      const overlay = document.getElementById("loadingMessage");
+      if (overlay) {
+        overlay.hidden = false;
+        overlay.style.display = "flex";
+        overlay.style.background = document.body.classList.contains("app-booting")
+          ? "#f5f7fa"
+          : "rgba(15, 23, 42, 0.38)";
+        overlay.style.backdropFilter = document.body.classList.contains("app-booting")
+          ? "none"
+          : "blur(2px)";
+      }
+      document.body.classList.add("is-loading");
+    }, 250);
   }
 
-  document.body.classList.add("is-loading");
+  // Sécurité : aucun sablier ne peut rester bloqué indéfiniment.
+  clearTimeout(globalLoadingSafetyTimer);
+  globalLoadingSafetyTimer = setTimeout(() => hideLoadingOverlay(true), 45000);
 }
 
 function hideLoadingOverlay(force = false) {
   globalLoadingCount = force ? 0 : Math.max(0, globalLoadingCount - 1);
   if (globalLoadingCount > 0) return;
 
-  const overlay = document.getElementById("loadingMessage");
+  clearTimeout(globalLoadingTimer);
+  clearTimeout(globalLoadingSafetyTimer);
+  globalLoadingTimer = null;
+  globalLoadingSafetyTimer = null;
 
+  const overlay = document.getElementById("loadingMessage");
   document.body.classList.remove("app-booting");
   document.body.classList.remove("is-loading");
 
@@ -3261,6 +3278,7 @@ function hideLoadingOverlay(force = false) {
     overlay.style.display = "none";
   }
 }
+
 
 function getLoadingMessageFromFetch(input, init = {}) {
   const method = String(init.method || "GET").toUpperCase();
@@ -5217,41 +5235,29 @@ async function uploadRevisionDocument(input) {
       ? (/\.[a-z0-9]{2,5}$/i.test(customName) ? customName : customName + extension)
       : file.name;
 
+    // Un seul appel Apps Script : upload Drive + écriture Sheets.
+    // Cela évite deux démarrages successifs du Web App.
     const uploadResponse = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
-        action: "uploadFile",
-        immatriculation,
-        fileName: finalName,
-        mimeType: file.type || "application/octet-stream",
-        fileBase64: base64
-      })
-    });
-    const uploadResult = await uploadResponse.json();
-    if (!uploadResponse.ok || uploadResult?.ok === false) {
-      throw new Error(uploadResult?.error || uploadResult?.message || "Upload impossible");
-    }
-    const lienDrive = uploadResult.url || uploadResult.lienDrive || uploadResult.fileUrl;
-    if (!lienDrive) throw new Error("Lien Drive manquant après l'upload");
-
-    const createResponse = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "createDocument",
+        action: "uploadDocument",
         immatriculation,
         categorie: "Révision",
         nom: finalName,
+        fileName: finalName,
+        mimeType: file.type || "application/octet-stream",
+        fileBase64: base64,
         date: new Date().toISOString().slice(0, 10),
-        description: "Pièce jointe à la révision",
-        lienDrive
+        description: "Pièce jointe à la révision"
       })
     });
-    const createResult = await createResponse.json();
-    if (!createResponse.ok || createResult?.ok === false) {
-      throw new Error(createResult?.error || createResult?.message || "Enregistrement impossible");
+    const createResult = await uploadResponse.json();
+    if (!uploadResponse.ok || createResult?.ok === false) {
+      throw new Error(createResult?.error || createResult?.message || "Upload impossible");
     }
+    const lienDrive = createResult.url || createResult.lienDrive || createResult.fileUrl;
+    if (!lienDrive) throw new Error("Lien Drive manquant après l'upload");
 
     // Ajoute immédiatement le document au cache local : pas de second chargement global.
     if (!Array.isArray(data.documents)) data.documents = [];
