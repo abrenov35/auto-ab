@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO - boutons documents corrigés -->
+<!-- AB PARC AUTO - upload document diagnostic corrigé -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -3695,38 +3695,57 @@ function handleFileSelect() {
   }
 }
 
-async function uploadFileToGoogleDrive(file) {
+async function postAppsScriptJson(payload) {
+  const response = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+
+  const rawText = await response.text();
+  let result;
   try {
-    if (!file) {
-      showMsg("Sélectionne un fichier", "err");
-      return null;
-    }
-    
-    showMsg("Upload en cours...", "ok");
-    
-    const fileBase64 = await fileToBase64(file);
-    const response = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'uploadFile',
-        fileName: file.name,
-        vehicule: selectedVehicule,
-        fileBase64: fileBase64,
-        fileType: file.type
-      })
-    });
-    
-    const result = await response.json();
-    if (result.success && result.fileUrl) {
-      showMsg("Fichier uploadé! ✅", "ok");
-      return result.fileUrl;
-    } else {
-      throw new Error(result.error || "Erreur upload");
-    }
-  } catch (err) {
-    showMsg("Erreur upload: " + err.message, "err");
-    return null;
+    result = rawText ? JSON.parse(rawText) : {};
+  } catch (parseError) {
+    throw new Error("Réponse Apps Script illisible : " + rawText.slice(0, 180));
   }
+
+  if (!response.ok || result?.ok === false || result?.success === false) {
+    throw new Error(result?.error || result?.message || ("Erreur HTTP " + response.status));
+  }
+
+  return result;
+}
+
+async function uploadFileToGoogleDrive(file) {
+  if (!file) {
+    throw new Error("Aucun fichier sélectionné.");
+  }
+
+  const immatriculation = selectedVehicule || vehicleDetailImmat || window.currentCtImmatriculation || "";
+  if (!immatriculation) {
+    throw new Error("Aucun véhicule sélectionné.");
+  }
+
+  const fileBase64 = await fileToBase64(file);
+  if (!fileBase64) {
+    throw new Error("Le fichier est vide ou illisible.");
+  }
+
+  const result = await postAppsScriptJson({
+    action: "uploadFile",
+    immatriculation: immatriculation,
+    fileName: file.name,
+    fileBase64: fileBase64,
+    mimeType: file.type || "application/octet-stream"
+  });
+
+  const fileUrl = result?.url || result?.lienDrive || result?.fileUrl;
+  if (!fileUrl) {
+    throw new Error("Le backend n'a pas renvoyé le lien Drive.");
+  }
+
+  return fileUrl;
 }
 
 function fileToBase64(file) {
@@ -3784,19 +3803,24 @@ async function submitDocument() {
     if (editingDocId) {
       payload.id = editingDocId;
     } else {
-      payload.immatriculation = selectedVehicule;
+      payload.immatriculation = selectedVehicule || vehicleDetailImmat || window.currentCtImmatriculation;
     }
     
-    await fetch(APPS_SCRIPT_URL, {
+    const saveResponse = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
     });
-    
+    const saveResult = await saveResponse.json();
+    if (!saveResponse.ok || saveResult?.ok === false) {
+      throw new Error(saveResult?.error || saveResult?.message || "Enregistrement impossible");
+    }
+
     closeDocModal();
     showMsg(editingDocId ? "Document modifié ✅" : "Document ajouté ✅", "ok");
     showLoadingAndReload(); // Actualiser après 500ms
   } catch (err) {
-    showMsg("Erreur: " + err.message, "err");
+    showMsg("Erreur document : " + (err?.message || String(err)), "err");
     isSubmitting = false;
     setModalButtonsDisabled("documentModal", false); // Réactiver en cas d'erreur
   }
