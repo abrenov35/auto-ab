@@ -2932,6 +2932,18 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <input type="date" id="addRevisionProchainDate" required>
     </div>
     
+    <div id="revisionDocumentBlock" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid #e4e7ec;">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>Nom du document</label>
+        <input type="text" id="revisionDocumentName" maxlength="120" placeholder="Ex. Facture révision 2026">
+      </div>
+      <input type="file" id="revisionDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;" onchange="uploadRevisionDocument(this)">
+      <button type="button" id="btnUploadRevisionDocument" class="btn" style="width:100%; background:#1976d2; color:#fff;" onclick="chooseRevisionDocument()">
+        <i class="bi bi-upload"></i> Ajouter un document
+      </button>
+      <div id="revisionDocumentMessage" style="display:none; margin-top:8px; text-align:center; font-size:12px;"></div>
+    </div>
+
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
       <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
@@ -4831,6 +4843,8 @@ function openAddRevisionModal() {
   if (archiveBtn) archiveBtn.style.display = "none";
   const deleteBtn = document.getElementById("btnDeleteRevisionModal");
   if (deleteBtn) deleteBtn.style.display = "none";
+  const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
+  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "none";
 
   const normalizeImmat = value =>
     String(value || "")
@@ -4992,6 +5006,113 @@ async function submitAddRevision() {
 }
 
 
+
+function chooseRevisionDocument() {
+  if (!editingRevisionImmat) {
+    showMsg("Enregistre d'abord la révision", "err");
+    return;
+  }
+  const input = document.getElementById("revisionDocumentFile");
+  if (input) input.click();
+}
+
+async function uploadRevisionDocument(input) {
+  const file = input?.files?.[0];
+  const immatriculation = editingRevisionImmat;
+  const button = document.getElementById("btnUploadRevisionDocument");
+  const message = document.getElementById("revisionDocumentMessage");
+
+  if (!file || !immatriculation) return;
+
+  const allowed = ["application/pdf", "image/jpeg", "image/png"];
+  if (!allowed.includes(file.type)) {
+    input.value = "";
+    showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    input.value = "";
+    showMsg("Le document dépasse 10 Mo", "err");
+    return;
+  }
+
+  try {
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '<i class="bi bi-hourglass-split"></i> Chargement…';
+    }
+    if (message) {
+      message.textContent = "Envoi vers Google Drive…";
+      message.style.color = "#1976d2";
+      message.style.display = "block";
+    }
+
+    const base64 = await fileToBase64(file);
+    const customName = String(document.getElementById("revisionDocumentName")?.value || "").trim();
+    const extension = file.name.includes(".") ? "." + file.name.split(".").pop() : "";
+    const finalName = customName
+      ? (/\.[a-z0-9]{2,5}$/i.test(customName) ? customName : customName + extension)
+      : file.name;
+
+    const uploadResponse = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "uploadFile",
+        immatriculation,
+        fileName: finalName,
+        mimeType: file.type || "application/octet-stream",
+        fileBase64: base64
+      })
+    });
+    const uploadResult = await uploadResponse.json();
+    if (!uploadResponse.ok || uploadResult?.ok === false) {
+      throw new Error(uploadResult?.error || uploadResult?.message || "Upload impossible");
+    }
+    const lienDrive = uploadResult.url || uploadResult.lienDrive || uploadResult.fileUrl;
+    if (!lienDrive) throw new Error("Lien Drive manquant après l'upload");
+
+    const createResponse = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "createDocument",
+        immatriculation,
+        categorie: "Révision",
+        nom: finalName,
+        date: new Date().toISOString().slice(0, 10),
+        description: "Pièce jointe à la révision",
+        lienDrive
+      })
+    });
+    const createResult = await createResponse.json();
+    if (!createResponse.ok || createResult?.ok === false) {
+      throw new Error(createResult?.error || createResult?.message || "Enregistrement impossible");
+    }
+
+    await loadData();
+    input.value = "";
+    if (message) {
+      message.textContent = "✓ Document chargé et enregistré";
+      message.style.color = "#2e7d46";
+      message.style.display = "block";
+    }
+    showMsg("Document de révision enregistré", "ok");
+  } catch (error) {
+    if (message) {
+      message.textContent = "Erreur : " + error.message;
+      message.style.color = "#d32f2f";
+      message.style.display = "block";
+    }
+    showMsg("Erreur : " + error.message, "err");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = '<i class="bi bi-upload"></i> Ajouter un document';
+    }
+  }
+}
+
 function openEditRevisionModal(immatriculation) {
   const normalizeImmat = value =>
     String(value || "")
@@ -5024,6 +5145,13 @@ function openEditRevisionModal(immatriculation) {
   if (archiveBtn) archiveBtn.style.display = "inline-flex";
   const deleteBtn = document.getElementById("btnDeleteRevisionModal");
   if (deleteBtn) deleteBtn.style.display = "inline-flex";
+  const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
+  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
+  const revisionDocumentName = document.getElementById("revisionDocumentName");
+  if (revisionDocumentName) {
+    const year = revision.prochainDate ? String(revision.prochainDate).slice(0,4) : new Date().getFullYear();
+    revisionDocumentName.value = `Révision ${year} - ${vehicule?.marque || ""} ${vehicule?.modele || ""}`.trim();
+  }
 
   vehiculeSelect.innerHTML = "";
   const option = document.createElement("option");
