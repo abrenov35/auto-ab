@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v6.3.44 - Cache + Debounce + Fix CORS Direct GAS -->
+<!-- AB PARC AUTO v6.3.45 - Cache + Debounce + Fix ALL Fetches (GET & POST) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -3549,6 +3549,9 @@ function getLoadingMessageFromFetch(input, init = {}) {
   ils ne doivent plus maintenir le sablier à l'écran.
 */
 const nativeFetch = window.fetch.bind(window);
+
+// ===== v6.3.45: Wrapper global pour TOUS les fetch =====
+// Intercepte GET et POST pour détecter les erreurs HTML
 window.fetch = async function(input, init = {}) {
   const method = String(init.method || "GET").toUpperCase();
   let action = "";
@@ -3563,7 +3566,50 @@ window.fetch = async function(input, init = {}) {
   if (useLoader) showLoadingOverlay(getLoadingMessageFromFetch(input, init));
 
   try {
-    return await nativeFetch(input, init);
+    const response = await nativeFetch(input, init);
+    
+    // ===== v6.3.45: Détection d'erreur HTML pour TOUTES les réponses =====
+    // Si Content-Type est application/json, on s'attend à du JSON, pas du HTML
+    if (response.status === 200 || response.status === 201) {
+      const contentType = response.headers.get('content-type') || '';
+      
+      // Si c'est supposé être du JSON
+      if (contentType.includes('application/json')) {
+        // Cloner la réponse car on ne peut lire body qu'une fois
+        const responseClone = response.clone();
+        const text = await responseClone.text();
+        
+        // Vérifier si c'est du HTML
+        if (text.trim().startsWith('<')) {
+          console.error(`❌ ERREUR: Le serveur a retourné du HTML au lieu de JSON`);
+          console.error(`Méthode: ${method}`);
+          console.error(`Action: ${action}`);
+          console.error(`URL: ${input}`);
+          console.error(`Réponse HTML:`, text.substring(0, 300));
+          
+          // Retourner une réponse fake avec erreur
+          const errorResponse = {
+            ok: false,
+            status: 200,
+            statusText: 'HTML Response When JSON Expected',
+            clone: () => ({ text: async () => text }),
+            text: async () => text,
+            json: async () => {
+              throw new Error(
+                `Réponse serveur invalide. Le serveur a retourné du HTML au lieu de JSON.\\n` +
+                `Vérifiez que le GAS est bien configuré et déployé.`
+              );
+            }
+          };
+          return errorResponse;
+        }
+        
+        // C'est du JSON valide, retourner la réponse originale
+        return response;
+      }
+    }
+    
+    return response;
   } finally {
     if (useLoader) hideLoadingOverlay();
   }
