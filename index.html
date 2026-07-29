@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v6.3.45 - Cache + Debounce + Fix ALL Fetches (GET & POST) -->
+<!-- AB PARC AUTO v6.3.46 - Cache + Debounce + AUTO CORS Fallback -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -3224,9 +3224,52 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 </div>
 
 <script>
-// 🚀 v6.3.44: Utiliser directement le GAS au lieu du proxy
-// Le GAS a CORS headers configurés, donc aucun problème
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G2j4z5BxaxKe99QDCpHJm3Dl94Qgksk0i6RBRlGP2RXSCOCwsWg/exec";
+// 🚀 v6.3.46: Auto-detect CORS issues et fallback au proxy si nécessaire
+let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G2j4z5BxaxKe99QDCpHJm3Dl94Qgksk0i6RBRlGP2RXSCOCwsWg/exec";
+let USE_CORS_PROXY = false; // Flag pour savoir si on utilise le proxy
+
+// Fonction pour tester le GAS et détecter les erreurs CORS
+async function testGASConnection() {
+  console.log("🔍 Test connexion GAS direct...");
+  try {
+    const response = await fetch(
+      APPS_SCRIPT_URL + "?action=loadData",
+      { 
+        method: "GET",
+        cache: "no-store"
+      }
+    );
+    
+    if (response.ok) {
+      console.log("✅ GAS direct fonctionne!");
+      return true;
+    } else {
+      console.warn("⚠️ GAS retourne:", response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Erreur de connexion GAS:", error.message);
+    
+    if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
+      console.warn("🔄 Problème CORS détecté - Basculer au proxy...");
+      return false;
+    }
+    return false;
+  }
+}
+
+// Au démarrage, tester et basculer au proxy si nécessaire
+async function initializeURLStrategy() {
+  const gasWorks = await testGASConnection();
+  
+  if (!gasWorks) {
+    console.warn("⚠️ GAS direct ne fonctionne pas");
+    console.log("🔄 Utilisation du proxy comme fallback...");
+    APPS_SCRIPT_URL = "https://auto-ab-cors-proxy.onrender.com";
+    USE_CORS_PROXY = true;
+    console.log("✅ Proxy activé:", APPS_SCRIPT_URL);
+  }
+}
 
 // ===== 🚀 CACHE MANAGER v6.3.43 =====
 // Cache en mémoire avec TTL (30 secondes) pour éviter les fetches répétés
@@ -3703,6 +3746,9 @@ function displayActivePage() {
 
 async function init() {
   showLoadingOverlay();
+  
+  // v6.3.46: Tester le GAS et basculer au proxy si nécessaire
+  await initializeURLStrategy();
 
   const cachedData = readDataCache();
 
