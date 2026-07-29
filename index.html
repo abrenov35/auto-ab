@@ -6556,7 +6556,7 @@ async function archiveItem(action, immatriculation, label) {
 (function () {
   function getDocumentById(id) {
     const key = String(id ?? '');
-    const all = Array.isArray(window.data?.documents) ? window.data.documents : [];
+    const all = Array.isArray(data?.documents) ? data.documents : [];
     return all.find(item => String(item.id ?? item.idDocument ?? '') === key) || null;
   }
 
@@ -6626,7 +6626,7 @@ async function archiveItem(action, immatriculation, label) {
       ''
     ).trim();
 
-    const docs = (Array.isArray(window.data?.documents) ? window.data.documents : [])
+    const docs = (Array.isArray(data?.documents) ? data.documents : [])
       .filter(d => String(d.immatriculation || '').trim() === currentImmat && (d.statut || 'Actif') !== 'Archivé');
 
     if (!docs.length) {
