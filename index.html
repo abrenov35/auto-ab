@@ -3561,21 +3561,32 @@ async function fetchWithRetry(url, options = {}, retries = 2) {
   let lastError;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      const response = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(timeout);
-      if (response.status !== 502 && response.status !== 503 && response.status !== 504) return response;
+      // Ne plus interrompre artificiellement la requête : Apps Script peut répondre lentement.
+      const response = await fetch(url, options);
+      if (![502, 503, 504].includes(response.status)) return response;
       lastError = new Error(`Erreur serveur ${response.status}`);
     } catch (error) {
-      lastError = error;
+      // Un AbortError provoqué par une ancienne requête ne doit plus bloquer l'application.
+      if (error?.name === "AbortError") {
+        lastError = new Error("La requête a été interrompue. Nouvelle tentative…");
+      } else {
+        lastError = error;
+      }
     }
-    if (attempt < retries) await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+    if (attempt < retries) {
+      await new Promise(resolve => setTimeout(resolve, 1200 * (attempt + 1)));
+    }
   }
-  throw lastError || new Error("Serveur indisponible");
+  throw lastError || new Error("Serveur momentanément indisponible");
 }
 
+let loadDataInFlight = null;
+
 async function loadData() {
+  // Empêche plusieurs chargements identiques de partir simultanément vers Apps Script.
+  if (loadDataInFlight) return loadDataInFlight;
+
+  loadDataInFlight = (async () => {
   const syncIndicator = document.getElementById("syncIndicator");
   const isInitialBoot = document.body.classList.contains("app-booting");
 
@@ -3649,6 +3660,13 @@ async function loadData() {
     if (syncIndicator) {
       syncIndicator.hidden = true;
     }
+  }
+  })();
+
+  try {
+    return await loadDataInFlight;
+  } finally {
+    loadDataInFlight = null;
   }
 }
 
