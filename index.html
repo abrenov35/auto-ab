@@ -3221,7 +3221,7 @@ let editingCtImmat = null;
 let editingRevisionImmat = null;
 
 // ========== INIT ==========
-let globalLoadingCount = 1;
+let globalLoadingCount = 0;
 
 function showLoadingOverlay(message = "Chargement en cours…", subtext = "Veuillez patienter") {
   globalLoadingCount += 1;
@@ -6469,7 +6469,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.47';
+  const APP_VERSION = 'v8.50';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
