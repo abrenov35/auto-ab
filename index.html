@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.58 - bouton voir dernière révision
+<!-- AB PARC AUTO v8.59 - téléchargement révision + fermeture sans recharge 503
 <!-- AB PARC AUTO v8.57 - sablier court et synchronisations silencieuses -->
 <!DOCTYPE html>
 <!--
@@ -2952,7 +2952,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
       <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
       <button id="btnArchiveRevisionModal" class="btn" title="Archiver la révision" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveRevisionFromModal()"><i class="bi bi-archive"></i> Archiver</button>
-      <button id="btnDeleteRevisionModal" class="btn" title="Supprimer définitivement la révision" style="display:none; background:transparent; color:#d32f2f; border:1px solid #d32f2f;" onclick="deleteRevisionFromModal()"><i class="bi bi-trash"></i> Supprimer</button>
+      <button id="btnDownloadRevisionModal" class="btn" title="Télécharger le dernier document de révision" style="display:none; background:#1976d2; color:#fff; border:1px solid #1976d2;" onclick="downloadLatestRevisionDocument()"><i class="bi bi-download"></i> Télécharger</button>
     </div>
   </div>
 </div>
@@ -3472,6 +3472,25 @@ function hideOfflineNotice() {
   if (notice) notice.hidden = true;
 }
 
+
+async function fetchWithRetry(url, options = {}, retries = 2) {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeout);
+      if (response.status !== 502 && response.status !== 503 && response.status !== 504) return response;
+      lastError = new Error(`Erreur serveur ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < retries) await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+  }
+  throw lastError || new Error("Serveur indisponible");
+}
+
 async function loadData() {
   const syncIndicator = document.getElementById("syncIndicator");
   const isInitialBoot = document.body.classList.contains("app-booting");
@@ -3481,10 +3500,10 @@ async function loadData() {
   }
 
   try {
-    const response = await fetch(APPS_SCRIPT_URL + "?action=loadData", {
+    const response = await fetchWithRetry(APPS_SCRIPT_URL + "?action=loadData", {
       method: "GET",
       cache: "no-store"
-    });
+    }, 2);
 
     if (!response.ok) {
       throw new Error(`Erreur serveur ${response.status}`);
@@ -5033,8 +5052,8 @@ function openAddRevisionModal() {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "none";
-  const deleteBtn = document.getElementById("btnDeleteRevisionModal");
-  if (deleteBtn) deleteBtn.style.display = "none";
+  const downloadBtn = document.getElementById("btnDownloadRevisionModal");
+  if (downloadBtn) downloadBtn.style.display = "none";
   const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
   if (revisionDocumentBlock) revisionDocumentBlock.style.display = "none";
 
@@ -5089,7 +5108,7 @@ function openAddRevisionModal() {
   document.getElementById("addRevisionModal").classList.add("active");
 }
 
-async function closeAddRevisionModal(skipRefresh = false) {
+async function closeAddRevisionModal(skipRefresh = true) {
   setModalButtonsDisabled("addRevisionModal", false);
   editingRevisionImmat = null;
   document.getElementById("addRevisionModal").classList.remove("active");
@@ -5102,8 +5121,8 @@ async function closeAddRevisionModal(skipRefresh = false) {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "none";
-  const deleteBtn = document.getElementById("btnDeleteRevisionModal");
-  if (deleteBtn) deleteBtn.style.display = "none";
+  const downloadBtn = document.getElementById("btnDownloadRevisionModal");
+  if (downloadBtn) downloadBtn.style.display = "none";
 
   if (!skipRefresh) {
     await refreshCurrentPageAfterModalClose();
@@ -5348,6 +5367,47 @@ async function uploadRevisionDocument(input) {
   }
 }
 
+
+function getLatestRevisionDocument(immatriculation) {
+  const normalizeImmat = value => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const target = normalizeImmat(immatriculation);
+  const docs = Array.isArray(data && data.documents) ? data.documents : [];
+
+  return docs
+    .filter(doc => {
+      const docImmat = normalizeImmat(doc.immatriculation || doc.idVehicule || doc.vehiculeId);
+      const category = String(doc.categorie || doc.type || "").toLowerCase();
+      const status = String(doc.statut || "Actif").toLowerCase();
+      return docImmat === target && category.includes("révision") && status !== "archivé";
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.dateUpload || a.date || a.dateAjout || 0).getTime() || 0;
+      const dateB = new Date(b.dateUpload || b.date || b.dateAjout || 0).getTime() || 0;
+      return dateB - dateA;
+    })[0] || null;
+}
+
+function downloadLatestRevisionDocument() {
+  const immatriculation = editingRevisionImmat || document.getElementById("addRevisionVehicule")?.value;
+  const doc = getLatestRevisionDocument(immatriculation);
+  const url = String(doc && (doc.lienDrive || doc.lien || doc.url) || "").trim();
+
+  if (!url) {
+    showMsg("Aucun document de révision disponible", "err");
+    return;
+  }
+
+  const downloadUrl = typeof ctDownloadUrl === "function" ? ctDownloadUrl(url) : url;
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.download = String(doc.nom || doc.nomFichier || "revision");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
 function openEditRevisionModal(immatriculation) {
   const normalizeImmat = value =>
     String(value || "")
@@ -5378,8 +5438,14 @@ function openEditRevisionModal(immatriculation) {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "inline-flex";
-  const deleteBtn = document.getElementById("btnDeleteRevisionModal");
-  if (deleteBtn) deleteBtn.style.display = "inline-flex";
+  const downloadBtn = document.getElementById("btnDownloadRevisionModal");
+  if (downloadBtn) {
+    const latestDoc = getLatestRevisionDocument(editingRevisionImmat);
+    downloadBtn.style.display = "inline-flex";
+    downloadBtn.disabled = !latestDoc;
+    downloadBtn.style.opacity = latestDoc ? "1" : "0.45";
+    downloadBtn.title = latestDoc ? "Télécharger le dernier document de révision" : "Aucun document de révision disponible";
+  }
   const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
   if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
   const revisionDocumentName = document.getElementById("revisionDocumentName");
@@ -5660,7 +5726,7 @@ function openCtEditModal(immatriculation) {
   window.currentCtImmatriculation = immatriculation;
 }
 
-async function closeCtEditModal(skipRefresh = false) {
+async function closeCtEditModal(skipRefresh = true) {
   setModalButtonsDisabled("ctEditModal", false);
 
   document.getElementById("ctEditModal").classList.remove("active");
