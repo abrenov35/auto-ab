@@ -1,3 +1,4 @@
+<!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
 <!-- AB PARC AUTO v8.59 - téléchargement révision + fermeture sans recharge 503
@@ -5493,49 +5494,136 @@ async function uploadRevisionDocument(input) {
 }
 
 
+
 function getLatestRevisionDocument(immatriculation) {
-  const normalizeImmat = value => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const normalizeText = value => String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+  const normalizeImmat = value =>
+    String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  const normalizeText = value =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
   const target = normalizeImmat(immatriculation);
-  const docs = Array.isArray(data && data.documents) ? data.documents : [];
+  const docs = Array.isArray(data?.documents) ? data.documents : [];
+
+  const getImmat = doc =>
+    doc?.immatriculation ??
+    doc?.Immatriculation ??
+    doc?.vehiculeId ??
+    doc?.VehiculeID ??
+    doc?.idVehicule ??
+    doc?.vehicule ??
+    "";
+
+  const getType = doc =>
+    doc?.categorie ??
+    doc?.Categorie ??
+    doc?.type ??
+    doc?.Type ??
+    "";
+
+  const getStatus = doc =>
+    doc?.statut ??
+    doc?.Statut ??
+    doc?.archive ??
+    doc?.Archive ??
+    "Actif";
+
+  const getUrl = doc =>
+    doc?.lienDrive ??
+    doc?.LienDrive ??
+    doc?.lien ??
+    doc?.Lien ??
+    doc?.url ??
+    doc?.URL ??
+    "";
+
+  const getDate = doc =>
+    doc?.dateUpload ??
+    doc?.DateUpload ??
+    doc?.dateAjout ??
+    doc?.DateAjout ??
+    doc?.date ??
+    doc?.Date ??
+    doc?.dateModification ??
+    doc?.DateModification ??
+    "";
 
   return docs
     .filter(doc => {
-      const docImmat = normalizeImmat(doc.immatriculation || doc.idVehicule || doc.vehiculeId || doc.VehiculeID);
-      const category = normalizeText(doc.categorie || doc.type || doc.Type || doc.description || "");
-      const status = normalizeText(doc.statut || doc.archive || "Actif");
-      return docImmat === target && category.includes("revision") && !status.includes("archive") && status !== "true";
+      const sameVehicle = normalizeImmat(getImmat(doc)) === target;
+      const type = normalizeText(getType(doc));
+      const status = normalizeText(getStatus(doc));
+      const hasUrl = Boolean(String(getUrl(doc) || "").trim());
+
+      return sameVehicle &&
+        type.includes("revision") &&
+        !status.includes("archive") &&
+        status !== "true" &&
+        hasUrl;
     })
     .sort((a, b) => {
-      const dateA = new Date(a.dateUpload || a.date || a.dateAjout || 0).getTime() || 0;
-      const dateB = new Date(b.dateUpload || b.date || b.dateAjout || 0).getTime() || 0;
+      const dateA = new Date(getDate(a) || 0).getTime() || 0;
+      const dateB = new Date(getDate(b) || 0).getTime() || 0;
       return dateB - dateA;
     })[0] || null;
 }
 
-function downloadLatestRevisionDocument() {
-  const immatriculation = editingRevisionImmat || document.getElementById("addRevisionVehicule")?.value;
-  const doc = getLatestRevisionDocument(immatriculation);
-  const url = String(doc && (doc.lienDrive || doc.lien || doc.url) || "").trim();
+async function downloadLatestRevisionDocument() {
+  const immatriculation =
+    editingRevisionImmat ||
+    document.getElementById("addRevisionVehicule")?.value ||
+    selectedVehicule ||
+    vehicleDetailImmat;
+
+  let doc = getLatestRevisionDocument(immatriculation);
+
+  if (!doc && typeof loadData === "function") {
+    try {
+      await loadData();
+      doc = getLatestRevisionDocument(immatriculation);
+    } catch (error) {
+      console.warn("Actualisation du document de révision impossible :", error);
+    }
+  }
+
+  const url = String(
+    doc && (
+      doc.lienDrive ??
+      doc.LienDrive ??
+      doc.lien ??
+      doc.Lien ??
+      doc.url ??
+      doc.URL
+    ) || ""
+  ).trim();
 
   if (!url) {
     showMsg("Aucun document de révision disponible", "err");
     return;
   }
 
-  const downloadUrl = typeof ctDownloadUrl === "function" ? ctDownloadUrl(url) : url;
-  const link = document.createElement("a");
-  link.href = downloadUrl;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.download = String(doc.nom || doc.nomFichier || "revision");
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  const downloadUrl =
+    typeof ctDownloadUrl === "function"
+      ? ctDownloadUrl(url)
+      : url;
+
+  const opened = window.open(downloadUrl, "_blank", "noopener,noreferrer");
+
+  if (!opened) {
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
 }
+
 
 function openEditRevisionModal(immatriculation) {
   const normalizeImmat = value =>
@@ -5571,9 +5659,11 @@ function openEditRevisionModal(immatriculation) {
   if (downloadBtn) {
     const latestDoc = getLatestRevisionDocument(editingRevisionImmat);
     downloadBtn.style.display = "inline-flex";
-    downloadBtn.disabled = !latestDoc;
-    downloadBtn.style.opacity = latestDoc ? "1" : "0.45";
-    downloadBtn.title = latestDoc ? "Télécharger le dernier document de révision" : "Aucun document de révision disponible";
+    downloadBtn.disabled = false;
+    downloadBtn.style.opacity = "1";
+    downloadBtn.title = latestDoc
+      ? "Télécharger le dernier document de révision"
+      : "Rechercher et télécharger le document de révision";
   }
   const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
   if (revisionDocumentBlock) revisionDocumentBlock.style.display = "none";
@@ -7132,6 +7222,120 @@ async function archiveItem(action, immatriculation, label) {
       window.deleteVehicleDetailDocument(doc.id ?? doc.idDocument);
     }
   });
+})();
+</script>
+
+
+<script>
+/* ===== V8.65 : SUPPRESSION DOCUMENT SYNCHRONISÉE PARTOUT ===== */
+(function () {
+  function documentId(doc) {
+    return String(doc?.id ?? doc?.idDocument ?? '').trim();
+  }
+
+  function documentName(doc) {
+    return String(doc?.nom ?? doc?.nomFichier ?? doc?.fichier ?? '').trim();
+  }
+
+  function documentImmat(doc) {
+    return String(doc?.immatriculation ?? doc?.vehiculeId ?? doc?.VehiculeID ?? '').trim();
+  }
+
+  function findDocumentForDelete(idOrImmat, fileName) {
+    const docs = Array.isArray(window.data?.documents) ? window.data.documents : [];
+    const first = String(idOrImmat ?? '').trim();
+    const second = String(fileName ?? '').trim();
+
+    if (second) {
+      return docs.find(doc =>
+        documentImmat(doc) === first && documentName(doc) === second
+      ) || null;
+    }
+
+    return docs.find(doc => documentId(doc) === first) || null;
+  }
+
+  function removeDocumentFromLocalData(doc) {
+    if (!doc || !window.data || !Array.isArray(window.data.documents)) return;
+
+    const targetId = documentId(doc);
+    const targetDriveId = String(doc.driveId ?? doc.DriveID ?? '').trim();
+    const targetLink = String(doc.lienDrive ?? doc.lien ?? '').trim();
+    const targetName = documentName(doc);
+    const targetImmat = documentImmat(doc);
+
+    window.data.documents = window.data.documents.filter(item => {
+      if (targetId && documentId(item) === targetId) return false;
+      if (targetDriveId && String(item.driveId ?? item.DriveID ?? '').trim() === targetDriveId) return false;
+      if (targetLink && String(item.lienDrive ?? item.lien ?? '').trim() === targetLink) return false;
+      if (targetName && targetImmat && documentName(item) === targetName && documentImmat(item) === targetImmat) return false;
+      return true;
+    });
+  }
+
+  function refreshAllDocumentViews() {
+    try { if (typeof renderDocuments === 'function') renderDocuments(); } catch (e) { console.warn(e); }
+    try { if (typeof renderVehicleDetailDocuments === 'function') renderVehicleDetailDocuments(); } catch (e) { console.warn(e); }
+    try { if (typeof renderVehicleDetailPage === 'function' && (window.vehicleDetailImmat || window.selectedVehicule)) renderVehicleDetailPage(); } catch (e) { console.warn(e); }
+    try { if (typeof renderRevisionPage === 'function') renderRevisionPage(); } catch (e) { console.warn(e); }
+    try { if (typeof renderCtPage === 'function') renderCtPage(); } catch (e) { console.warn(e); }
+    try {
+      const immat = String(window.vehicleDetailImmat || window.selectedVehicule || localStorage.getItem('activeVehicleAB') || '').trim();
+      if (immat && typeof loadDocumentsList === 'function') loadDocumentsList(immat);
+    } catch (e) { console.warn(e); }
+  }
+
+  async function deleteDocumentEverywhere(idOrImmat, fileName) {
+    const doc = findDocumentForDelete(idOrImmat, fileName);
+    if (!doc) {
+      showMsg('Document introuvable', 'err');
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      `Supprimer définitivement « ${documentName(doc) || 'ce document'} » ?`,
+      { title: 'Supprimer le document', confirmText: 'Supprimer', danger: true }
+    );
+    if (!confirmed) return;
+
+    try {
+      if (typeof showLoadingOverlay === 'function') showLoadingOverlay('Suppression du document…');
+
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'deleteDocument',
+          id: doc.id ?? doc.idDocument,
+          driveId: doc.driveId ?? doc.DriveID ?? '',
+          lien: doc.lienDrive ?? doc.lien ?? ''
+        })
+      });
+
+      if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
+      const result = await response.json();
+      if (result && result.ok === false) throw new Error(result.error || 'Suppression impossible');
+
+      removeDocumentFromLocalData(doc);
+      refreshAllDocumentViews();
+      showMsg('Document supprimé partout', 'ok');
+
+      // Synchronisation silencieuse de contrôle, sans bloquer l'interface.
+      if (typeof loadData === 'function') {
+        setTimeout(() => {
+          loadData()
+            .then(refreshAllDocumentViews)
+            .catch(error => console.warn('Synchronisation après suppression :', error));
+        }, 300);
+      }
+    } catch (error) {
+      showMsg('Erreur : ' + (error?.message || String(error)), 'err');
+    } finally {
+      try { if (typeof hideLoadingOverlay === 'function') hideLoadingOverlay(true); } catch (_) {}
+    }
+  }
+
+  window.deleteDocument = deleteDocumentEverywhere;
+  window.deleteVehicleDetailDocument = deleteDocumentEverywhere;
 })();
 </script>
 
