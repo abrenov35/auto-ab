@@ -5114,8 +5114,22 @@ async function submitAddRevision() {
 
     const wasEditing = Boolean(editingRevisionImmat);
 
-    // Recharge les données sans recharger toute la page.
-    await loadData();
+    // Mise à jour locale immédiate : évite un rechargement complet et accélère la sauvegarde.
+    const revisionPayload = {
+      immatriculation,
+      idVehicule: immatriculation,
+      conducteur,
+      dernierDate,
+      prochainDate,
+      statut: "Actif"
+    };
+    const revisions = Array.isArray(data.revisions) ? data.revisions : (data.revisions = []);
+    const revisionIndex = revisions.findIndex(r => r.immatriculation === immatriculation);
+    if (revisionIndex >= 0) {
+      data.revisions[revisionIndex] = { ...data.revisions[revisionIndex], ...revisionPayload };
+    } else {
+      data.revisions.push(revisionPayload);
+    }
 
     // Réinitialise impérativement l'état de soumission avant de fermer la fenêtre.
     isSubmitting = false;
@@ -5239,7 +5253,22 @@ async function uploadRevisionDocument(input) {
       throw new Error(createResult?.error || createResult?.message || "Enregistrement impossible");
     }
 
-    await loadData();
+    // Ajoute immédiatement le document au cache local : pas de second chargement global.
+    if (!Array.isArray(data.documents)) data.documents = [];
+    data.documents.push({
+      id: createResult.id || createResult.documentId || ("local-" + Date.now()),
+      idVehicule: immatriculation,
+      immatriculation,
+      categorie: "Révision",
+      nom: finalName,
+      nomFichier: finalName,
+      date: new Date().toISOString().slice(0, 10),
+      description: "Pièce jointe à la révision",
+      lienDrive,
+      statut: "Actif",
+      dateUpload: new Date().toISOString()
+    });
+    if (typeof renderVehicleDetailDocuments === "function") renderVehicleDetailDocuments();
     input.value = "";
     if (message) {
       message.textContent = "✓ Document chargé et enregistré";
@@ -6119,7 +6148,16 @@ function renderVehicleDetailPage(){
   const revisionBadge = revisionDaysLeft !== null && revisionDaysLeft <= 45
     ? `<span class="vehicle-ct-alert-days">${revisionDaysLeft < 0 ? 'J' + revisionDaysLeft : 'J-' + revisionDaysLeft}</span>`
     : '';
-  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span></div><div class="vehicle-info-item${revisionAlertClass}"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span>${revisionBadge}</div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
+  const revisionDocs = (Array.isArray(data?.documents) ? data.documents : [])
+    .filter(d => d.immatriculation === immat && (d.statut || 'Actif') !== 'Archivé' && normalizeTextValue(d.categorie || d.type).includes('revision') && (d.lienDrive || d.lien));
+  revisionDocs.sort((a, b) => String(b.dateUpload || b.date || '').localeCompare(String(a.dateUpload || a.date || '')));
+  const latestRevisionDoc = revisionDocs[0] || null;
+  const latestRevisionUrl = latestRevisionDoc ? (latestRevisionDoc.lienDrive || latestRevisionDoc.lien || '') : '';
+  const latestRevisionName = latestRevisionDoc ? (latestRevisionDoc.nom || latestRevisionDoc.nomFichier || 'Document de révision') : '';
+  const revisionEye = latestRevisionUrl
+    ? `<button type="button" class="vehicle-ct-eye" title="Voir le document de la dernière révision" aria-label="Voir le document de la dernière révision" onclick='viewDocument(${JSON.stringify(latestRevisionName)}, ${JSON.stringify(latestRevisionUrl)})'><i class="bi bi-eye"></i></button>`
+    : `<button type="button" class="vehicle-ct-eye disabled" title="Aucun document de révision disponible" aria-label="Aucun document de révision disponible" disabled><i class="bi bi-eye"></i></button>`;
+  document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item vehicle-ct-last"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span>${revisionEye}</div><div class="vehicle-info-item${revisionAlertClass}"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span>${revisionBadge}</div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
   const ct=(Array.isArray(data?.controlsTk)?data.controlsTk:[]).find(c=>c.immatriculation===immat && c.statut!=='Archivé');
   const ctDaysLeft = ct ? calculateDaysUntilCT(ct.prochainDate) : null;
   const ctAlertClass = ctDaysLeft !== null && ctDaysLeft <= 30 ? ' vehicle-ct-alert' : '';
@@ -6127,6 +6165,15 @@ function renderVehicleDetailPage(){
   document.getElementById('vehicleDetailCt').innerHTML=ct?`<div class="vehicle-info-lines vehicle-ct-lines"><div class="vehicle-info-item vehicle-ct-last"><span class="vehicle-info-label">Dernier contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.dernierDate)}</span>${ctDocumentLink?`<button type="button" class="vehicle-ct-eye" title="Voir le PV du contrôle technique" aria-label="Voir le PV du contrôle technique" onclick="viewCt('${safeText(immat)}','${safeText(ctDocumentLink)}')"><i class="bi bi-eye"></i></button>`:`<button type="button" class="vehicle-ct-eye disabled" title="Aucun PV disponible" aria-label="Aucun PV disponible" disabled><i class="bi bi-eye"></i></button>`}</div><div class="vehicle-info-item${ctAlertClass}"><span class="vehicle-info-label">Prochain contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.prochainDate)}</span>${ctDaysLeft !== null && ctDaysLeft <= 30 ? `<span class="vehicle-ct-alert-days">${ctDaysLeft < 0 ? 'Dépassé' : 'J-' + ctDaysLeft}</span>` : ''}</div></div>`:'<div class="vehicle-empty">Aucun contrôle technique enregistré</div>';
   renderVehicleDetailDocuments();
 }
+
+function normalizeTextValue(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function renderVehicleDetailDocuments(){
   const box=document.getElementById('vehicleDetailDocuments');
   if(!box)return;
