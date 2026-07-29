@@ -5322,10 +5322,74 @@ async function uploadRevisionDocument(input) {
         description: "Pièce jointe à la révision"
       })
     });
-    const createResult = await uploadResponse.json();
-    if (!uploadResponse.ok || createResult?.ok === false) {
+    let createResult = await uploadResponse.json();
+
+    // Compatibilité avec les anciens backends qui ne connaissent pas encore
+    // l'action unique « uploadDocument ».
+    const uploadDocumentUnsupported =
+      createResult?.ok === false &&
+      /action\s+post\s+inconnue\s*:\s*uploadDocument/i.test(
+        String(createResult?.error || createResult?.message || "")
+      );
+
+    if (uploadDocumentUnsupported) {
+      if (message) message.textContent = "Envoi du fichier vers Google Drive…";
+
+      const fileResponse = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "uploadFile",
+          fileName: finalName,
+          mimeType: file.type || "application/octet-stream",
+          fileBase64: base64
+        })
+      });
+      const fileResult = await fileResponse.json();
+      if (!fileResponse.ok || fileResult?.ok === false) {
+        throw new Error(fileResult?.error || fileResult?.message || "Upload Drive impossible");
+      }
+
+      const uploadedUrl = fileResult.url || fileResult.lienDrive || fileResult.fileUrl;
+      if (!uploadedUrl) throw new Error("Lien Drive manquant après l'upload");
+
+      if (message) message.textContent = "Enregistrement du document…";
+
+      const documentResponse = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "createDocument",
+          immatriculation,
+          idVehicule: immatriculation,
+          categorie: "Révision",
+          nom: finalName,
+          nomFichier: finalName,
+          date: new Date().toISOString().slice(0, 10),
+          description: "Pièce jointe à la révision",
+          lienDrive: uploadedUrl
+        })
+      });
+      const documentResult = await documentResponse.json();
+      if (!documentResponse.ok || documentResult?.ok === false) {
+        throw new Error(documentResult?.error || documentResult?.message || "Enregistrement impossible");
+      }
+
+      createResult = {
+        ...documentResult,
+        url: uploadedUrl,
+        lienDrive: uploadedUrl,
+        fileId: fileResult.fileId
+      };
+    }
+
+    if (!uploadResponse.ok && !uploadDocumentUnsupported) {
+      throw new Error(createResult?.error || createResult?.message || `Erreur serveur ${uploadResponse.status}`);
+    }
+    if (createResult?.ok === false) {
       throw new Error(createResult?.error || createResult?.message || "Upload impossible");
     }
+
     const lienDrive = createResult.url || createResult.lienDrive || createResult.fileUrl;
     if (!lienDrive) throw new Error("Lien Drive manquant après l'upload");
 
