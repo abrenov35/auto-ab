@@ -3226,56 +3226,10 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 <script>
 // 🚀 v6.3.46: Auto-detect CORS issues et fallback au proxy si nécessaire
 let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYI7rCqLhrf1lErQvAjBkalYTYKFSKXHFgi6h0qiD9z37uIKdz0USXfm_iU81OXIMo/exec";
-let USE_CORS_PROXY = false; // Flag pour savoir si on utilise le proxy
 
-// Fonction pour tester le GAS et détecter les erreurs CORS
-// v6.3.49: Essayer silencieusement de se connecter au serveur pour uploads/downloads
-let SERVER_BACKUP_URL = "https://auto-ab-cors-proxy.onrender.com";
-
+// Fonction stub - APPS_SCRIPT_URL est toujours disponible
 async function tryQuietServerConnection() {
-  // Essayer de se connecter au serveur sans afficher d'erreur
-  try {
-    const response = await fetch(
-      SERVER_BACKUP_URL + "?action=loadData",
-      { 
-        method: "GET",
-        cache: "no-store",
-        signal: AbortSignal.timeout(3000) // Timeout 3 secondes
-      }
-    );
-    
-    if (response.ok) {
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        // Serveur marche! Réactiver pour cette requête
-        APPS_SCRIPT_URL = SERVER_BACKUP_URL;
-        console.log("✅ Serveur disponible - téléchargement activé");
-        return true;
-      }
-    }
-  } catch (error) {
-    // Silencieux - pas d'erreur affichée
-  }
-  
-  return false;
-}
-
-// v6.3.48: Stratégie simplifiée - Utiliser le cache local directement
-// (GAS et Proxy ne sont pas fiables, donc on désactive les requêtes réseau)
-async function initializeURLStrategy() {
-  console.log("📦 AB PARC AUTO fonctionne en mode CACHE LOCAL");
-  console.log("Les données sont sauvegardées localement et se synchronisent quand le serveur est accessible");
-  
-  // Désactiver les requêtes réseau par défaut
-  APPS_SCRIPT_URL = null;
-  USE_CORS_PROXY = false;
-  
-  const cachedData = readDataCache();
-  if (cachedData) {
-    console.log("✅ Cache local disponible avec", cachedData.vehicules?.length || 0, "véhicules");
-  } else {
-    console.log("⚠️ Pas encore de données en cache");
-  }
+  return true;
 }
 
 // ===== 🚀 CACHE MANAGER v6.3.43 =====
@@ -3766,9 +3720,6 @@ function displayActivePage() {
 async function init() {
   showLoadingOverlay();
   
-  // v6.3.46: Tester le GAS et basculer au proxy si nécessaire
-  await initializeURLStrategy();
-
   const cachedData = readDataCache();
 
   if (cachedData) {
