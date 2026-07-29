@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.56 - loader et uploads optimisés -->
+<!-- AB PARC AUTO v8.58 - sans sablier et uploads libres -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -2475,11 +2475,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
 </style>
 </head>
-<body class="app-booting is-loading">
+<body>
 
 <!-- MESSAGE DE CHARGEMENT -->
 <div
-  id="loadingMessage"
+  id="loadingMessage" hidden style="display:none !important;"
   aria-live="polite"
   aria-busy="true"
   style="
@@ -2824,11 +2824,6 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <input type="date" id="ctProchainDate" required>
     </div>
 
-    <div class="form-group">
-      <label>Nom du document</label>
-      <input type="text" id="ctDocumentName" maxlength="120" placeholder="Ex. Contrôle technique 2027 - Berlingo">
-      <div style="margin-top:5px;font-size:11px;color:#667085;">Ce nom sera utilisé lors du prochain chargement de pièce.</div>
-    </div>
     
     <div id="ctDocumentsSection" style="border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; display: none;">
       <h3 style="margin-top: 0; font-size: 14px; color: #0d3a66;">📋 Pièces jointes</h3>
@@ -2905,6 +2900,13 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <label>Prochain Contrôle Technique *</label>
       <input type="date" id="addCtProchainDate" required>
     </div>
+
+    <div id="addCtDocumentBlock" style="margin-top:16px;padding-top:16px;border-top:1px solid #e4e7ec;">
+      <div class="form-group"><label>Nom du document</label><input type="text" id="addCtDocumentName" maxlength="120" placeholder="Saisir librement le nom"></div>
+      <div class="form-group"><label>Date du document</label><input type="date" id="addCtDocumentDate"></div>
+      <div class="form-group"><label>Description</label><textarea id="addCtDocumentDescription" placeholder="Saisir librement la description"></textarea></div>
+      <div class="form-group"><label>Pièce jointe</label><input type="file" id="addCtDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></div>
+    </div>
     
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeAddCtModal()">Annuler</button>
@@ -2935,15 +2937,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <input type="date" id="addRevisionProchainDate" required>
     </div>
     
-    <div id="revisionDocumentBlock" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid #e4e7ec;">
-      <div class="form-group" style="margin-bottom:10px;">
-        <label>Nom du document</label>
-        <input type="text" id="revisionDocumentName" maxlength="120" placeholder="Ex. Facture révision 2026">
-      </div>
-      <input type="file" id="revisionDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;" onchange="uploadRevisionDocument(this)">
-      <button type="button" id="btnUploadRevisionDocument" class="btn" style="width:100%; background:#1976d2; color:#fff;" onclick="chooseRevisionDocument()">
-        <i class="bi bi-upload"></i> Ajouter un document
-      </button>
+    <div id="revisionDocumentBlock" style="display:block; margin-top:16px; padding-top:16px; border-top:1px solid #e4e7ec;">
+      <div class="form-group"><label>Nom du document</label><input type="text" id="revisionDocumentName" maxlength="120" placeholder="Saisir librement le nom"></div>
+      <div class="form-group"><label>Date du document</label><input type="date" id="revisionDocumentDate"></div>
+      <div class="form-group"><label>Description</label><textarea id="revisionDocumentDescription" placeholder="Saisir librement la description"></textarea></div>
+      <div class="form-group"><label>Pièce jointe</label><input type="file" id="revisionDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></div>
       <div id="revisionDocumentMessage" style="display:none; margin-top:8px; text-align:center; font-size:12px;"></div>
     </div>
 
@@ -3225,7 +3223,7 @@ let globalLoadingCount = 0;
 let globalLoadingTimer = null;
 let globalLoadingSafetyTimer = null;
 
-function showLoadingOverlay(message = "Chargement en cours…", subtext = "Veuillez patienter") {
+function showLoadingOverlay(message = "Traitement en cours…", subtext = "Veuillez patienter") {
   globalLoadingCount += 1;
 
   const text = document.getElementById("loadingText");
@@ -3233,8 +3231,7 @@ function showLoadingOverlay(message = "Chargement en cours…", subtext = "Veuil
   if (text) text.textContent = message;
   if (secondaryText) secondaryText.textContent = subtext;
 
-  // N'affiche le sablier que si l'opération dépasse 250 ms.
-  // Les actions rapides restent instantanées et l'interface ne clignote plus.
+  // Le sablier n'apparaît qu'après 650 ms : aucune gêne pour les actions rapides.
   if (!globalLoadingTimer) {
     globalLoadingTimer = setTimeout(() => {
       globalLoadingTimer = null;
@@ -3246,18 +3243,18 @@ function showLoadingOverlay(message = "Chargement en cours…", subtext = "Veuil
         overlay.style.display = "flex";
         overlay.style.background = document.body.classList.contains("app-booting")
           ? "#f5f7fa"
-          : "rgba(15, 23, 42, 0.38)";
-        overlay.style.backdropFilter = document.body.classList.contains("app-booting")
-          ? "none"
-          : "blur(2px)";
+          : "rgba(15, 23, 42, 0.28)";
+        overlay.style.backdropFilter = "none";
+        // Ne bloque plus toute l'interface pendant une réponse lente de Google.
+        overlay.style.pointerEvents = "none";
       }
       document.body.classList.add("is-loading");
-    }, 250);
+    }, 650);
   }
 
-  // Sécurité : aucun sablier ne peut rester bloqué indéfiniment.
+  // Après 12 s, le sablier disparaît même si Google continue de répondre.
   clearTimeout(globalLoadingSafetyTimer);
-  globalLoadingSafetyTimer = setTimeout(() => hideLoadingOverlay(true), 45000);
+  globalLoadingSafetyTimer = setTimeout(() => hideLoadingOverlay(true), 12000);
 }
 
 function hideLoadingOverlay(force = false) {
@@ -3276,13 +3273,12 @@ function hideLoadingOverlay(force = false) {
   if (overlay) {
     overlay.hidden = true;
     overlay.style.display = "none";
+    overlay.style.pointerEvents = "none";
   }
 }
 
-
 function getLoadingMessageFromFetch(input, init = {}) {
   const method = String(init.method || "GET").toUpperCase();
-  if (method === "GET") return "Chargement des données…";
 
   try {
     const payload = typeof init.body === "string" ? JSON.parse(init.body) : {};
@@ -3295,24 +3291,34 @@ function getLoadingMessageFromFetch(input, init = {}) {
     if (action.includes("create") || action.includes("update") || action.includes("save")) {
       return "Enregistrement en cours…";
     }
-    if (action.includes("load")) return "Chargement des données…";
-  } catch (error) {
-    // Corps non JSON : message générique.
-  }
+  } catch (error) {}
 
-  return "Traitement en cours…";
+  return method === "GET" ? "Chargement des données…" : "Traitement en cours…";
 }
 
-/* Sablier automatique pour toutes les communications avec Apps Script. */
+/*
+  Loader automatique uniquement pour les écritures utilisateur.
+  Les GET de synchronisation et de rafraîchissement restent silencieux :
+  ils ne doivent plus maintenir le sablier à l'écran.
+*/
 const nativeFetch = window.fetch.bind(window);
 window.fetch = async function(input, init = {}) {
-  const message = getLoadingMessageFromFetch(input, init);
-  showLoadingOverlay(message);
+  const method = String(init.method || "GET").toUpperCase();
+  let action = "";
+  try {
+    const payload = typeof init.body === "string" ? JSON.parse(init.body) : {};
+    action = String(payload.action || "").toLowerCase();
+  } catch (error) {}
+
+  const isBackgroundLoad = method === "GET" || action === "loaddata" || action.startsWith("load");
+  const useLoader = !isBackgroundLoad;
+
+  if (useLoader) showLoadingOverlay(getLoadingMessageFromFetch(input, init));
 
   try {
     return await nativeFetch(input, init);
   } finally {
-    hideLoadingOverlay();
+    if (useLoader) hideLoadingOverlay();
   }
 };
 
@@ -6897,6 +6903,150 @@ async function archiveItem(action, immatriculation, label) {
       window.deleteVehicleDetailDocument(doc.id ?? doc.idDocument);
     }
   });
+})();
+</script>
+
+
+<script>
+/* ===== V8.58 — SANS SABLIER + UPLOAD UNIQUEMENT À LA CRÉATION ===== */
+(function () {
+  // Suppression complète du sablier global.
+  window.showLoadingOverlay = function () {};
+  window.hideLoadingOverlay = function () {
+    const overlay = document.getElementById('loadingMessage');
+    if (overlay) { overlay.hidden = true; overlay.style.display = 'none'; }
+    document.body.classList.remove('app-booting', 'is-loading');
+  };
+  window.showGlobalLoader = function () {};
+  window.hideGlobalLoader = window.hideLoadingOverlay;
+  window.showLoader = function () {};
+  window.hideLoader = window.hideLoadingOverlay;
+  window.hideLoadingOverlay(true);
+
+  function clean(v){ return String(v || '').trim(); }
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Lecture du fichier impossible'));
+      reader.onload = () => resolve(String(reader.result || '').split(',').pop());
+      reader.readAsDataURL(file);
+    });
+  }
+  function withExtension(name, file) {
+    const n = clean(name);
+    if (!n) return file.name;
+    if (/\.[a-z0-9]{2,5}$/i.test(n)) return n;
+    const ext = file.name.includes('.') ? '.' + file.name.split('.').pop() : '';
+    return n + ext;
+  }
+  async function postJson(payload) {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (!response.ok || result?.ok === false) throw new Error(result?.error || result?.message || 'Opération impossible');
+    return result;
+  }
+
+  async function uploadCreatedDocument({ file, immatriculation, categorie, nom, date, description, ct }) {
+    if (!file) return null;
+    const base64 = await fileToBase64(file);
+    const fileName = withExtension(nom, file);
+    if (ct) {
+      return postJson({ action:'uploadCtFile', immatriculation, fileName, mimeType:file.type || 'application/octet-stream', fileBase64:base64, date, description });
+    }
+    return postJson({ action:'uploadDocument', immatriculation, categorie, nom:fileName, fileName, date, description, mimeType:file.type || 'application/octet-stream', fileBase64:base64 });
+  }
+
+  // Le crayon Révision modifie uniquement les dates : aucun upload dans cette fenêtre.
+  const originalOpenEditRevisionModal = window.openEditRevisionModal;
+  window.openEditRevisionModal = function(immat) {
+    const result = originalOpenEditRevisionModal.apply(this, arguments);
+    const block = document.getElementById('revisionDocumentBlock');
+    if (block) block.style.display = 'none';
+    return result;
+  };
+  const originalOpenAddRevisionModal = window.openAddRevisionModal;
+  window.openAddRevisionModal = function() {
+    const result = originalOpenAddRevisionModal.apply(this, arguments);
+    const block = document.getElementById('revisionDocumentBlock');
+    if (block) block.style.display = 'block';
+    ['revisionDocumentName','revisionDocumentDate','revisionDocumentDescription'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    const file=document.getElementById('revisionDocumentFile'); if(file) file.value='';
+    return result;
+  };
+
+  // Le crayon CT ne contient plus de nom ni d'upload : seulement les dates.
+  const originalOpenCtEditModal = window.openCtEditModal;
+  window.openCtEditModal = function() {
+    const result = originalOpenCtEditModal.apply(this, arguments);
+    const name = document.getElementById('ctDocumentName');
+    if (name?.closest('.form-group')) name.closest('.form-group').style.display='none';
+    return result;
+  };
+
+  // Dans le crayon Document : nom, date et description uniquement, jamais de fichier.
+  const originalEditDocument = window.editDocument;
+  window.editDocument = function() {
+    const result = originalEditDocument.apply(this, arguments);
+    const group = document.getElementById('docFileGroup');
+    if (group) group.style.display = 'none';
+    return result;
+  };
+  const originalEditCtDocument = window.editCtDocument;
+  window.editCtDocument = function() {
+    const result = originalEditCtDocument.apply(this, arguments);
+    const group = document.getElementById('docFileGroup');
+    if (group) group.style.display = 'none';
+    return result;
+  };
+
+  // Upload facultatif lors de la création d'une révision.
+  const originalSubmitAddRevision = window.submitAddRevision;
+  window.submitAddRevision = async function() {
+    const isCreation = !window.editingRevisionImmat && !editingRevisionImmat;
+    const immat = clean(document.getElementById('addRevisionVehicule')?.value);
+    const file = document.getElementById('revisionDocumentFile')?.files?.[0] || null;
+    const meta = {
+      nom: clean(document.getElementById('revisionDocumentName')?.value),
+      date: clean(document.getElementById('revisionDocumentDate')?.value),
+      description: clean(document.getElementById('revisionDocumentDescription')?.value)
+    };
+    await originalSubmitAddRevision.apply(this, arguments);
+    if (isCreation && file && immat && (data.revisions || []).some(r => String(r.immatriculation) === immat)) {
+      try {
+        const result = await uploadCreatedDocument({file, immatriculation:immat, categorie:'Révision', ...meta});
+        data.documents = Array.isArray(data.documents) ? data.documents : [];
+        data.documents.push({ id:result.id || result.documentId || '', idVehicule:immat, immatriculation:immat, categorie:'Révision', nom:withExtension(meta.nom,file), date:meta.date, description:meta.description, lienDrive:result.url || result.lienDrive || '' });
+        if (typeof renderVehicleDetail === 'function' && selectedVehicule === immat) renderVehicleDetail(immat);
+        showMsg('Révision et document enregistrés', 'ok');
+      } catch(e) { showMsg('Révision enregistrée, mais document non chargé : ' + e.message, 'err'); }
+    }
+  };
+
+  // Upload facultatif lors de la création d'un contrôle technique.
+  const originalSubmitAddCt = window.submitAddCt;
+  window.submitAddCt = async function() {
+    const immat = clean(document.getElementById('addCtVehicule')?.value);
+    const file = document.getElementById('addCtDocumentFile')?.files?.[0] || null;
+    const meta = {
+      nom: clean(document.getElementById('addCtDocumentName')?.value),
+      date: clean(document.getElementById('addCtDocumentDate')?.value),
+      description: clean(document.getElementById('addCtDocumentDescription')?.value)
+    };
+    await originalSubmitAddCt.apply(this, arguments);
+    if (file && immat && (data.controlsTk || []).some(c => String(c.immatriculation) === immat)) {
+      try {
+        const result = await uploadCreatedDocument({file, immatriculation:immat, categorie:'Contrôle technique', ct:true, ...meta});
+        data.documents = Array.isArray(data.documents) ? data.documents : [];
+        data.documents.push({ id:result.id || result.documentId || '', idVehicule:immat, immatriculation:immat, categorie:'Contrôle technique', nom:withExtension(meta.nom,file), date:meta.date, description:meta.description, lienDrive:result.url || result.lienDrive || '' });
+        if (typeof renderVehicleDetail === 'function' && selectedVehicule === immat) renderVehicleDetail(immat);
+        showMsg('Contrôle technique et document enregistrés', 'ok');
+      } catch(e) { showMsg('Contrôle technique enregistré, mais document non chargé : ' + e.message, 'err'); }
+    }
+  };
 })();
 </script>
 
