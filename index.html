@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO - upload document diagnostic corrigé -->
+<!-- AB PARC AUTO v8.53 - enregistrement document stable - upload document diagnostic corrigé -->
 <!DOCTYPE html>
 <!--
 AB PARC AUTO — GOOGLE SHEETS
@@ -3828,68 +3828,100 @@ function fileToBase64(file) {
 }
 
 async function submitDocument() {
-  setModalButtonsDisabled("documentModal", true);
-  // Protection contre double-clics
   if (isSubmitting) return;
-  
-  const categorie = "Document";
-  const nom = document.getElementById("docNom").value;
-  const date = document.getElementById("docDate").value;
-  const description = document.getElementById("docDescription").value;
-  
+
+  const modalId = "docModal";
+  const nom = String(document.getElementById("docNom")?.value || "").trim();
+  const date = String(document.getElementById("docDate")?.value || "").trim();
+  const description = String(document.getElementById("docDescription")?.value || "").trim();
+  const wasEditing = Boolean(editingDocId);
+  const currentId = editingDocId;
+  const immatriculation = selectedVehicule || vehicleDetailImmat || window.currentCtImmatriculation || "";
+
   if (!nom) {
-    showMsg("Remplis les champs requis", "err");
-    setModalButtonsDisabled("documentModal", false); // Réactiver
+    showMsg("Le nom du document est obligatoire", "err");
     return;
   }
-  
-  if (!editingDocId && !selectedFile) {
+
+  if (!wasEditing && !selectedFile) {
     showMsg("Sélectionne un fichier", "err");
-    setModalButtonsDisabled("documentModal", false); // Réactiver
     return;
   }
-  
+
   isSubmitting = true;
-  
+  setModalButtonsDisabled(modalId, true);
+
   try {
-    let lienDrive = document.getElementById("docLienDrive").value;
-    
-    // Upload du fichier si nouveau fichier sélectionné
+    let lienDrive = String(document.getElementById("docLienDrive")?.value || "").trim();
+
     if (selectedFile) {
       lienDrive = await uploadFileToGoogleDrive(selectedFile);
-      if (!lienDrive) {
-        isSubmitting = false;
-        setModalButtonsDisabled("documentModal", false); // Réactiver
-        return;
-      }
-    }
-    
-    const action = editingDocId ? "updateDocument" : "createDocument";
-    const payload = { action, categorie, nom, date, description, lienDrive };
-    
-    if (editingDocId) {
-      payload.id = editingDocId;
-    } else {
-      payload.immatriculation = selectedVehicule || vehicleDetailImmat || window.currentCtImmatriculation;
-    }
-    
-    const saveResponse = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const saveResult = await saveResponse.json();
-    if (!saveResponse.ok || saveResult?.ok === false) {
-      throw new Error(saveResult?.error || saveResult?.message || "Enregistrement impossible");
     }
 
+    const payload = {
+      action: wasEditing ? "updateDocument" : "createDocument",
+      categorie: wasEditing
+        ? ((data.documents || []).find(d => String(d.id) === String(currentId))?.categorie || "Document")
+        : "Document",
+      nom,
+      date,
+      description,
+      lienDrive,
+      immatriculation
+    };
+
+    if (wasEditing) payload.id = currentId;
+
+    const result = await postAppsScriptJson(payload);
+    const savedId = wasEditing ? currentId : (result.id || result.idDocument || "");
+
+    // Mise à jour immédiate de l'affichage, sans F5 ni second chargement complet.
+    if (!Array.isArray(data.documents)) data.documents = [];
+
+    if (wasEditing) {
+      const index = data.documents.findIndex(d => String(d.id) === String(currentId));
+      if (index !== -1) {
+        data.documents[index] = {
+          ...data.documents[index],
+          nom,
+          nomFichier: nom,
+          date,
+          description,
+          lienDrive
+        };
+      }
+    } else {
+      data.documents.push({
+        id: savedId,
+        idVehicule: immatriculation,
+        immatriculation,
+        categorie: payload.categorie,
+        nom,
+        nomFichier: nom,
+        date,
+        description,
+        lienDrive,
+        statut: "Actif"
+      });
+    }
+
+    writeDataCache(data);
     closeDocModal();
-    showMsg(editingDocId ? "Document modifié ✅" : "Document ajouté ✅", "ok");
-    showLoadingAndReload(); // Actualiser après 500ms
+
+    if (vehicleDetailImmat && typeof renderVehicleDetailPage === "function") {
+      renderVehicleDetailPage();
+    } else if (typeof renderDocuments === "function") {
+      renderDocuments();
+    }
+
+    showMsg(wasEditing ? "Document modifié ✅" : "Document ajouté ✅", "ok");
   } catch (err) {
+    console.error("Erreur document :", err);
     showMsg("Erreur document : " + (err?.message || String(err)), "err");
+  } finally {
     isSubmitting = false;
-    setModalButtonsDisabled("documentModal", false); // Réactiver en cas d'erreur
+    setModalButtonsDisabled(modalId, false);
+    hideLoadingOverlay(true);
   }
 }
 
