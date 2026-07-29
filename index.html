@@ -2897,7 +2897,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="modal-header" id="ctEditTitle">Modifier Contrôle Technique</div>
     
 <div class="form-group">
-      <label>Dernier Contrôle Technique (lecture seule)</label>
+      <label>Dernier Contrôle Technique</label>
       <div style="padding: 10px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; color: #666; font-size: 14px; min-height: 38px; display: flex; align-items: center;">
         <span id="ctDernierDateDisplay">—</span>
       </div>
@@ -2905,8 +2905,8 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     </div>
     
     <div class="form-group">
-      <label>Prochain Contrôle Technique *</label>
-      <input type="date" id="ctProchainDate" required>
+      <label>Prochain Contrôle Technique</label>
+      <input type="date" id="ctProchainDate">
     </div>
 
     <div class="form-group">
@@ -2987,8 +2987,8 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     </div>
     
     <div class="form-group">
-      <label>Prochain Contrôle Technique *</label>
-      <input type="date" id="addCtProchainDate" required>
+      <label>Prochain Contrôle Technique</label>
+      <input type="date" id="addCtProchainDate">
     </div>
     
     <div class="form-actions">
@@ -3016,8 +3016,8 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     </div>
     
     <div class="form-group">
-      <label>Prochaine Révision *</label>
-      <input type="date" id="addRevisionProchainDate" required>
+      <label>Prochaine Révision</label>
+      <input type="date" id="addRevisionProchainDate">
     </div>
     
     <div id="revisionDocumentBlock" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid #e4e7ec;">
@@ -5215,34 +5215,15 @@ async function submitAddRevision() {
   const immatriculation = document.getElementById("addRevisionVehicule").value;
   const prochainDate = document.getElementById("addRevisionProchainDate").value;
 
-  // Même logique que le contrôle technique :
-  // lors d'une modification, l'ancienne prochaine révision devient la dernière révision.
-  let dernierDate = document.getElementById("addRevisionDernierDate").value;
-  if (editingRevisionImmat) {
-    const normalizeImmatForUpdate = value =>
-      String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-
-    const currentRevision = (Array.isArray(data.revisions) ? data.revisions : []).find(r =>
-      normalizeImmatForUpdate(r.immatriculation) === normalizeImmatForUpdate(editingRevisionImmat)
-    );
-
-    if (!currentRevision) {
-      showMsg("Révision introuvable", "err");
-      return;
-    }
-
-    dernierDate = currentRevision.prochainDate || currentRevision.dernierDate || "";
-  }
+  // Les deux dates sont saisies librement.
+  // La date prévue précédemment ne devient jamais automatiquement la date réelle de révision.
+  const dernierDate = document.getElementById("addRevisionDernierDate").value || "";
 
   if (!immatriculation) {
     showMsg("Sélectionne un véhicule", "err");
     return;
   }
 
-  if (!prochainDate) {
-    showMsg("Remplis la date de la prochaine révision", "err");
-    return;
-  }
 
   const normalizeImmat = value =>
     String(value || "")
@@ -5617,20 +5598,17 @@ function openEditRevisionModal(immatriculation) {
 
   if (revisionDernierInput) {
     revisionDernierInput.value = revision.dernierDate || "";
-    revisionDernierInput.disabled = true;
-    revisionDernierInput.style.display = "none";
+    revisionDernierInput.disabled = false;
+    revisionDernierInput.style.display = "block";
   }
 
   if (revisionDernierReadonly) {
-    const dateReference = revision.prochainDate || revision.dernierDate || "";
-    revisionDernierReadonly.textContent = dateReference
-      ? new Date(dateReference + "T00:00:00").toLocaleDateString("fr-FR")
-      : "—";
-    revisionDernierReadonly.style.display = "block";
+    revisionDernierReadonly.style.display = "none";
+    revisionDernierReadonly.textContent = "—";
   }
 
-  // Seule la nouvelle date de prochaine révision reste modifiable.
-  document.getElementById("addRevisionProchainDate").value = "";
+  // Les dates réelles et prévisionnelles restent toutes les deux modifiables.
+  document.getElementById("addRevisionProchainDate").value = revision.prochainDate || "";
 
   setModalButtonsDisabled("addRevisionModal", false);
   document.getElementById("addRevisionModal").classList.add("active");
@@ -6129,10 +6107,6 @@ async function submitAddCt() {
     return;
   }
   
-  if (!prochainDate) {
-    showMsg("Remplis la date du prochain CT", "err");
-    return;
-  }
   
   isSubmitting = true;
   const submitBtn = document.getElementById("submitAddCtBtn");
@@ -6168,10 +6142,6 @@ async function submitControleTk() {
   
   const prochainDate = document.getElementById("ctProchainDate").value;
   
-  if (!prochainDate) {
-    showMsg("Remplis la date du prochain CT", "err");
-    return;
-  }
   
   // 🔄 LOGIQUE INTELLIGENTE: ancien prochain → dernier
   const ct = data.controlsTk.find(c => c.immatriculation === editingCtImmat);
