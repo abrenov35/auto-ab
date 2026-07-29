@@ -6398,5 +6398,125 @@ async function archiveItem(action, immatriculation, label) {
 
 
 
+
+<script>
+/* ===== CORRECTION ACTIONS DOCUMENTS — 29/07/2026 ===== */
+(function () {
+  function getDocumentById(id) {
+    const key = String(id ?? '');
+    const all = Array.isArray(window.data?.documents) ? window.data.documents : [];
+    return all.find(item => String(item.id ?? item.idDocument ?? '') === key) || null;
+  }
+
+  window.editDocument = function editDocumentFixed(docId) {
+    const doc = getDocumentById(docId);
+    if (!doc) {
+      showMsg('Document introuvable', 'err');
+      return;
+    }
+
+    window.editingDocId = doc.id ?? doc.idDocument;
+    const title = document.getElementById('docModalTitle');
+    const nom = document.getElementById('docNom');
+    const date = document.getElementById('docDate');
+    const description = document.getElementById('docDescription');
+    const lien = document.getElementById('docLienDrive');
+    const modal = document.getElementById('docModal');
+
+    if (title) title.textContent = 'Modifier le document';
+    if (nom) nom.value = doc.nom || doc.nomFichier || '';
+    if (date) date.value = String(doc.date || '').slice(0, 10);
+    if (description) description.value = doc.description || '';
+    if (lien) lien.value = doc.lienDrive || doc.lien || '';
+    if (modal) modal.classList.add('active');
+  };
+
+  window.deleteVehicleDetailDocument = async function deleteVehicleDetailDocumentFixed(docId) {
+    const doc = getDocumentById(docId);
+    if (!doc) {
+      showMsg('Document introuvable', 'err');
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      `Supprimer définitivement « ${doc.nom || doc.nomFichier || 'ce document'} » ?`,
+      { title: 'Supprimer le document', confirmText: 'Supprimer', danger: true }
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'deleteDocument', id: doc.id ?? doc.idDocument })
+      });
+      if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
+
+      const result = await response.json();
+      if (result && result.ok === false) throw new Error(result.error || 'Suppression impossible');
+
+      await loadData();
+      if (typeof populateVehicleQuickSelect === 'function') populateVehicleQuickSelect();
+      if (typeof renderVehicleDetailPage === 'function') renderVehicleDetailPage();
+      showMsg('Document supprimé', 'ok');
+    } catch (error) {
+      showMsg('Erreur : ' + error.message, 'err');
+    }
+  };
+
+  window.renderVehicleDetailDocuments = function renderVehicleDetailDocumentsFixed() {
+    const box = document.getElementById('vehicleDetailDocuments');
+    if (!box) return;
+
+    const docs = (Array.isArray(window.data?.documents) ? window.data.documents : [])
+      .filter(d => d.immatriculation === window.vehicleDetailImmat && (d.statut || 'Actif') !== 'Archivé');
+
+    if (!docs.length) {
+      box.innerHTML = '<div class="vehicle-empty">Aucun document enregistré</div>';
+      return;
+    }
+
+    const rows = docs.map(doc => {
+      const id = String(doc.id ?? doc.idDocument ?? '');
+      return `<tr>
+        <td><strong>${safeText(doc.nom || doc.nomFichier || 'Sans nom')}</strong></td>
+        <td>${safeText(doc.categorie || doc.type || '—')}</td>
+        <td>${safeText(doc.description || '—')}</td>
+        <td>${formatFrDate(doc.date)}</td>
+        <td>
+          <div class="vehicle-doc-actions">
+            <button type="button" class="ab-icon-btn view js-doc-view" data-doc-id="${safeText(id)}" title="Visualiser" aria-label="Visualiser"><i class="bi bi-eye"></i></button>
+            <button type="button" class="ab-icon-btn edit js-doc-edit" data-doc-id="${safeText(id)}" title="Modifier" aria-label="Modifier"><i class="bi bi-pencil"></i></button>
+            <button type="button" class="ab-icon-btn delete js-doc-delete" data-doc-id="${safeText(id)}" title="Supprimer" aria-label="Supprimer"><i class="bi bi-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    box.innerHTML = `<table class="vehicle-docs-table"><thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+  };
+
+  document.addEventListener('click', function (event) {
+    const button = event.target.closest('.js-doc-view, .js-doc-edit, .js-doc-delete');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const doc = getDocumentById(button.dataset.docId);
+    if (!doc) {
+      showMsg('Document introuvable', 'err');
+      return;
+    }
+
+    if (button.classList.contains('js-doc-view')) {
+      viewDocument(doc.nom || doc.nomFichier || 'Document', doc.lienDrive || doc.lien || '');
+    } else if (button.classList.contains('js-doc-edit')) {
+      window.editDocument(doc.id ?? doc.idDocument);
+    } else {
+      window.deleteVehicleDetailDocument(doc.id ?? doc.idDocument);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
