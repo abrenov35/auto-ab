@@ -1,3 +1,4 @@
+<!-- AB PARC AUTO v8.61 - navigation stable -->
 <!-- AB PARC AUTO v8.59 - téléchargement révision + fermeture sans recharge 503
 <!-- AB PARC AUTO v8.57 - sablier court et synchronisations silencieuses -->
 <!DOCTYPE html>
@@ -2474,6 +2475,86 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   #viewCtModal .modal-content{width:96vw!important;max-width:96vw!important;}
 }
 
+
+
+/* ===== V8.61 : BARRE DE NAVIGATION STABLE QUELLE QUE SOIT LA LARGEUR ===== */
+.app-nav {
+  position: relative !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-height: 50px;
+  width: 100%;
+  padding: 6px 16px 9px !important;
+  overflow: visible !important;
+}
+
+.app-nav-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex: 0 0 auto;
+}
+
+.app-nav-buttons .btn-toolbar {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+.app-nav .vehicle-picker-wrap {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 270px;
+  margin: 0 !important;
+  padding-left: 12px;
+}
+
+@media (max-width: 1050px) {
+  .app-nav {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    row-gap: 8px !important;
+    padding: 7px 10px 9px !important;
+  }
+
+  .app-nav-buttons {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+
+  .app-nav .vehicle-picker-wrap {
+    position: static;
+    transform: none;
+    width: min(360px, 100%) !important;
+    max-width: 100% !important;
+    padding-left: 0;
+    border-left: 0;
+    grid-column: 1 !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-nav-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .app-nav-buttons .btn-toolbar {
+    width: 100% !important;
+    padding: 7px 5px !important;
+    font-size: 10px !important;
+    white-space: normal !important;
+    line-height: 1.15;
+  }
+}
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2541,25 +2622,27 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.49</span>
+      <span class="version" id="appVersionBadge">v8.61</span>
     </div>
   </div>
 
   <nav class="app-nav" aria-label="Navigation principale">
-    <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="openVehicleManagementModal()">
-      <i class="bi bi-card-list"></i>
-      <span>Gestion Véhicules</span>
-    </button>
+    <div class="app-nav-buttons">
+      <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="openVehicleManagementModal()">
+        <i class="bi bi-card-list"></i>
+        <span>Gestion Véhicules</span>
+      </button>
 
-    <button type="button" class="btn-toolbar nav-revisions" onclick="openRevisionModal()">
-      <i class="bi bi-wrench-adjustable"></i>
-      <span>Révisions</span>
-    </button>
+      <button type="button" class="btn-toolbar nav-revisions" onclick="openRevisionModal()">
+        <i class="bi bi-wrench-adjustable"></i>
+        <span>Révisions</span>
+      </button>
 
-    <button type="button" class="btn-toolbar nav-ct" onclick="openControleTkModal()">
-      <i class="bi bi-shield-check"></i>
-      <span>Contrôle Technique</span>
-    </button>
+      <button type="button" class="btn-toolbar nav-ct" onclick="openControleTkModal()">
+        <i class="bi bi-shield-check"></i>
+        <span>Contrôle Technique</span>
+      </button>
+    </div>
 
     <div class="vehicle-picker-wrap">
       <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="Sélectionner un véhicule" onchange="openVehicleDetailPage(this.value)">
