@@ -2716,8 +2716,8 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <textarea id="docDescription" placeholder="Détails supplémentaires..."></textarea>
     </div>
     
-    <div class="form-group">
-      <label>Télécharger une pièce *</label>
+    <div class="form-group" id="docFileGroup">
+      <label id="docFileLabel">Télécharger une pièce *</label>
       <div style="display: flex; gap: 10px; align-items: center;">
         <input type="file" id="docFile" style="display: none;" onchange="handleFileSelect()">
         <button type="button" class="btn btn-secondary" onclick="document.getElementById('docFile').click()">
@@ -3709,11 +3709,15 @@ function renderDocuments() {
 // ========== MODAL DOCUMENT ==========
 function openAddDocumentModal() {
   editingDocId = null;
+  selectedFile = null;
   document.getElementById("docModalTitle").textContent = "Ajouter un document";
   document.getElementById("docNom").value = "";
   document.getElementById("docDate").value = "";
   document.getElementById("docDescription").value = "";
   document.getElementById("docLienDrive").value = "";
+  document.getElementById("docFile").value = "";
+  document.getElementById("docFileName").textContent = "Aucun fichier sélectionné";
+  document.getElementById("docFileGroup").style.display = "block";
   document.getElementById("docModal").classList.add("active");
 }
 
@@ -3728,6 +3732,10 @@ function editDocument(docId) {
   document.getElementById("docDate").value = doc.date;
   document.getElementById("docDescription").value = doc.description;
   document.getElementById("docLienDrive").value = doc.lienDrive;
+  selectedFile = null;
+  document.getElementById("docFile").value = "";
+  document.getElementById("docFileName").textContent = "Aucun fichier sélectionné";
+  document.getElementById("docFileGroup").style.display = "none";
   document.getElementById("docModal").classList.add("active");
 }
 
@@ -6640,6 +6648,13 @@ async function archiveItem(action, immatriculation, label) {
     if (date) date.value = String(doc.date || '').slice(0, 10);
     if (description) description.value = doc.description || '';
     if (lien) lien.value = doc.lienDrive || doc.lien || '';
+    selectedFile = null;
+    const fileInput = document.getElementById('docFile');
+    const fileName = document.getElementById('docFileName');
+    const fileGroup = document.getElementById('docFileGroup');
+    if (fileInput) fileInput.value = '';
+    if (fileName) fileName.textContent = 'Aucun fichier sélectionné';
+    if (fileGroup) fileGroup.style.display = 'none';
     if (modal) modal.classList.add('active');
   };
 
