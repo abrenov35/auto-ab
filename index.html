@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v6.3.43 - Cache + Debounce optimisation performance -->
+<!-- AB PARC AUTO v6.3.44 - Cache + Debounce + Fix CORS Direct GAS -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
 <!-- AB PARC AUTO v8.61 - navigation stable -->
@@ -3224,7 +3224,9 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 </div>
 
 <script>
-const APPS_SCRIPT_URL = "https://auto-ab-cors-proxy.onrender.com";
+// 🚀 v6.3.44: Utiliser directement le GAS au lieu du proxy
+// Le GAS a CORS headers configurés, donc aucun problème
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI0mj-xCqHLvD98G2j4z5BxaxKe99QDCpHJm3Dl94Qgksk0i6RBRlGP2RXSCOCwsWg/exec";
 
 // ===== 🚀 CACHE MANAGER v6.3.43 =====
 // Cache en mémoire avec TTL (30 secondes) pour éviter les fetches répétés
@@ -3289,7 +3291,7 @@ const DataCacheManager = (() => {
   };
 })();
 
-// Fonction pour fetcher depuis le serveur (ancienne loadData logic)
+// Fonction pour fetcher depuis le serveur (avec meilleure gestion d'erreur v6.3.44)
 async function fetchDataFromServer() {
   const syncIndicator = document.getElementById("syncIndicator");
   const isInitialBoot = document.body.classList.contains("app-booting");
@@ -3308,7 +3310,23 @@ async function fetchDataFromServer() {
       throw new Error(`Erreur serveur ${response.status}`);
     }
 
-    const backendData = await response.json();
+    const responseText = await response.text();
+
+    // Détection: si ça commence par <, c'est du HTML (erreur 404, 500, etc)
+    if (responseText.trim().startsWith('<')) {
+      console.error("❌ Le serveur a retourné du HTML au lieu de JSON");
+      console.error("Réponse reçue:", responseText.substring(0, 200));
+      throw new Error("Le serveur n'a pas retourné de données valides. Vérifiez que le GAS est déployé et accessible.");
+    }
+
+    let backendData;
+    try {
+      backendData = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.error("❌ Erreur parsing JSON:", parseErr);
+      console.error("Réponse reçue:", responseText.substring(0, 200));
+      throw new Error("Les données reçues du serveur ne sont pas du JSON valide.");
+    }
 
     if (!backendData || backendData.ok !== true) {
       throw new Error(backendData?.error || "Réponse invalide du backend");
@@ -3325,22 +3343,24 @@ async function fetchDataFromServer() {
         : (Array.isArray(backendData.controls) ? backendData.controls : [])
     };
 
-    console.log("Données du backend reçues:", newData);
-    console.log("Nombre de véhicules:", newData.vehicules.length);
-    console.log("Nombre de révisions:", newData.revisions.length);
-    console.log("Nombre de contrôles techniques:", newData.controlsTk.length);
+    console.log("✅ Données du backend reçues:", newData);
+    console.log("  Véhicules:", newData.vehicules.length);
+    console.log("  Révisions:", newData.revisions.length);
+    console.log("  Contrôles techniques:", newData.controlsTk.length);
 
     writeDataCache(newData);
     hideOfflineNotice();
     return newData;
   } catch (err) {
-    console.error("Erreur de chargement:", err);
+    console.error("❌ Erreur de chargement:", err.message);
 
     const cachedData = readDataCache();
     if (cachedData) {
+      console.log("💾 Utilisation des données du cache local");
       showOfflineNotice("Serveur indisponible : affichage des dernières données enregistrées");
       return cachedData;
     } else {
+      console.error("❌ Aucune donnée en cache disponible");
       showOfflineNotice("Serveur indisponible et aucune donnée locale disponible");
       throw err;
     }
