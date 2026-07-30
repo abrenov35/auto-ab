@@ -2925,7 +2925,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button id="submitCtBtn" class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
-      <button id="btnAddDocumentCtModal" class="btn" style="background: #1976d2; color: white;" onclick="openAddDocumentModal()">📤 Ajouter un document</button>
+      <button id="btnAddDocumentCtModal" class="btn" style="background: #1976d2; color: white;" onclick="openCtDocumentsModal()">📤 Ajouter un document</button>
       <button id="btnArchiveCtModal" class="btn" title="Archiver le contrôle technique" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveCtFromModal()"><i class="bi bi-archive"></i> Archiver</button>
     </div>
   </div>
@@ -6235,6 +6235,11 @@ async function closeCtEditModal(skipRefresh = true) {
 }
 
 // ========== DOCUMENTS CT ==========
+
+function openCtDocumentsModal() {
+  closeCtEditModal(true);  // Fermer modale CT
+  openDocumentsModal();     // Ouvrir modale d'upload CT
+}
 
 function openDocumentsModal() {
   const immat = window.currentCtImmatriculation;
