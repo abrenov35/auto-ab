@@ -4028,6 +4028,7 @@ function renderDocuments() {
 
 // ========== MODAL DOCUMENT ==========
 function openAddDocumentModal() {
+  closeCtEditModal(true);  // Fermer modale CT avant d'ouvrir upload
   editingDocId = null;
   selectedFile = null;
   document.getElementById("docModalTitle").textContent = "Ajouter un document";
@@ -4042,6 +4043,7 @@ function openAddDocumentModal() {
 }
 
 function editDocument(docId) {
+  closeCtEditModal(true);  // Fermer modale CT avant d'ouvrir edit
   const doc = data.documents.find(d => d.id == docId);
   if (!doc) return;
   
