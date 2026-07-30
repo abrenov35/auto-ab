@@ -6500,29 +6500,39 @@ async function submitRevisionUpload() {
   try {
     const submitBtn = document.getElementById("submitRevisionUploadBtn");
     const progress = document.getElementById("revisionUploadProgress");
-    const message = document.getElementById("revisionUploadMessage");
     
     if (submitBtn) submitBtn.disabled = true;
     if (progress) progress.style.display = "block";
-    if (message) message.style.display = "none";
     
-    const formData = new FormData();
-    formData.append("action", "uploadRevisionFile");
-    formData.append("immatriculation", immatriculation);
-    formData.append("file", file);
-    formData.append("nomDocument", nomDocument);
-    formData.append("dateDocument", dateDocument);
-    formData.append("descriptionDocument", descriptionDocument);
+    // Convertir en base64
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
+      reader.onload = () => resolve(String(reader.result || "").split(",").pop());
+      reader.readAsDataURL(file);
+    });
     
+    if (!base64 || base64.length < 20) {
+      throw new Error("Lecture du fichier incomplète");
+    }
+    
+    // Upload avec uploadFile action
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      body: formData
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "uploadFile",
+        immatriculation: immatriculation,
+        fileName: nomDocument || file.name,
+        fileBase64: base64,
+        mimeType: file.type || "application/octet-stream"
+      })
     });
     
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
     
-    if (result.ok) {
+    if (result.ok || result.success) {
       showMsg("✅ Document uploadé avec succès", "success");
       input.value = "";
       if (progress) progress.style.display = "none";
@@ -6533,9 +6543,12 @@ async function submitRevisionUpload() {
       document.getElementById("revisionUploadDocumentDescription").value = "";
       if (submitBtn) submitBtn.disabled = true;
       
+      // Recharger data
+      await loadData();
+      
       setTimeout(() => closeRevisionDocumentsModal(), 1000);
     } else {
-      throw new Error(result.message || "Upload échoué");
+      throw new Error(result?.error || result?.message || "Upload échoué");
     }
   } catch (err) {
     showMsg(`❌ Erreur: ${err.message}`, "err");
