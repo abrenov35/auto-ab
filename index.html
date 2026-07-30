@@ -3031,49 +3031,12 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <input type="date" id="addRevisionProchainDate">
     </div>
     
-    <div id="revisionDocumentBlock" style="display:none; margin-top:20px; padding-top:20px; border-top:2px solid #e4e7ec;">
-      <!-- Champs infos -->
-      <div class="form-group">
-        <label>Nom du document</label>
-        <input type="text" id="revisionDocumentName" maxlength="120" placeholder="Ex: Facture révision 2026">
-      </div>
-      
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="revisionDocumentDate">
-      </div>
-      
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="revisionDocumentDescription" maxlength="500" placeholder="Détails du document…"></textarea>
-      </div>
-      
-      <!-- Zone upload moderne -->
-      <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 16px; border: 2px dashed #1976d2;">
-        <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce</div>
-        <input type="file" id="revisionDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/jpg,image/png" style="display:none;" onchange="handleRevisionFileSelect(this)">
-        <button type="button" class="btn" style="background:#1976d2; color:#fff; width:100%; padding:10px; margin-bottom:8px;" onclick="document.getElementById('revisionDocumentFile').click()">
-          📁 Choisir un fichier
-        </button>
-        <span id="revisionDocumentFileName" style="color: #666; font-size: 12px; display:block; text-align:center;">Aucun fichier sélectionné</span>
-        <button type="button" class="btn btn-success" id="submitRevisionDocumentBtn" style="width:100%; padding:10px; margin-top:8px;" onclick="submitRevisionDocument()" disabled>
-          📤 Charger et enregistrer
-        </button>
-        <div id="revisionDocumentMessage" style="display:none; margin-top:8px; text-align:center; font-size:12px;"></div>
-        <div id="revisionDocumentProgress" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#eef6ff; color:#0d3a66; font-size:12px; font-weight:600; text-align:left;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span class="ct-upload-spinner" aria-hidden="true"></span>
-            <span id="revisionDocumentProgressText">Document en cours de chargement…</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
       <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
       <button id="btnArchiveRevisionModal" class="btn" title="Archiver la révision" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveRevisionFromModal()"><i class="bi bi-archive"></i> Archiver</button>
-      <button type="button" id="btnAddDocumentRevisionModal" class="btn" style="background:#1976d2; color:#fff; border:1px solid #1976d2;" onclick="chooseRevisionDocument()"><i class="bi bi-upload"></i> Ajouter un document</button>
+      <button type="button" id="btnAddDocumentRevisionModal" class="btn" style="background:#1976d2; color:#fff; border:1px solid #1976d2;" onclick="openRevisionDocumentsModal()"><i class="bi bi-upload"></i> Ajouter un document</button>
     </div>
   </div>
 </div>
@@ -3121,6 +3084,53 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeDocumentsModal()">Annuler</button>
       <button class="btn btn-success" id="submitUploadCtBtn" onclick="submitUploadCt()" disabled>📤 Charger et enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DOCUMENTS RÉVISIONS (Upload) -->
+<div class="modal" id="revisionDocumentsModal">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">📋 Documents Révision - <span id="revisionDocModalImmat"></span></div>
+    
+    <div style="padding: 20px;">
+      <!-- Champs infos -->
+      <div class="form-group">
+        <label>Nom du document *</label>
+        <input type="text" id="revisionUploadDocumentName" maxlength="120" placeholder="Ex: Facture révision 2026">
+      </div>
+      
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="revisionUploadDocumentDate">
+      </div>
+      
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="revisionUploadDocumentDescription" maxlength="500" placeholder="Détails du document…"></textarea>
+      </div>
+      
+      <!-- Zone upload moderne -->
+      <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 20px; border: 2px dashed #1976d2;">
+        <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce *</div>
+        <input type="file" id="revisionUploadDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/jpg,image/png" style="display: none;" onchange="handleRevisionUploadFileSelect(this)">
+        <button type="button" class="btn" style="background:#1976d2; color:#fff; width:100%; padding:10px; margin-bottom:8px;" onclick="document.getElementById('revisionUploadDocumentFile').click()">
+          📁 Choisir un fichier
+        </button>
+        <span id="revisionUploadDocumentFileName" style="color: #666; font-size: 12px; display:block; text-align:center;">Aucun fichier sélectionné</span>
+        <div id="revisionUploadMessage" style="margin-top: 8px; font-size: 12px; text-align: center; display: none;"></div>
+        <div id="revisionUploadProgress" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#eef6ff; color:#0d3a66; font-size:12px; font-weight:600; text-align:left;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="ct-upload-spinner" aria-hidden="true"></span>
+            <span id="revisionUploadProgressText">Document en cours de chargement…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeRevisionDocumentsModal()">Annuler</button>
+      <button class="btn btn-success" id="submitRevisionUploadBtn" onclick="submitRevisionUpload()" disabled>📤 Charger et enregistrer</button>
     </div>
   </div>
 </div>
@@ -4076,6 +4086,13 @@ function renderDocuments() {
 // ========== MODAL DOCUMENT ==========
 function openAddDocumentModal() {
   closeCtEditModal(true);  // Fermer modale CT avant d'ouvrir upload
+  
+  // Récupérer l'immatriculation du contexte actuel
+  const immatriculation = window.currentCtImmatriculation || window.currentVehiculeImmatriculation || "";
+  if (!immatriculation) {
+    showMsg("Aucun contexte d'immatriculation - ouvre modale générique", "warn");
+  }
+  
   editingDocId = null;
   selectedFile = null;
   document.getElementById("docModalTitle").textContent = "Ajouter un document";
@@ -4085,7 +4102,11 @@ function openAddDocumentModal() {
   document.getElementById("docLienDrive").value = "";
   document.getElementById("docFile").value = "";
   document.getElementById("docFileName").textContent = "Aucun fichier sélectionné";
+  document.getElementById("docFileName").style.color = "#666";
   document.getElementById("docFileGroup").style.display = "block";
+  document.getElementById("docProgress").style.display = "none";
+  document.getElementById("docMessage").style.display = "none";
+  
   document.getElementById("docModal").classList.add("active");
 }
 
@@ -4205,7 +4226,7 @@ async function submitDocument() {
   const description = String(document.getElementById("docDescription")?.value || "").trim();
   const wasEditing = Boolean(editingDocId);
   const currentId = editingDocId;
-  const immatriculation = selectedVehicule || vehicleDetailImmat || window.currentCtImmatriculation || "";
+  const immatriculation = selectedVehicule || vehicleDetailImmat || window.currentCtImmatriculation || window.currentVehiculeImmatriculation || "";
 
   if (!nom) {
     showMsg("Le nom du document est obligatoire", "err");
@@ -6407,6 +6428,129 @@ function openDocumentsModal() {
 function closeDocumentsModal() {
   document.getElementById("documentsModal").classList.remove("active");
 }
+
+// ===== FONCTIONS MODALE RÉVISION UPLOAD =====
+
+function openRevisionDocumentsModal() {
+  const immatriculation = editingRevisionImmat;
+  if (!immatriculation) {
+    showMsg("Enregistre d'abord la révision", "err");
+    return;
+  }
+  
+  document.getElementById("revisionDocModalImmat").textContent = immatriculation;
+  document.getElementById("revisionUploadDocumentFile").value = "";
+  document.getElementById("revisionUploadDocumentFileName").textContent = "Aucun fichier sélectionné";
+  document.getElementById("revisionUploadDocumentName").value = "";
+  document.getElementById("revisionUploadDocumentDate").value = "";
+  document.getElementById("revisionUploadDocumentDescription").value = "";
+  document.getElementById("submitRevisionUploadBtn").disabled = true;
+  document.getElementById("revisionUploadProgress").style.display = "none";
+  document.getElementById("revisionUploadMessage").style.display = "none";
+  
+  document.getElementById("revisionDocumentsModal").classList.add("active");
+}
+
+function closeRevisionDocumentsModal() {
+  document.getElementById("revisionDocumentsModal").classList.remove("active");
+}
+
+function handleRevisionUploadFileSelect(input) {
+  const fileName = document.getElementById("revisionUploadDocumentFileName");
+  const submitBtn = document.getElementById("submitRevisionUploadBtn");
+  const hasFile = !!input?.files?.length;
+  
+  if (submitBtn) submitBtn.disabled = !hasFile;
+  
+  if (hasFile) {
+    const file = input.files[0];
+    if (fileName) {
+      fileName.textContent = `✅ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+      fileName.style.color = "#2e7d46";
+    }
+  } else {
+    if (fileName) {
+      fileName.textContent = "Aucun fichier sélectionné";
+      fileName.style.color = "#666";
+    }
+  }
+}
+
+async function submitRevisionUpload() {
+  const input = document.getElementById("revisionUploadDocumentFile");
+  if (!input || !input.files[0]) {
+    showMsg("Choisissez un fichier d'abord", "err");
+    return;
+  }
+  
+  const file = input.files[0];
+  const immatriculation = editingRevisionImmat;
+  const nomDocument = document.getElementById("revisionUploadDocumentName")?.value || file.name;
+  const dateDocument = document.getElementById("revisionUploadDocumentDate")?.value || "";
+  const descriptionDocument = document.getElementById("revisionUploadDocumentDescription")?.value || "";
+  
+  const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+  if (!allowed.includes(file.type)) {
+    showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showMsg("Le document dépasse 10 Mo", "err");
+    return;
+  }
+  
+  try {
+    const submitBtn = document.getElementById("submitRevisionUploadBtn");
+    const progress = document.getElementById("revisionUploadProgress");
+    const message = document.getElementById("revisionUploadMessage");
+    
+    if (submitBtn) submitBtn.disabled = true;
+    if (progress) progress.style.display = "block";
+    if (message) message.style.display = "none";
+    
+    const formData = new FormData();
+    formData.append("action", "uploadRevisionFile");
+    formData.append("immatriculation", immatriculation);
+    formData.append("file", file);
+    formData.append("nomDocument", nomDocument);
+    formData.append("dateDocument", dateDocument);
+    formData.append("descriptionDocument", descriptionDocument);
+    
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: formData
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    
+    if (result.ok) {
+      showMsg("✅ Document uploadé avec succès", "success");
+      input.value = "";
+      if (progress) progress.style.display = "none";
+      document.getElementById("revisionUploadDocumentFileName").textContent = "Aucun fichier sélectionné";
+      document.getElementById("revisionUploadDocumentFileName").style.color = "#666";
+      document.getElementById("revisionUploadDocumentName").value = "";
+      document.getElementById("revisionUploadDocumentDate").value = "";
+      document.getElementById("revisionUploadDocumentDescription").value = "";
+      if (submitBtn) submitBtn.disabled = true;
+      
+      setTimeout(() => closeRevisionDocumentsModal(), 1000);
+    } else {
+      throw new Error(result.message || "Upload échoué");
+    }
+  } catch (err) {
+    showMsg(`❌ Erreur: ${err.message}`, "err");
+    if (document.getElementById("revisionUploadProgress")) {
+      document.getElementById("revisionUploadProgress").style.display = "none";
+    }
+    if (document.getElementById("submitRevisionUploadBtn")) {
+      document.getElementById("submitRevisionUploadBtn").disabled = false;
+    }
+  }
+}
+
+// ===== FIN MODALE RÉVISION UPLOAD =====
 
 async function submitUploadCtLegacy() {
   const immat = window.currentCtImmatriculation;
