@@ -2925,6 +2925,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button id="submitCtBtn" class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
+      <button id="btnAddDocumentCtModal" class="btn" style="background: #1976d2; color: white;" onclick="openAddDocumentModal()">📤 Ajouter un document</button>
       <button id="btnArchiveCtModal" class="btn" title="Archiver le contrôle technique" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveCtFromModal()"><i class="bi bi-archive"></i> Archiver</button>
     </div>
   </div>
@@ -6209,6 +6210,8 @@ function openCtEditModal(immatriculation) {
 
   const archiveBtn = document.getElementById("btnArchiveCtModal");
   if (archiveBtn) archiveBtn.style.display = "inline-flex";
+  const addDocBtn = document.getElementById("btnAddDocumentCtModal");
+  if (addDocBtn) addDocBtn.style.display = "block";
   window.currentCtImmatriculation = immatriculation;
 }
 
@@ -6224,6 +6227,8 @@ async function closeCtEditModal(skipRefresh = true) {
 
   const archiveBtn = document.getElementById("btnArchiveCtModal");
   if (archiveBtn) archiveBtn.style.display = "none";
+  const addDocBtn = document.getElementById("btnAddDocumentCtModal");
+  if (addDocBtn) addDocBtn.style.display = "none";
 
   if (!skipRefresh) {
     await refreshCurrentPageAfterModalClose();
