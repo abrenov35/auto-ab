@@ -4381,11 +4381,15 @@ function viewDocument(docName, lienDrive, docType) {
       
       if (isImage) {
         // ✅ Pour les images: afficher avec <img> directement
+        // Google Drive: export=view fonctionne pour les images via /uc
         const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
+        // Double check: si c'est une URL Google Drive, la mettre en format /uc?export=view&id=
+        const driveId = ctGetDriveFileId(url);
+        const finalImgUrl = driveId ? `https://drive.google.com/uc?export=view&id=${driveId}` : imgUrl;
         viewDocContent.innerHTML = `
           <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
             <img 
-              src="${safeText(imgUrl)}" 
+              src="${safeText(finalImgUrl)}" 
               alt="${safeText(docName || 'Image')}"
               style="max-width:100%;max-height:100%;object-fit:contain;"
               onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;\">Impossible d afficher l image</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"openDocumentDownload(\\'${safeText(downloadUrl)}\\', \\'${safeText(docName)}\\');\">📥 Télécharger le fichier</button></div>'"
@@ -4412,10 +4416,12 @@ function viewDocument(docName, lienDrive, docType) {
         if (isImageExt) {
           // Essayer d'afficher l'image directement
           const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
+          const driveId = ctGetDriveFileId(url);
+          const finalImgUrl = driveId ? `https://drive.google.com/uc?export=view&id=${driveId}` : imgUrl;
           viewDocContent.innerHTML = `
             <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
               <img 
-                src="${safeText(imgUrl)}" 
+                src="${safeText(finalImgUrl)}" 
                 alt="${safeText(docName || 'Image')}"
                 style="max-width:100%;max-height:100%;object-fit:contain;"
                 onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"openDocumentDownload(\'${safeText(downloadUrl)}\', \'${safeText(docName)}\');\"">📥 Télécharger le fichier</button></div>'"
@@ -4436,10 +4442,12 @@ function viewDocument(docName, lienDrive, docType) {
         } else {
           // ✅ FALLBACK AGRESSIF: Essayer d'afficher comme image même si on n'est pas certain
           const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
+          const driveId = ctGetDriveFileId(url);
+          const finalImgUrl = driveId ? `https://drive.google.com/uc?export=view&id=${driveId}` : imgUrl;
           viewDocContent.innerHTML = `
             <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
               <img 
-                src="${safeText(imgUrl)}" 
+                src="${safeText(finalImgUrl)}" 
                 alt="${safeText(docName || 'Document')}"
                 style="max-width:100%;max-height:100%;object-fit:contain;"
                 onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;\">Aperçu non disponible</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"openDocumentDownload(\'${safeText(downloadUrl)}\', \'${safeText(docName)}\');\"">📥 Télécharger le fichier</button></div>'"
@@ -7370,7 +7378,7 @@ function viewCt(ctImmat, lienCt) {
         content.innerHTML = `
           <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f7fa;">
             <img 
-              src="${safeText(imgUrl)}" 
+              src="${safeText(finalImgUrl)}" 
               alt="Contrôle technique ${ctImmat}"
               style="max-width:100%;max-height:100%;object-fit:contain;"
               onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"window.open(\'${safeText(ctDownloadUrl(lienCt))}\', \'_blank\')\">📥 Télécharger</button></div>'"
@@ -7385,7 +7393,7 @@ function viewCt(ctImmat, lienCt) {
         content.innerHTML = `
           <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f7fa;">
             <img 
-              src="${safeText(imgUrl)}" 
+              src="${safeText(finalImgUrl)}" 
               alt="Contrôle technique ${ctImmat}"
               style="max-width:100%;max-height:100%;object-fit:contain;"
               onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;margin-bottom:12px;\">Aperçu non disponible</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"window.open(\'${safeText(ctDownloadUrl(lienCt))}\', \'_blank\')\">📥 Télécharger</button></div>'"
