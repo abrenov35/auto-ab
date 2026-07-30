@@ -5365,7 +5365,7 @@ function openAddRevisionModal() {
   const downloadBtn = document.getElementById("btnDownloadRevisionModal");
   if (downloadBtn) downloadBtn.style.display = "none";
   const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
-  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "none";
+  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
 
   const normalizeImmat = value =>
     String(value || "")
@@ -5920,7 +5920,7 @@ function openEditRevisionModal(immatriculation) {
       : "Rechercher et télécharger le document de révision";
   }
   const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
-  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "none";
+  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
   const revisionDocumentName = document.getElementById("revisionDocumentName");
   if (revisionDocumentName) {
     // Champ volontairement vide : le nom du document est saisi librement par l'utilisateur.
@@ -6343,7 +6343,7 @@ function loadDocumentsListLegacy(immat) {
           <div style="display: flex; gap: 4px;">
             <button class="btn" style="background: #2e7d46; color: white; padding: 6px 10px; font-size: 12px;" onclick="window.open('${doc.lienDrive}', '_blank')">👁️ Voir</button>
             <button class="btn" style="background: #1976d2; color: white; padding: 6px 10px; font-size: 12px;" onclick="window.location.href = '${doc.lienDrive}?export=download'">📥 Télécharger</button>
-            <button class="btn" style="background: #d32f2f; color: white; padding: 6px 10px; font-size: 12px; cursor: pointer;" onclick="deleteDocumentEverywhere({id: '${(doc.id || doc.nomFichier)}', nomFichier: '${doc.nomFichier}', lienDrive: '${doc.lienDrive}'})">🗑️</button>
+            <button class="btn" style="background: #d32f2f; color: white; padding: 6px 10px; font-size: 12px; cursor: pointer;" onclick="deleteDocumentEverywhere('${doc.id || doc.nomFichier}', '${doc.nomFichier}')">🗑️</button>
           </div>
         </div>
       `).join("");
