@@ -4363,11 +4363,27 @@ function viewDocument(docName, lienDrive) {
 
   if (viewDocContent) {
     if (url) {
-      const previewUrl = ctPreviewUrl(url);
       const downloadUrl = ctDownloadUrl(url);
       
-      if (previewUrl) {
-        // ✅ Aperçu disponible
+      // ✅ Détecter le type de fichier
+      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url) || /image\//i.test(url);
+      const isPdf = /\.pdf$/i.test(url) || /application\/pdf/i.test(url);
+      
+      if (isImage) {
+        // ✅ Pour les images: afficher avec <img> directement
+        const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
+        viewDocContent.innerHTML = `
+          <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
+            <img 
+              src="${safeText(imgUrl)}" 
+              alt="${safeText(docName || 'Image')}"
+              style="max-width:100%;max-height:100%;object-fit:contain;"
+              onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;\">Impossible d afficher l image</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"openDocumentDownload(\\'${safeText(downloadUrl)}\\', \\'${safeText(docName)}\\');\">📥 Télécharger le fichier</button></div>'"
+            />
+          </div>`;
+      } else if (isPdf) {
+        // ✅ Pour les PDFs: utiliser Google Drive preview
+        const previewUrl = ctPreviewUrl(url);
         viewDocContent.innerHTML = `
           <div style="position:relative;width:100%;height:68vh;min-height:460px;">
             <iframe
@@ -4378,7 +4394,7 @@ function viewDocument(docName, lienDrive) {
             ></iframe>
           </div>`;
       } else {
-        // ❌ Aperçu non disponible (format non-prévisualisable)
+        // ❌ Autres formats non prévisualisables
         viewDocContent.innerHTML = `
           <div style="text-align:center;padding:48px;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:8px;height:68vh;min-height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
             <div style="font-size:48px;margin-bottom:20px;">📄</div>
@@ -7275,7 +7291,26 @@ function viewCt(ctImmat, lienCt) {
     content.innerHTML = `<div style="text-align:center;padding:28px;"><div style="font-size:46px;margin-bottom:12px;">📄</div><div style="font-size:18px;font-weight:700;color:#344054;margin-bottom:8px;">Aucun document enregistré</div><div style="color:#667085;">Utilisez « Ajouter / remplacer » pour charger le contrôle technique.</div></div>`;
     download.style.display = "none";
   } else {
-    content.innerHTML = `<iframe class="ct-preview-frame" src="${ctPreviewUrl(lienCt)}" title="Aperçu du contrôle technique ${ctImmat}" loading="lazy" allow="autoplay"></iframe>`;
+    // ✅ Déterminer le type de fichier
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(lienCt) || /image\//i.test(lienCt);
+    const isPdf = /\.pdf$/i.test(lienCt) || /application\/pdf/i.test(lienCt);
+    
+    if (isImage) {
+      // ✅ Pour les images: afficher avec <img> directement
+      const imgUrl = ctDownloadUrl(lienCt).replace(/export=download/g, "export=view");
+      content.innerHTML = `
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f7fa;">
+          <img 
+            src="${safeText(imgUrl)}" 
+            alt="Contrôle technique ${ctImmat}"
+            style="max-width:100%;max-height:100%;object-fit:contain;"
+            onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div>Impossible d afficher l image</div></div>'"
+          />
+        </div>`;
+    } else {
+      // ✅ Pour les PDFs: utiliser Google Drive preview
+      content.innerHTML = `<iframe class="ct-preview-frame" src="${ctPreviewUrl(lienCt)}" title="Aperçu du contrôle technique ${ctImmat}" loading="lazy" allow="autoplay"></iframe>`;
+    }
     download.style.display = "inline-flex";
   }
   document.getElementById("viewCtModal").classList.add("active");
