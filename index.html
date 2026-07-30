@@ -3126,6 +3126,14 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
           </div>
         </div>
       </div>
+      
+      <!-- Liste des documents existants -->
+      <div style="margin-bottom: 20px;">
+        <div style="font-weight: 600; margin-bottom: 12px;">📂 Pièces existantes</div>
+        <div id="revisionDocumentsList" style="max-height: 300px; overflow-y: auto; border: 1px solid #e4e7ec; border-radius: 4px;">
+          <div style="color: #999; text-align: center; padding: 20px;">Aucun document pour cette révision</div>
+        </div>
+      </div>
     </div>
     
     <div class="form-actions">
@@ -6436,7 +6444,41 @@ function openRevisionDocumentsModal() {
   document.getElementById("revisionUploadProgress").style.display = "none";
   document.getElementById("revisionUploadMessage").style.display = "none";
   
+  // Charger et afficher les documents existants
+  loadRevisionDocumentsList(immatriculation);
+  
   document.getElementById("revisionDocumentsModal").classList.add("active");
+}
+
+function loadRevisionDocumentsList(immatriculation) {
+  const container = document.getElementById("revisionDocumentsList");
+  if (!container) return;
+  
+  // Chercher tous les documents associés à cette révision
+  const revisionDocs = (Array.isArray(data.documents) ? data.documents : []).filter(doc =>
+    String(doc.immatriculation || "").toUpperCase() === String(immatriculation || "").toUpperCase() &&
+    doc.categorie === "Révision"
+  );
+  
+  if (revisionDocs.length === 0) {
+    container.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">Aucun document pour cette révision</div>';
+    return;
+  }
+  
+  container.innerHTML = revisionDocs.map(doc => `
+    <div style="padding: 12px; border-bottom: 1px solid #e4e7ec; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-weight: 600; color: #333;">${doc.nomFichier || doc.nom}</div>
+        <div style="font-size: 12px; color: #999;">${doc.date || ""}</div>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button type="button" class="btn" style="padding: 6px 10px; background: #1976d2; color: #fff; font-size: 12px;" 
+                title="Télécharger" onclick="window.open('${doc.lienDrive || doc.url || '#'}', '_blank')">
+          📥
+        </button>
+      </div>
+    </div>
+  `).join("");
 }
 
 function closeRevisionDocumentsModal() {
@@ -6525,6 +6567,32 @@ async function submitRevisionUpload() {
     const result = await response.json();
     
     if (result.ok || result.success) {
+      // Créer le document avec categorie="Révision"
+      const fileUrl = result?.url || result?.lienDrive || result?.fileUrl || "";
+      
+      if (fileUrl) {
+        // Créer l'enregistrement document avec categorie="Révision"
+        const docResponse = await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "createDocument",
+            immatriculation: immatriculation,
+            idVehicule: immatriculation,
+            categorie: "Révision",  // ← IMPORTANT!
+            nom: nomDocument || file.name,
+            nomFichier: nomDocument || file.name,
+            date: dateDocument || new Date().toISOString().slice(0, 10),
+            description: descriptionDocument || "Pièce jointe à la révision",
+            lienDrive: fileUrl
+          })
+        });
+        
+        if (!docResponse.ok) throw new Error(`Erreur création ${docResponse.status}`);
+        const docResult = await docResponse.json();
+        if (!docResult.ok && !docResult.success) throw new Error(docResult?.error || "Création échouée");
+      }
+      
       showMsg("✅ Document uploadé avec succès", "success");
       input.value = "";
       if (progress) progress.style.display = "none";
@@ -6538,6 +6606,7 @@ async function submitRevisionUpload() {
       // Recharger data ET actualiser la vue Révision
       await loadData();
       renderRevisionPage();  // ← Affiche les documents mis à jour!
+      loadRevisionDocumentsList(immatriculation);  // ← Affiche liste dans la modale!
       
       setTimeout(() => closeRevisionDocumentsModal(), 1000);
     } else {
