@@ -5254,6 +5254,29 @@ function viewLatestRevisionDocument(immatriculation) {
   viewDocument(nom, lien);
 }
 
+function downloadLatestRevisionDocument(immatriculation) {
+  const documentRevision = getLatestRevisionDocument(immatriculation);
+
+  if (!documentRevision) {
+    showMsg("Aucun document pour la dernière révision.", "err");
+    return;
+  }
+
+  const lien = documentRevision.lienDrive || documentRevision.lien || documentRevision.url || documentRevision.Lien || "";
+
+  if (!lien) {
+    showMsg("Le document de révision ne possède aucun lien de téléchargement.", "err");
+    return;
+  }
+
+  // Créer un lien de téléchargement Google Drive
+  const downloadUrl = lien.includes("drive.google.com") 
+    ? lien + (lien.includes("?") ? "&export=download" : "?export=download")
+    : lien;
+  
+  window.location.href = downloadUrl;
+}
+
 function renderRevisionPage() {
   const revisionList = document.getElementById("revisionPageList");
 
@@ -5302,7 +5325,8 @@ function renderRevisionPage() {
     const action = archived
       ? `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`
       : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>
-         <button type="button" class="ab-icon-btn view" title="Voir la dernière révision" aria-label="Voir la dernière révision" onclick="viewLatestRevisionDocument('${r.immatriculation}')"><i class="bi bi-eye"></i></button>`;
+         <button type="button" class="ab-icon-btn view" title="Voir la dernière révision" aria-label="Voir la dernière révision" onclick="viewLatestRevisionDocument('${r.immatriculation}')"><i class="bi bi-eye"></i></button>
+         <button type="button" class="ab-icon-btn download" title="Télécharger la révision" aria-label="Télécharger la révision" onclick="downloadLatestRevisionDocument('${r.immatriculation}')"><i class="bi bi-download"></i></button>`;
 
     return `
       <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${r.marque}</div>
@@ -6317,8 +6341,9 @@ function loadDocumentsListLegacy(immat) {
             </div>
           </div>
           <div style="display: flex; gap: 4px;">
-            <button class="btn" style="background: #2e7d46; color: white; padding: 6px 10px; font-size: 12px;" onclick="window.open('${doc.lienDrive}', '_blank')">📥 Voir</button>
-            <button class="btn" style="background: #d32f2f; color: white; padding: 6px 10px; font-size: 12px;" onclick="deleteDocument('${immat}', '${doc.nomFichier}')">🗑️</button>
+            <button class="btn" style="background: #2e7d46; color: white; padding: 6px 10px; font-size: 12px;" onclick="window.open('${doc.lienDrive}', '_blank')">👁️ Voir</button>
+            <button class="btn" style="background: #1976d2; color: white; padding: 6px 10px; font-size: 12px;" onclick="window.location.href = '${doc.lienDrive}?export=download'">📥 Télécharger</button>
+            <button class="btn" style="background: #d32f2f; color: white; padding: 6px 10px; font-size: 12px; cursor: pointer;" onclick="deleteDocumentEverywhere({id: '${(doc.id || doc.nomFichier)}', nomFichier: '${doc.nomFichier}', lienDrive: '${doc.lienDrive}'})">🗑️</button>
           </div>
         </div>
       `).join("");
