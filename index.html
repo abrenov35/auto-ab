@@ -2925,7 +2925,6 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeCtEditModal()">Annuler</button>
       <button id="submitCtBtn" class="btn btn-success" onclick="submitControleTk()">Enregistrer</button>
-      <button id="btnViewDocsModal" class="btn" style="background: #1976d2; color: white; display: none;" onclick="openDocumentsModal()">📥 Télécharger</button>
       <button id="btnArchiveCtModal" class="btn" title="Archiver le contrôle technique" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveCtFromModal()"><i class="bi bi-archive"></i> Archiver</button>
     </div>
   </div>
@@ -3038,7 +3037,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <button class="btn btn-secondary" onclick="closeAddRevisionModal()">Annuler</button>
       <button id="submitAddRevisionBtn" class="btn btn-success" onclick="submitAddRevision()">Enregistrer</button>
       <button id="btnArchiveRevisionModal" class="btn" title="Archiver la révision" style="display:none; background:transparent; color:#ef6c00; border:1px solid #ef6c00;" onclick="archiveRevisionFromModal()"><i class="bi bi-archive"></i> Archiver</button>
-      <button type="button" id="btnDownloadRevisionModal" class="btn" title="Télécharger le dernier document de révision" style="display:none; background:#1976d2; color:#fff; border:1px solid #1976d2;" onclick="downloadLatestRevisionDocument()"><i class="bi bi-download"></i> Télécharger</button>
+      <button type="button" id="btnAddDocumentRevisionModal" class="btn" style="background:#1976d2; color:#fff; border:1px solid #1976d2;" onclick="chooseRevisionDocument()"><i class="bi bi-upload"></i> Ajouter un document</button>
     </div>
   </div>
 </div>
@@ -5386,8 +5385,8 @@ function openAddRevisionModal() {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "none";
-  const downloadBtn = document.getElementById("btnDownloadRevisionModal");
-  if (downloadBtn) downloadBtn.style.display = "none";
+  const addDocBtn = document.getElementById("btnAddDocumentRevisionModal");
+  if (addDocBtn) addDocBtn.style.display = "block";
   const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
   if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
 
@@ -5455,8 +5454,8 @@ async function closeAddRevisionModal(skipRefresh = true) {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "none";
-  const downloadBtn = document.getElementById("btnDownloadRevisionModal");
-  if (downloadBtn) downloadBtn.style.display = "none";
+  const addDocBtn = document.getElementById("btnAddDocumentRevisionModal");
+  if (addDocBtn) addDocBtn.style.display = "block";
 
   if (!skipRefresh) {
     await refreshCurrentPageAfterModalClose();
@@ -5933,15 +5932,11 @@ function openEditRevisionModal(immatriculation) {
 
   const archiveBtn = document.getElementById("btnArchiveRevisionModal");
   if (archiveBtn) archiveBtn.style.display = "inline-flex";
-  const downloadBtn = document.getElementById("btnDownloadRevisionModal");
-  if (downloadBtn) {
-    const latestDoc = getLatestRevisionDocument(editingRevisionImmat);
-    downloadBtn.style.display = "inline-flex";
-    downloadBtn.disabled = false;
-    downloadBtn.style.opacity = "1";
-    downloadBtn.title = latestDoc
-      ? "Télécharger le dernier document de révision"
-      : "Rechercher et télécharger le document de révision";
+  const addDocBtn = document.getElementById("btnAddDocumentRevisionModal");
+  if (addDocBtn) {
+    addDocBtn.style.display = "inline-flex";
+    addDocBtn.disabled = false;
+    addDocBtn.style.opacity = "1";
   }
   const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
   if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
@@ -6210,9 +6205,6 @@ function openCtEditModal(immatriculation) {
   }
 
   document.getElementById("ctEditModal").classList.add("active");
-  
-  // Afficher le bouton "Voir pièces"
-  document.getElementById("btnViewDocsModal").style.display = "block";
   document.getElementById("ctDocumentsSection").style.display = "none";
 
   const archiveBtn = document.getElementById("btnArchiveCtModal");
