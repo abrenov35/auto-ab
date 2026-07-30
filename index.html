@@ -4235,12 +4235,12 @@ async function submitDocument() {
   const immatriculation = selectedVehicule || vehicleDetailImmat || window.currentCtImmatriculation || window.currentVehiculeImmatriculation || "";
 
   if (!nom) {
-    showMsg("Le nom du document est obligatoire", "err");
+    showErrorInModal("docModal", "Le nom du document est obligatoire");
     return;
   }
 
   if (!wasEditing && !selectedFile) {
-    showMsg("Sélectionne un fichier", "err");
+    showErrorInModal("docModal", "Sélectionne un fichier");
     return;
   }
 
@@ -6510,7 +6510,7 @@ function handleRevisionUploadFileSelect(input) {
 async function submitRevisionUpload() {
   const input = document.getElementById("revisionUploadDocumentFile");
   if (!input || !input.files[0]) {
-    showMsg("Choisissez un fichier d'abord", "err");
+    showErrorInModal("revisionDocumentsModal", "Choisissez un fichier d'abord");
     return;
   }
   
@@ -6522,11 +6522,11 @@ async function submitRevisionUpload() {
   
   const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
   if (!allowed.includes(file.type)) {
-    showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
+    showErrorInModal("revisionDocumentsModal", "Formats autorisés : PDF, JPG, JPEG ou PNG");
     return;
   }
   if (file.size > 10 * 1024 * 1024) {
-    showMsg("Le document dépasse 10 Mo", "err");
+    showErrorInModal("revisionDocumentsModal", "Le document dépasse 10 Mo");
     return;
   }
   
@@ -7011,6 +7011,36 @@ function showMsg(text, type) {
   setTimeout(() => msg.remove(), 3000);
 }
 
+// ✅ Afficher erreur AU CENTRE de la modale
+function showErrorInModal(modalId, text) {
+  const modal = document.getElementById(modalId);
+  if (!modal) {
+    showMsg(text, "err");
+    return;
+  }
+  
+  // Créer message centré dans la modale
+  const errorDiv = document.createElement("div");
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #d32f2f;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 4px;
+    font-weight: 600;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-width: 400px;
+    text-align: center;
+  `;
+  errorDiv.textContent = text;
+  document.body.appendChild(errorDiv);
+  setTimeout(() => errorDiv.remove(), 3000);
+}
+
 function showLoadingAndReload() {
   showLoadingOverlay();
 
@@ -7269,13 +7299,13 @@ async function submitUploadCt() {
   const immat = window.currentCtImmatriculation;
   const input = document.getElementById("documentFileInput");
   const message = document.getElementById("uploadCtMessage");
-  if (!immat) return showMsg("Aucun contrôle technique sélectionné", "err");
-  if (!input?.files?.length) return showMsg("Sélectionnez un document", "err");
+  if (!immat) return showErrorInModal("documentsModal", "Aucun contrôle technique sélectionné");
+  if (!input?.files?.length) return showErrorInModal("documentsModal", "Sélectionnez un document");
   const file = input.files[0];
   const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
   const maxBytes = 10 * 1024 * 1024;
-  if (!allowed.includes(file.type)) return showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
-  if (file.size > maxBytes) return showMsg("Le document dépasse 10 Mo", "err");
+  if (!allowed.includes(file.type)) return showErrorInModal("documentsModal", "Formats autorisés : PDF, JPG, JPEG ou PNG");
+  if (file.size > maxBytes) return showErrorInModal("documentsModal", "Le document dépasse 10 Mo");
   try {
     ctSetUploadBusy(true, "Préparation du document…");
     if (message) message.style.display = "none";
