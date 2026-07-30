@@ -5456,8 +5456,6 @@ function openAddRevisionModal() {
   if (archiveBtn) archiveBtn.style.display = "none";
   const addDocBtn = document.getElementById("btnAddDocumentRevisionModal");
   if (addDocBtn) addDocBtn.style.display = "block";
-  const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
-  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
 
   const normalizeImmat = value =>
     String(value || "")
@@ -6100,14 +6098,6 @@ function openEditRevisionModal(immatriculation) {
     addDocBtn.disabled = false;
     addDocBtn.style.opacity = "1";
   }
-  const revisionDocumentBlock = document.getElementById("revisionDocumentBlock");
-  if (revisionDocumentBlock) revisionDocumentBlock.style.display = "block";
-  const revisionDocumentName = document.getElementById("revisionDocumentName");
-  if (revisionDocumentName) {
-    // Champ volontairement vide : le nom du document est saisi librement par l'utilisateur.
-    revisionDocumentName.value = "";
-    revisionDocumentName.placeholder = "Saisir librement le nom du document";
-  }
 
   vehiculeSelect.innerHTML = "";
   const option = document.createElement("option");
@@ -6451,6 +6441,8 @@ function openRevisionDocumentsModal() {
 
 function closeRevisionDocumentsModal() {
   document.getElementById("revisionDocumentsModal").classList.remove("active");
+  // Fermer aussi la modale addRevisionModal pour retourner à la page Révision
+  document.getElementById("addRevisionModal").classList.remove("active");
 }
 
 function handleRevisionUploadFileSelect(input) {
@@ -6543,8 +6535,9 @@ async function submitRevisionUpload() {
       document.getElementById("revisionUploadDocumentDescription").value = "";
       if (submitBtn) submitBtn.disabled = true;
       
-      // Recharger data
+      // Recharger data ET actualiser la vue Révision
       await loadData();
+      renderRevisionPage();  // ← Affiche les documents mis à jour!
       
       setTimeout(() => closeRevisionDocumentsModal(), 1000);
     } else {
