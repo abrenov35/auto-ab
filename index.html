@@ -4288,16 +4288,34 @@ function viewDocument(docName, lienDrive) {
   if (viewDocContent) {
     if (url) {
       const previewUrl = ctPreviewUrl(url);
-      viewDocContent.innerHTML = `
-        <iframe
-          src="${safeText(previewUrl)}"
-          title="${safeText(docName || "Document")}"
-          style="width:100%;height:68vh;min-height:460px;border:1px solid #dfe5ec;border-radius:8px;background:#fff;"
-          allow="autoplay"
-        ></iframe>`;
+      const downloadUrl = ctDownloadUrl(url);
+      
+      if (previewUrl) {
+        // ✅ Aperçu disponible
+        viewDocContent.innerHTML = `
+          <div style="position:relative;width:100%;height:68vh;min-height:460px;">
+            <iframe
+              src="${safeText(previewUrl)}"
+              title="${safeText(docName || "Document")}"
+              style="width:100%;height:100%;border:1px solid #dfe5ec;border-radius:8px;background:#fff;"
+              allow="autoplay"
+            ></iframe>
+          </div>`;
+      } else {
+        // ❌ Aperçu non disponible (format non-prévisualisable)
+        viewDocContent.innerHTML = `
+          <div style="text-align:center;padding:48px;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:8px;height:68vh;min-height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-size:48px;margin-bottom:20px;">📄</div>
+            <div style="font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;">Aperçu non disponible</div>
+            <div style="color:#667085;font-size:14px;margin-bottom:24px;">Le format du fichier ne peut pas être affiché ici.</div>
+            <button class="btn" style="background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;" onclick="openDocumentDownload('${safeText(downloadUrl)}', '${safeText(docName)}')">
+              📥 Télécharger le fichier
+            </button>
+          </div>`;
+      }
     } else {
       viewDocContent.innerHTML = `
-        <div style="text-align:center;">
+        <div style="text-align:center;padding:48px;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:8px;height:68vh;min-height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
           <div style="font-size:48px;margin-bottom:20px;">📋</div>
           <div style="font-size:18px;font-weight:600;margin-bottom:12px;color:#d32f2f;">Pas de pièce disponible</div>
           <div style="color:#666;font-size:14px;">Aucun fichier n'est associé à ce document.</div>
@@ -4316,6 +4334,12 @@ function closeViewDocModal() {
 function openViewDocLink() {
   if (currentViewDocLink) {
     window.open(currentViewDocLink, "_blank");
+  }
+}
+
+function openDocumentDownload(downloadUrl, docName) {
+  if (downloadUrl) {
+    window.open(downloadUrl, "_blank", "noopener");
   }
 }
 
@@ -6808,13 +6832,31 @@ async function deleteVehicleDetailDocument(id){
 
 /* ===== V8.45 : GESTION DOCUMENTAIRE CT ===== */
 function ctGetDriveFileId(url) {
-  const value = String(url || "");
-  const match = value.match(/\/d\/([a-zA-Z0-9_-]+)/) || value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  return match ? match[1] : "";
+  const value = String(url || "").trim();
+  if (!value) return "";
+  
+  // Format 1: /file/d/FILE_ID/...
+  let match = value.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  // Format 2: /d/FILE_ID/...
+  match = value.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  // Format 3: ?id=FILE_ID ou &id=FILE_ID
+  match = value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  // Format 4: open?id=FILE_ID
+  match = value.match(/open\?id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  return "";
 }
 function ctPreviewUrl(url) {
   const id = ctGetDriveFileId(url);
-  return id ? `https://drive.google.com/file/d/${id}/preview` : String(url || "");
+  // Retourner UNIQUEMENT une URL /preview valide, jamais l'URL brute
+  return id ? `https://drive.google.com/file/d/${id}/preview` : null;
 }
 function ctDownloadUrl(url) {
   const id = ctGetDriveFileId(url);
