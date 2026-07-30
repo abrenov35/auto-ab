@@ -4351,15 +4351,98 @@ async function deleteDocument(docId) {
 let currentViewDocLink = null;
 
 
-// ✅ NOUVELLE FONCTION: Générer URL image Google Drive
-function getImageUrlForGoogleDrive(url) {
-  const driveId = ctGetDriveFileId(url);
-  if (!driveId) return url; // Si pas d'ID, retourner URL brute
+
+
+
+// ✅ DIAGNOSTIC COMPLET — Suivre le guide de Copilot exactement
+function displayImageWithDiagnostics(containerElement, url, docName) {
+  if (!containerElement || !url) return;
   
-  // ✅ ESSAYER CES FORMATS DANS CET ORDRE (du plus compatible au moins)
-  // Format 1: /file/d/ID/view (le PLUS compatible pour images!)
-  return `https://drive.google.com/file/d/${driveId}/view`;
+  const fileId = ctGetDriveFileId(url);
+  
+  // ✅ LOGGING COMPLET (comme recommandé par Copilot)
+  console.group("🔍 DIAGNOSTIC IMAGE GOOGLE DRIVE");
+  console.log("Document Name:", docName);
+  console.log("Original URL:", url);
+  console.log("Extracted File ID:", fileId);
+  
+  if (!fileId) {
+    console.error("❌ PROBLÈME: ID Google Drive non extrait!");
+    console.groupEnd();
+    showErrorInContainer(containerElement, "Impossible d'extraire l'ID Google Drive");
+    return;
+  }
+  
+  // ✅ TESTER LES 2 FORMATS LES PLUS FIABLES (selon Copilot)
+  // Format 1: /uc?export=view&id=ID (le meilleur choix pour <img>)
+  const url1 = `https://drive.google.com/uc?export=view&id=${fileId}`;
+  console.log("URL Format 1 (/uc?export=view):", url1);
+  
+  // Format 2: /thumbnail (très fiable)
+  const url2 = `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+  console.log("URL Format 2 (/thumbnail):", url2);
+  
+  // ✅ TESTER FORMAT 1 DABORD
+  const img1 = new Image();
+  
+  img1.onload = function() {
+    console.log("✅ FORMAT 1 OK! Image chargée avec /uc?export=view");
+    console.groupEnd();
+    displayImageInContainer(containerElement, url1, docName);
+  };
+  
+  img1.onerror = function(e) {
+    console.error("❌ Format 1 échoué. Essayer Format 2...");
+    
+    // ✅ FALLBACK: TESTER FORMAT 2
+    const img2 = new Image();
+    
+    img2.onload = function() {
+      console.log("✅ FORMAT 2 OK! Image chargée avec /thumbnail");
+      console.groupEnd();
+      displayImageInContainer(containerElement, url2, docName);
+    };
+    
+    img2.onerror = function(e2) {
+      console.error("❌ FORMAT 2 AUSSI ÉCHOUÉ!");
+      console.error("PROBABLE CAUSE: Permissions du fichier Google Drive (fichier privé?)");
+      console.log("Solution: Rendre le fichier accessible 'Toute personne ayant le lien'");
+      console.groupEnd();
+      showErrorInContainer(containerElement, "Impossible d'afficher l'image. Vérifier permissions Google Drive.");
+    };
+    
+    img2.src = url2;
+  };
+  
+  img1.src = url1;
 }
+
+// Helper: Afficher l'image dans le container
+function displayImageInContainer(container, imageUrl, docName) {
+  container.innerHTML = `
+    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;">
+      <img 
+        src="${safeText(imageUrl)}"
+        alt="${safeText(docName || 'Image')}"
+        style="max-width:100%;max-height:100%;object-fit:contain;"
+        onload="console.log('✅ Image affichée avec succès!')"
+        onerror="console.error('❌ Erreur chargement final image')"
+      />
+    </div>`;
+}
+
+// Helper: Afficher erreur
+function showErrorInContainer(container, message) {
+  container.innerHTML = `
+    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;">
+      <div style="text-align:center;padding:48px;">
+        <div style="font-size:48px;margin-bottom:20px;">⚠️</div>
+        <div style="font-size:16px;font-weight:600;color:#d32f2f;margin-bottom:16px;">${message}</div>
+        <div style="font-size:13px;color:#666;margin-top:12px;">Vérifier la console (F12) pour plus de détails</div>
+      </div>
+    </div>`;
+}
+
 
 
 function viewDocument(docName, lienDrive, docType) {
@@ -4428,17 +4511,9 @@ function viewDocument(docName, lienDrive, docType) {
         const isPdfExt = /\.pdf$/i.test(url) || /\.pdf$/i.test(docName || "");
         
         if (isImageExt) {
-          // Essayer d'afficher l'image directement (format /file/d/ID/view)
-          const finalImgUrl = getImageUrlForGoogleDrive(url);
-          viewDocContent.innerHTML = `
-            <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
-              <img 
-                src="${safeText(finalImgUrl)}" 
-                alt="${safeText(docName || 'Image')}"
-                style="max-width:100%;max-height:100%;object-fit:contain;"
-                onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"openDocumentDownload(\'${safeText(downloadUrl)}\', \'${safeText(docName)}\');\"">📥 Télécharger le fichier</button></div>'"
-              />
-            </div>`;
+          // Essayer d'afficher l'image (extension détectée)
+          viewDocContent.innerHTML = `<div style="width:100%;height:68vh;min-height:460px;"></div>`;
+          displayImageWithDiagnostics(viewDocContent.firstChild, url, docName);
         } else if (isPdfExt) {
           // Essayer d'afficher en iframe pour PDFs (même si ce n'est pas Google Drive)
           viewDocContent.innerHTML = `
@@ -4452,17 +4527,9 @@ function viewDocument(docName, lienDrive, docType) {
               ></iframe>
             </div>`;
         } else {
-          // ✅ FALLBACK AGRESSIF: Essayer d'afficher comme image (format /file/d/ID/view)
-          const finalImgUrl = getImageUrlForGoogleDrive(url);
-          viewDocContent.innerHTML = `
-            <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
-              <img 
-                src="${safeText(finalImgUrl)}" 
-                alt="${safeText(docName || 'Document')}"
-                style="max-width:100%;max-height:100%;object-fit:contain;"
-                onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;\">Aperçu non disponible</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"openDocumentDownload(\'${safeText(downloadUrl)}\', \'${safeText(docName)}\');\"">📥 Télécharger le fichier</button></div>'"
-              />
-            </div>`;
+          // ✅ FALLBACK AGRESSIF: Essayer comme image (tester 2 formats)
+          viewDocContent.innerHTML = `<div style="width:100%;height:68vh;min-height:460px;"></div>`;
+          displayImageWithDiagnostics(viewDocContent.firstChild, url, docName);
         };
       }
     } else {
