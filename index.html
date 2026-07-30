@@ -7146,10 +7146,10 @@ function renderVehicleDetailDocuments(){
         <button type="button" class="ab-icon-btn view" title="Visualiser" aria-label="Visualiser" onclick="viewDocument('${safeText(doc.nom||'Document')}','${safeText(doc.lienDrive||'')}')">
           <i class="bi bi-eye"></i>
         </button>
-        <button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="editDocument(${JSON.stringify(doc.id)})">
+        <button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="editDocument(${JSON.stringify(doc.id || doc.nomFichier || doc.nom)})">
           <i class="bi bi-pencil"></i>
         </button>
-        <button type="button" class="ab-icon-btn delete" title="Supprimer" aria-label="Supprimer" onclick="deleteVehicleDetailDocument(${JSON.stringify(doc.id)})">
+        <button type="button" class="ab-icon-btn delete" title="Supprimer" aria-label="Supprimer" onclick="deleteVehicleDetailDocument(${JSON.stringify(doc.id || doc.nomFichier || doc.nom)})">
           <i class="bi bi-trash"></i>
         </button>
       </div>
@@ -7739,7 +7739,20 @@ async function archiveItem(action, immatriculation, label) {
   function getDocumentById(id) {
     const key = String(id ?? '');
     const all = Array.isArray(data?.documents) ? data.documents : [];
-    return all.find(item => String(item.id ?? item.idDocument ?? '') === key) || null;
+    
+    // Chercher d'abord par ID
+    let found = all.find(item => String(item.id ?? item.idDocument ?? '') === key);
+    if (found) return found;
+    
+    // Fallback: chercher par nomFichier ou nom
+    if (!found && key) {
+      found = all.find(item => 
+        String(item.nomFichier ?? item.nom ?? '') === key ||
+        String(item.nomFichier ?? item.nom ?? '') === decodeURIComponent(key)
+      );
+    }
+    
+    return found || null;
   }
 
   window.editDocument = function editDocumentFixed(docId) {
