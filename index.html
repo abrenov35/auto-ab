@@ -4386,6 +4386,12 @@ function viewDocument(docName, lienDrive, docType) {
         // Double check: si c'est une URL Google Drive, la mettre en format /uc?export=view&id=
         const driveId = ctGetDriveFileId(url);
         const finalImgUrl = driveId ? `https://drive.google.com/uc?export=view&id=${driveId}` : imgUrl;
+        console.log("📸 IMAGE DETECTED:");
+        console.log("   Doc Name:", docName);
+        console.log("   Doc Type:", docType);
+        console.log("   Original URL:", url);
+        console.log("   Drive ID:", driveId);
+        console.log("   Final Image URL:", finalImgUrl);
         viewDocContent.innerHTML = `
           <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
             <img 
@@ -7291,6 +7297,7 @@ async function deleteVehicleDetailDocument(id){
 function ctGetDriveFileId(url) {
   const value = String(url || "").trim();
   if (!value) return "";
+  console.log("🔍 ctGetDriveFileId - Input URL:", value);
   
   // ✅ Format 1: /file/d/FILE_ID/ (standard Google Drive)
   let match = value.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -7311,8 +7318,12 @@ function ctGetDriveFileId(url) {
   // ✅ Format 5: Chercher une longue chaîne alphanumériques (26+ caractères = ID Google Drive)
   // Les IDs Google Drive font ~28 caractères, combinaison d'a-z, A-Z, 0-9, -, _
   match = value.match(/([a-zA-Z0-9_-]{26,})/);
-  if (match) return match[1];
+  if (match) {
+    console.log("✅ Drive ID trouvé:", match[1]);
+    return match[1];
+  }
   
+  console.log("❌ Pas de Drive ID trouvé dans l'URL");
   return "";
 }
 function ctPreviewUrl(url) {
