@@ -4477,7 +4477,7 @@ function viewDocument(docName, lienDrive, docType) {
       if (isImage) {
         // ✅ Pour les images: afficher avec <img> directement
         // Format /file/d/ID/view fonctionne mieux pour les images!
-        const finalImgUrl = getImageUrlForGoogleDrive(url);
+        const finalImgUrl = url;
         console.log("📸 IMAGE DETECTED:");
         console.log("   Doc Name:", docName);
         console.log("   Doc Type:", docType);
