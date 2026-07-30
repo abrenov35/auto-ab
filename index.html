@@ -4103,7 +4103,6 @@ function openAddDocumentModal() {
   document.getElementById("docFile").value = "";
   document.getElementById("docFileName").textContent = "Aucun fichier sélectionné";
   document.getElementById("docFileName").style.color = "#666";
-  document.getElementById("docFileGroup").style.display = "block";
   document.getElementById("docProgress").style.display = "none";
   document.getElementById("docMessage").style.display = "none";
   
@@ -4125,7 +4124,6 @@ function editDocument(docId) {
   selectedFile = null;
   document.getElementById("docFile").value = "";
   document.getElementById("docFileName").textContent = "Aucun fichier sélectionné";
-  document.getElementById("docFileGroup").style.display = "none";
   document.getElementById("docModal").classList.add("active");
 }
 
@@ -7694,10 +7692,8 @@ async function archiveItem(action, immatriculation, label) {
     selectedFile = null;
     const fileInput = document.getElementById('docFile');
     const fileName = document.getElementById('docFileName');
-    const fileGroup = document.getElementById('docFileGroup');
     if (fileInput) fileInput.value = '';
     if (fileName) fileName.textContent = 'Aucun fichier sélectionné';
-    if (fileGroup) fileGroup.style.display = 'none';
     if (modal) modal.classList.add('active');
   };
 
