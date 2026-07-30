@@ -4365,9 +4365,11 @@ function viewDocument(docName, lienDrive) {
     if (url) {
       const downloadUrl = ctDownloadUrl(url);
       
-      // ✅ Détecter le type de fichier
+      // ✅ Détecter si c'est une image (priorité haute)
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url) || /image\//i.test(url);
-      const isPdf = /\.pdf$/i.test(url) || /application\/pdf/i.test(url);
+      
+      // ✅ Essayer ctPreviewUrl (fonctionne pour les PDFs et fichiers Google Drive)
+      const previewUrl = ctPreviewUrl(url);
       
       if (isImage) {
         // ✅ Pour les images: afficher avec <img> directement
@@ -4381,9 +4383,8 @@ function viewDocument(docName, lienDrive) {
               onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;\">Impossible d afficher l image</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"openDocumentDownload(\\'${safeText(downloadUrl)}\\', \\'${safeText(docName)}\\');\">📥 Télécharger le fichier</button></div>'"
             />
           </div>`;
-      } else if (isPdf) {
+      } else if (previewUrl) {
         // ✅ Pour les PDFs: utiliser Google Drive preview
-        const previewUrl = ctPreviewUrl(url);
         viewDocContent.innerHTML = `
           <div style="position:relative;width:100%;height:68vh;min-height:460px;">
             <iframe
@@ -4391,19 +4392,35 @@ function viewDocument(docName, lienDrive) {
               title="${safeText(docName || "Document")}"
               style="width:100%;height:100%;border:1px solid #dfe5ec;border-radius:8px;background:#fff;"
               allow="autoplay"
+              onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\""><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"openDocumentDownload(\'${safeText(downloadUrl)}\', \'${safeText(docName)}\');\"">📥 Télécharger le fichier</button></div>'"
             ></iframe>
           </div>`;
       } else {
-        // ❌ Autres formats non prévisualisables
-        viewDocContent.innerHTML = `
-          <div style="text-align:center;padding:48px;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:8px;height:68vh;min-height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-            <div style="font-size:48px;margin-bottom:20px;">📄</div>
-            <div style="font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;">Aperçu non disponible</div>
-            <div style="color:#667085;font-size:14px;margin-bottom:24px;">Le format du fichier ne peut pas être affiché ici.</div>
-            <button class="btn" style="background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;" onclick="openDocumentDownload('${safeText(downloadUrl)}', '${safeText(docName)}')">
-              📥 Télécharger le fichier
-            </button>
-          </div>`;
+        // ❌ Autres formats non prévisualisables (PDF direct link ou autre)
+        // Essayer d'afficher le PDF même si ce n'est pas un Google Drive link
+        if (url.includes('.pdf') || url.includes('pdf')) {
+          // Essayer d'afficher en iframe (même si ce n'est pas Google Drive)
+          viewDocContent.innerHTML = `
+            <div style="position:relative;width:100%;height:68vh;min-height:460px;">
+              <iframe
+                src="${safeText(url)}"
+                title="${safeText(docName || "Document")}"
+                style="width:100%;height:100%;border:1px solid #dfe5ec;border-radius:8px;background:#fff;"
+                allow="autoplay"
+                onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\""><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;\" onclick=\"openDocumentDownload(\'${safeText(downloadUrl)}\', \'${safeText(docName)}\');\"">📥 Télécharger le fichier</button></div>'"
+              ></iframe>
+            </div>`;
+        } else {
+          viewDocContent.innerHTML = `
+            <div style="text-align:center;padding:48px;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:8px;height:68vh;min-height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+              <div style="font-size:48px;margin-bottom:20px;">📄</div>
+              <div style="font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;">Aperçu non disponible</div>
+              <div style="color:#667085;font-size:14px;margin-bottom:24px;">Le format du fichier ne peut pas être affiché ici.</div>
+              <button class="btn" style="background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;" onclick="openDocumentDownload('${safeText(downloadUrl)}', '${safeText(docName)}')">
+                📥 Télécharger le fichier
+              </button>
+            </div>`;
+        };
       }
     } else {
       viewDocContent.innerHTML = `
@@ -7241,20 +7258,25 @@ function ctGetDriveFileId(url) {
   const value = String(url || "").trim();
   if (!value) return "";
   
-  // Format 1: /file/d/FILE_ID/...
+  // ✅ Format 1: /file/d/FILE_ID/ (standard Google Drive)
   let match = value.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (match) return match[1];
   
-  // Format 2: /d/FILE_ID/...
+  // ✅ Format 2: /d/FILE_ID/ (raccourci)
   match = value.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (match) return match[1];
   
-  // Format 3: ?id=FILE_ID ou &id=FILE_ID
+  // ✅ Format 3: ?id=FILE_ID ou &id=FILE_ID (paramètre query)
   match = value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (match) return match[1];
   
-  // Format 4: open?id=FILE_ID
+  // ✅ Format 4: open?id=FILE_ID (ancien format)
   match = value.match(/open\?id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  // ✅ Format 5: Chercher une longue chaîne alphanumériques (26+ caractères = ID Google Drive)
+  // Les IDs Google Drive font ~28 caractères, combinaison d'a-z, A-Z, 0-9, -, _
+  match = value.match(/([a-zA-Z0-9_-]{26,})/);
   if (match) return match[1];
   
   return "";
@@ -7293,7 +7315,7 @@ function viewCt(ctImmat, lienCt) {
   } else {
     // ✅ Déterminer le type de fichier
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(lienCt) || /image\//i.test(lienCt);
-    const isPdf = /\.pdf$/i.test(lienCt) || /application\/pdf/i.test(lienCt);
+    const previewUrl = ctPreviewUrl(lienCt);
     
     if (isImage) {
       // ✅ Pour les images: afficher avec <img> directement
@@ -7307,9 +7329,16 @@ function viewCt(ctImmat, lienCt) {
             onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div>Impossible d afficher l image</div></div>'"
           />
         </div>`;
-    } else {
+    } else if (previewUrl) {
       // ✅ Pour les PDFs: utiliser Google Drive preview
-      content.innerHTML = `<iframe class="ct-preview-frame" src="${ctPreviewUrl(lienCt)}" title="Aperçu du contrôle technique ${ctImmat}" loading="lazy" allow="autoplay"></iframe>`;
+      content.innerHTML = `<iframe class="ct-preview-frame" src="${safeText(previewUrl)}" title="Aperçu du contrôle technique ${ctImmat}" loading="lazy" allow="autoplay" onerror="this.innerHTML='<div style=\"text-align:center;padding:48px;\">Impossible d afficher le PDF. <br><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"window.open(\'${safeText(ctDownloadUrl(lienCt))}\', \'_blank\')\">📥 Télécharger</button></div>'"></iframe>`;
+    } else {
+      // ❌ Format non visualisable (essayer quand même si c'est un PDF direct link)
+      if (lienCt.includes('.pdf') || lienCt.includes('pdf')) {
+        content.innerHTML = `<iframe class="ct-preview-frame" src="${safeText(lienCt)}" title="Aperçu du contrôle technique ${ctImmat}" loading="lazy" allow="autoplay" onerror="this.innerHTML='<div style=\"text-align:center;padding:48px;\">Impossible d afficher le PDF. <br><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"window.open(\'${safeText(ctDownloadUrl(lienCt))}\', \'_blank\')\">📥 Télécharger</button></div>'"></iframe>`;
+      } else {
+        content.innerHTML = `<div style="text-align:center;padding:48px;background:#f5f7fa;border-radius:8px;"><div style="font-size:48px;margin-bottom:20px;">📄</div><div>Aperçu non disponible</div></div>`;
+      }
     }
     download.style.display = "inline-flex";
   }
