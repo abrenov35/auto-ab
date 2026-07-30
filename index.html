@@ -5425,8 +5425,7 @@ function renderRevisionPage() {
     const action = archived
       ? `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`
       : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>
-         <button type="button" class="ab-icon-btn view" title="Voir la dernière révision" aria-label="Voir la dernière révision" onclick="viewLatestRevisionDocument('${r.immatriculation}')"><i class="bi bi-eye"></i></button>
-         <button type="button" class="ab-icon-btn download" title="Télécharger la révision" aria-label="Télécharger la révision" onclick="downloadLatestRevisionDocument('${r.immatriculation}')"><i class="bi bi-download"></i></button>`;
+         <button type="button" class="ab-icon-btn view" title="Voir la dernière révision" aria-label="Voir la dernière révision" onclick="viewLatestRevisionDocument('${r.immatriculation}')"><i class="bi bi-eye"></i></button>`;
 
     return `
       <div class="ab-table-cell vehicle-brand" style="padding:10px 6px;border-bottom:1px solid #eef1f5;border-left:3px solid ${archived ? "#98a2b3" : color};padding-left:8px;font-weight:700;color:${archived ? "#667085" : "#1d2939"};">${r.marque}</div>
