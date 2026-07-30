@@ -5589,7 +5589,7 @@ async function uploadRevisionDocument(input) {
 
   if (!file || !immatriculation) return;
 
-  const allowed = ["application/pdf", "image/jpeg", "image/png"];
+  const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
   if (!allowed.includes(file.type)) {
     input.value = "";
     showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
@@ -6904,7 +6904,7 @@ async function submitUploadCt() {
   if (!immat) return showMsg("Aucun contrôle technique sélectionné", "err");
   if (!input?.files?.length) return showMsg("Sélectionnez un document", "err");
   const file = input.files[0];
-  const allowed = ["application/pdf", "image/jpeg", "image/png"];
+  const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
   const maxBytes = 10 * 1024 * 1024;
   if (!allowed.includes(file.type)) return showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
   if (file.size > maxBytes) return showMsg("Le document dépasse 10 Mo", "err");
