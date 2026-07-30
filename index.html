@@ -4350,6 +4350,18 @@ async function deleteDocument(docId) {
 // Variables globales pour la modale de visualisation
 let currentViewDocLink = null;
 
+
+// ✅ NOUVELLE FONCTION: Générer URL image Google Drive
+function getImageUrlForGoogleDrive(url) {
+  const driveId = ctGetDriveFileId(url);
+  if (!driveId) return url; // Si pas d'ID, retourner URL brute
+  
+  // ✅ ESSAYER CES FORMATS DANS CET ORDRE (du plus compatible au moins)
+  // Format 1: /file/d/ID/view (le PLUS compatible pour images!)
+  return `https://drive.google.com/file/d/${driveId}/view`;
+}
+
+
 function viewDocument(docName, lienDrive, docType) {
   const url = String(lienDrive || "").trim();
   const viewDocContent = document.getElementById("viewDocContent");
@@ -4381,16 +4393,12 @@ function viewDocument(docName, lienDrive, docType) {
       
       if (isImage) {
         // ✅ Pour les images: afficher avec <img> directement
-        // Google Drive: export=view fonctionne pour les images via /uc
-        const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
-        // Double check: si c'est une URL Google Drive, la mettre en format /uc?export=view&id=
-        const driveId = ctGetDriveFileId(url);
-        const finalImgUrl = driveId ? `https://drive.google.com/uc?export=view&id=${driveId}` : imgUrl;
+        // Format /file/d/ID/view fonctionne mieux pour les images!
+        const finalImgUrl = getImageUrlForGoogleDrive(url);
         console.log("📸 IMAGE DETECTED:");
         console.log("   Doc Name:", docName);
         console.log("   Doc Type:", docType);
         console.log("   Original URL:", url);
-        console.log("   Drive ID:", driveId);
         console.log("   Final Image URL:", finalImgUrl);
         viewDocContent.innerHTML = `
           <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
@@ -4420,10 +4428,8 @@ function viewDocument(docName, lienDrive, docType) {
         const isPdfExt = /\.pdf$/i.test(url) || /\.pdf$/i.test(docName || "");
         
         if (isImageExt) {
-          // Essayer d'afficher l'image directement
-          const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
-          const driveId = ctGetDriveFileId(url);
-          const finalImgUrl = driveId ? `https://drive.google.com/uc?export=view&id=${driveId}` : imgUrl;
+          // Essayer d'afficher l'image directement (format /file/d/ID/view)
+          const finalImgUrl = getImageUrlForGoogleDrive(url);
           viewDocContent.innerHTML = `
             <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
               <img 
@@ -4446,10 +4452,8 @@ function viewDocument(docName, lienDrive, docType) {
               ></iframe>
             </div>`;
         } else {
-          // ✅ FALLBACK AGRESSIF: Essayer d'afficher comme image même si on n'est pas certain
-          const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
-          const driveId = ctGetDriveFileId(url);
-          const finalImgUrl = driveId ? `https://drive.google.com/uc?export=view&id=${driveId}` : imgUrl;
+          // ✅ FALLBACK AGRESSIF: Essayer d'afficher comme image (format /file/d/ID/view)
+          const finalImgUrl = getImageUrlForGoogleDrive(url);
           viewDocContent.innerHTML = `
             <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
               <img 
