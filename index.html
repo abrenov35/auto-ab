@@ -4350,7 +4350,7 @@ async function deleteDocument(docId) {
 // Variables globales pour la modale de visualisation
 let currentViewDocLink = null;
 
-function viewDocument(docName, lienDrive) {
+function viewDocument(docName, lienDrive, docType) {
   const url = String(lienDrive || "").trim();
   const viewDocContent = document.getElementById("viewDocContent");
   const viewDocTitle = document.getElementById("viewDocTitle");
@@ -4366,10 +4366,15 @@ function viewDocument(docName, lienDrive) {
       const downloadUrl = ctDownloadUrl(url);
       
       // ✅ Détecter si c'est une image (priorité haute)
-      // Vérifier: l'URL ou le nom du fichier
+      // Vérifier: l'URL, le nom du fichier, ou le type passé
+      const docTypeStr = String(docType || "").toLowerCase();
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url) || 
                       /image\//i.test(url) ||
-                      /\.(jpg|jpeg|png|gif|webp)$/i.test(docName || "");
+                      /\.(jpg|jpeg|png|gif|webp)$/i.test(docName || "") ||
+                      docTypeStr.includes('image') ||
+                      docTypeStr.includes('jpg') ||
+                      docTypeStr.includes('png') ||
+                      docTypeStr.includes('gif')
       
       // ✅ Essayer ctPreviewUrl (fonctionne pour les PDFs et fichiers Google Drive)
       const previewUrl = ctPreviewUrl(url);
@@ -4429,14 +4434,16 @@ function viewDocument(docName, lienDrive) {
               ></iframe>
             </div>`;
         } else {
+          // ✅ FALLBACK AGRESSIF: Essayer d'afficher comme image même si on n'est pas certain
+          const imgUrl = ctDownloadUrl(url).replace(/export=download/g, "export=view");
           viewDocContent.innerHTML = `
-            <div style="text-align:center;padding:48px;background:#f5f7fa;border:1px solid #dfe5ec;border-radius:8px;height:68vh;min-height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-              <div style="font-size:48px;margin-bottom:20px;">📄</div>
-              <div style="font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;">Aperçu non disponible</div>
-              <div style="color:#667085;font-size:14px;margin-bottom:24px;">Le format du fichier ne peut pas être affiché ici.</div>
-              <button class="btn" style="background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;" onclick="openDocumentDownload('${safeText(downloadUrl)}', '${safeText(docName)}')">
-                📥 Télécharger le fichier
-              </button>
+            <div style="position:relative;width:100%;height:68vh;min-height:460px;display:flex;align-items:center;justify-content:center;background:#f5f7fa;border-radius:8px;overflow:hidden;">
+              <img 
+                src="${safeText(imgUrl)}" 
+                alt="${safeText(docName || 'Document')}"
+                style="max-width:100%;max-height:100%;object-fit:contain;"
+                onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;font-weight:600;margin-bottom:12px;color:#344054;\">Aperçu non disponible</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"openDocumentDownload(\'${safeText(downloadUrl)}\', \'${safeText(docName)}\');\"">📥 Télécharger le fichier</button></div>'"
+              />
             </div>`;
         };
       }
@@ -5396,13 +5403,14 @@ function viewLatestRevisionDocument(immatriculation) {
 
   const nom = documentRevision.nom || documentRevision.nomFichier || documentRevision.fichier || "Document de révision";
   const lien = documentRevision.lienDrive || documentRevision.lien || documentRevision.url || documentRevision.Lien || "";
+  const type = documentRevision.type || documentRevision.categorie || "Révision";
 
   if (!lien) {
     showMsg("Le document de révision ne possède aucun lien.", "err");
     return;
   }
 
-  viewDocument(nom, lien);
+  viewDocument(nom, lien, type);
 }
 
 function downloadLatestRevisionDocument(immatriculation) {
@@ -7224,7 +7232,7 @@ function renderVehicleDetailDocuments(){
     <td>${formatFrDate(doc.date)}</td>
     <td>
       <div class="vehicle-doc-actions">
-        <button type="button" class="ab-icon-btn view" title="Visualiser" aria-label="Visualiser" onclick="viewDocument('${safeText(doc.nom||'Document')}','${safeText(doc.lienDrive||'')}')">
+        <button type="button" class="ab-icon-btn view" title="Visualiser" aria-label="Visualiser" onclick="viewDocument('${safeText(doc.nom||'Document')}','${safeText(doc.lienDrive||'')}','${safeText(doc.type||doc.categorie||'')}')">
           <i class="bi bi-eye"></i>
         </button>
         <button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="editDocument(${JSON.stringify(doc.id || doc.nomFichier || doc.nom)})">
@@ -7372,7 +7380,17 @@ function viewCt(ctImmat, lienCt) {
         // Essayer d'afficher PDF direct
         content.innerHTML = `<iframe class="ct-preview-frame" src="${safeText(lienCt)}" title="Aperçu du contrôle technique ${ctImmat}" loading="lazy" allow="autoplay" onerror="this.innerHTML='<div style=\"text-align:center;padding:48px;\">Impossible d afficher le PDF. <br><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"window.open(\'${safeText(ctDownloadUrl(lienCt))}\', \'_blank\')\">📥 Télécharger</button></div>'"></iframe>`;
       } else {
-        content.innerHTML = `<div style="text-align:center;padding:48px;background:#f5f7fa;border-radius:8px;"><div style="font-size:48px;margin-bottom:20px;">📄</div><div>Aperçu non disponible</div></div>`;
+        // ✅ FALLBACK AGRESSIF: Essayer d'afficher comme image
+        const imgUrl = ctDownloadUrl(lienCt).replace(/export=download/g, "export=view");
+        content.innerHTML = `
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f7fa;">
+            <img 
+              src="${safeText(imgUrl)}" 
+              alt="Contrôle technique ${ctImmat}"
+              style="max-width:100%;max-height:100%;object-fit:contain;"
+              onerror="this.parentElement.innerHTML='<div style=\"text-align:center;padding:48px;\"><div style=\"font-size:48px;margin-bottom:20px;\">📄</div><div style=\"font-size:18px;margin-bottom:12px;\">Aperçu non disponible</div><button class=\"btn\" style=\"background:#1976d2;color:white;padding:10px 20px;border:none;border-radius:6px;margin-top:12px;cursor:pointer;\" onclick=\"window.open(\'${safeText(ctDownloadUrl(lienCt))}\', \'_blank\')\">📥 Télécharger</button></div>'"
+            />
+          </div>`;
       }
     }
     download.style.display = "inline-flex";
@@ -7503,7 +7521,7 @@ async function loadDocumentsList(immat) {
       const url = safeText(doc.lienDrive || doc.lien || "");
       const date = formatFrDate(doc.dateUpload || doc.date);
       const docId = JSON.stringify(doc.id || doc.idDocument || "");
-      return `<div style="background:#fff;border:1px solid #e4e7ec;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;justify-content:space-between;align-items:center;"><div style="min-width:0;"><div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ${name}</div><div style="font-size:11px;color:#667085;margin-top:3px;">${date}</div></div><div style="display:flex;gap:6px;flex:0 0 auto;"><button type="button" class="ab-icon-btn view" title="Ouvrir le document" onclick="viewDocument('${name}','${url}')"><i class="bi bi-eye"></i></button><button type="button" class="ab-icon-btn edit" title="Modifier le document" onclick='editCtDocument(${docId})'><i class="bi bi-pencil"></i></button></div></div>`;
+      return `<div style="background:#fff;border:1px solid #e4e7ec;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;justify-content:space-between;align-items:center;"><div style="min-width:0;"><div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ${name}</div><div style="font-size:11px;color:#667085;margin-top:3px;">${date}</div></div><div style="display:flex;gap:6px;flex:0 0 auto;"><button type="button" class="ab-icon-btn view" title="Ouvrir le document" onclick="viewDocument('${name}','${url}','Contrôle technique')"><i class="bi bi-eye"></i></button><button type="button" class="ab-icon-btn edit" title="Modifier le document" onclick='editCtDocument(${docId})'><i class="bi bi-pencil"></i></button></div></div>`;
     }).join("");
   } catch (error) {
     list.innerHTML = `<div style="padding:20px;text-align:center;color:#d32f2f;">${safeText(error.message)}</div>`;
