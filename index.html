@@ -2785,39 +2785,48 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
 <!-- MODAL AJOUTER/MODIFIER DOCUMENT -->
 <div class="modal" id="docModal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 600px;">
     <div class="modal-header" id="docModalTitle">Ajouter un document</div>
     
-    <div class="form-group">
-      <label>Nom du fichier *</label>
-      <input type="text" id="docNom" required placeholder="Ex: Assurance_2026.pdf">
-    </div>
-    
-    <div class="form-group">
-      <label>Date</label>
-      <input type="date" id="docDate">
-    </div>
-    
-    <div class="form-group">
-      <label>Description</label>
-      <textarea id="docDescription" placeholder="Détails supplémentaires..."></textarea>
-    </div>
-    
-    <div class="form-group" id="docFileGroup">
-      <label id="docFileLabel">Télécharger une pièce *</label>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <input type="file" id="docFile" style="display: none;" onchange="handleFileSelect()">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('docFile').click()">
+    <div style="padding: 20px;">
+      <!-- Champs infos -->
+      <div class="form-group">
+        <label>Nom du document *</label>
+        <input type="text" id="docNom" required maxlength="120" placeholder="Ex: Assurance_2026.pdf">
+      </div>
+      
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="docDate">
+      </div>
+      
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="docDescription" maxlength="500" placeholder="Détails supplémentaires..."></textarea>
+      </div>
+      
+      <!-- Zone upload moderne -->
+      <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 20px; border: 2px dashed #1976d2;">
+        <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce *</div>
+        <input type="file" id="docFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/jpg,image/png" style="display: none;" onchange="handleFileSelect()">
+        <button type="button" class="btn" style="background:#1976d2; color:#fff; width:100%; padding:10px; margin-bottom:8px;" onclick="document.getElementById('docFile').click()">
           📁 Choisir un fichier
         </button>
-        <span id="docFileName" style="color: #666; font-size: 14px;">Aucun fichier sélectionné</span>
+        <span id="docFileName" style="color: #666; font-size: 12px; display:block; text-align:center;">Aucun fichier sélectionné</span>
+        <div id="docMessage" style="display:none; margin-top:8px; font-size:12px; text-align:center;"></div>
+        <div id="docProgress" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#eef6ff; color:#0d3a66; font-size:12px; font-weight:600; text-align:left;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="ct-upload-spinner" aria-hidden="true"></span>
+            <span id="docProgressText">Document en cours de chargement…</span>
+          </div>
+        </div>
       </div>
       <input type="hidden" id="docLienDrive">
     </div>
     
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeDocModal()">Annuler</button>
-      <button class="btn btn-success" onclick="submitDocument()">Enregistrer</button>
+      <button class="btn btn-success" onclick="submitDocument()">📤 Charger et enregistrer</button>
     </div>
   </div>
 </div>
@@ -3022,13 +3031,42 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <input type="date" id="addRevisionProchainDate">
     </div>
     
-    <div id="revisionDocumentBlock" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid #e4e7ec;">
-      <div class="form-group" style="margin-bottom:10px;">
+    <div id="revisionDocumentBlock" style="display:none; margin-top:20px; padding-top:20px; border-top:2px solid #e4e7ec;">
+      <!-- Champs infos -->
+      <div class="form-group">
         <label>Nom du document</label>
-        <input type="text" id="revisionDocumentName" maxlength="120" placeholder="Ex. Facture révision 2026">
+        <input type="text" id="revisionDocumentName" maxlength="120" placeholder="Ex: Facture révision 2026">
       </div>
-      <input type="file" id="revisionDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;" onchange="uploadRevisionDocument(this)">
-      <div id="revisionDocumentMessage" style="display:none; margin-top:8px; text-align:center; font-size:12px;"></div>
+      
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="revisionDocumentDate">
+      </div>
+      
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="revisionDocumentDescription" maxlength="500" placeholder="Détails du document…"></textarea>
+      </div>
+      
+      <!-- Zone upload moderne -->
+      <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 16px; border: 2px dashed #1976d2;">
+        <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce</div>
+        <input type="file" id="revisionDocumentFile" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/jpg,image/png" style="display:none;" onchange="handleRevisionFileSelect(this)">
+        <button type="button" class="btn" style="background:#1976d2; color:#fff; width:100%; padding:10px; margin-bottom:8px;" onclick="document.getElementById('revisionDocumentFile').click()">
+          📁 Choisir un fichier
+        </button>
+        <span id="revisionDocumentFileName" style="color: #666; font-size: 12px; display:block; text-align:center;">Aucun fichier sélectionné</span>
+        <button type="button" class="btn btn-success" id="submitRevisionDocumentBtn" style="width:100%; padding:10px; margin-top:8px;" onclick="submitRevisionDocument()" disabled>
+          📤 Charger et enregistrer
+        </button>
+        <div id="revisionDocumentMessage" style="display:none; margin-top:8px; text-align:center; font-size:12px;"></div>
+        <div id="revisionDocumentProgress" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#eef6ff; color:#0d3a66; font-size:12px; font-weight:600; text-align:left;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="ct-upload-spinner" aria-hidden="true"></span>
+            <span id="revisionDocumentProgressText">Document en cours de chargement…</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="form-actions">
@@ -3046,11 +3084,30 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="modal-header">📋 Documents CT - <span id="docModalImmat"></span></div>
     
     <div style="padding: 20px;">
-      <!-- Zone upload -->
+      <!-- Champs infos -->
+      <div class="form-group">
+        <label>Nom du document *</label>
+        <input type="text" id="ctDocumentName" maxlength="120" placeholder="Ex: CT_Révision_juillet_2026.pdf">
+      </div>
+      
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="ctDocumentDate">
+      </div>
+      
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="ctDocumentDescription" maxlength="500" placeholder="Détails du document…"></textarea>
+      </div>
+      
+      <!-- Zone upload moderne -->
       <div style="background: #f5f5f5; padding: 16px; border-radius: 4px; margin-bottom: 20px; border: 2px dashed #1976d2;">
-        <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce</div>
-        <input type="file" id="documentFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;" onchange="handleCtFileSelection(this)">
-        <button class="btn btn-success" style="width:100%; padding:10px;" id="submitUploadCtBtn" onclick="submitUploadCt()" disabled>📤 Charger et enregistrer</button>
+        <div style="font-weight: 600; margin-bottom: 8px;">📤 Uploader une pièce *</div>
+        <input type="file" id="documentFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/jpg,image/png" style="display: none;" onchange="handleCtFileSelection(this)">
+        <button type="button" class="btn" style="background:#1976d2; color:#fff; width:100%; padding:10px; margin-bottom:8px;" onclick="document.getElementById('documentFileInput').click()">
+          📁 Choisir un fichier
+        </button>
+        <span id="ctDocumentFileName" style="color: #666; font-size: 12px; display:block; text-align:center;">Aucun fichier sélectionné</span>
         <div id="uploadCtMessage" style="margin-top: 8px; font-size: 12px; text-align: center; display: none;"></div>
         <div id="uploadCtProgress" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#eef6ff; color:#0d3a66; font-size:12px; font-weight:600; text-align:left;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -3059,18 +3116,11 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
           </div>
         </div>
       </div>
-      
-      <!-- Liste des documents -->
-      <div style="margin-bottom: 20px; display: none;">
-        <div style="font-weight: 600; margin-bottom: 12px;">📂 Pièces existantes</div>
-        <div id="documentsList" style="max-height: 300px; overflow-y: auto;">
-          <div style="color: #999; text-align: center; padding: 20px;">Aucun document pour ce CT</div>
-        </div>
-      </div>
     </div>
     
     <div class="form-actions">
-      <button class="btn btn-secondary" onclick="closeDocumentsModal()">Fermer</button>
+      <button class="btn btn-secondary" onclick="closeDocumentsModal()">Annuler</button>
+      <button class="btn btn-success" id="submitUploadCtBtn" onclick="submitUploadCt()" disabled>📤 Charger et enregistrer</button>
     </div>
   </div>
 </div>
@@ -5581,6 +5631,99 @@ function chooseRevisionDocument() {
   if (input) input.click();
 }
 
+function handleRevisionFileSelect(input) {
+  const fileName = document.getElementById("revisionDocumentFileName");
+  const submitBtn = document.getElementById("submitRevisionDocumentBtn");
+  const hasFile = !!input?.files?.length;
+  
+  if (submitBtn) submitBtn.disabled = !hasFile;
+  
+  if (hasFile) {
+    const file = input.files[0];
+    if (fileName) {
+      fileName.textContent = `✅ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+      fileName.style.color = "#2e7d46";
+    }
+  } else {
+    if (fileName) {
+      fileName.textContent = "Aucun fichier sélectionné";
+      fileName.style.color = "#666";
+    }
+  }
+}
+
+async function submitRevisionDocument() {
+  const input = document.getElementById("revisionDocumentFile");
+  if (!input || !input.files[0]) {
+    showMsg("Choisissez un fichier d'abord", "err");
+    return;
+  }
+  
+  const file = input.files[0];
+  const immatriculation = editingRevisionImmat;
+  const nomDocument = document.getElementById("revisionDocumentName")?.value || file.name;
+  const dateDocument = document.getElementById("revisionDocumentDate")?.value || "";
+  const descriptionDocument = document.getElementById("revisionDocumentDescription")?.value || "";
+  
+  const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+  if (!allowed.includes(file.type)) {
+    showMsg("Formats autorisés : PDF, JPG, JPEG ou PNG", "err");
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showMsg("Le document dépasse 10 Mo", "err");
+    return;
+  }
+  
+  try {
+    const submitBtn = document.getElementById("submitRevisionDocumentBtn");
+    const progress = document.getElementById("revisionDocumentProgress");
+    const message = document.getElementById("revisionDocumentMessage");
+    
+    if (submitBtn) submitBtn.disabled = true;
+    if (progress) progress.style.display = "block";
+    if (message) message.style.display = "none";
+    
+    const formData = new FormData();
+    formData.append("action", "uploadRevisionFile");
+    formData.append("immatriculation", immatriculation);
+    formData.append("file", file);
+    formData.append("nomDocument", nomDocument);
+    formData.append("dateDocument", dateDocument);
+    formData.append("descriptionDocument", descriptionDocument);
+    
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: formData
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    
+    if (result.ok) {
+      showMsg("✅ Document uploadé avec succès", "success");
+      input.value = "";
+      if (progress) progress.style.display = "none";
+      document.getElementById("revisionDocumentFileName").textContent = "Aucun fichier sélectionné";
+      document.getElementById("revisionDocumentFileName").style.color = "#666";
+      document.getElementById("revisionDocumentName").value = "";
+      document.getElementById("revisionDocumentDate").value = "";
+      document.getElementById("revisionDocumentDescription").value = "";
+      if (submitBtn) submitBtn.disabled = true;
+    } else {
+      throw new Error(result.message || "Upload échoué");
+    }
+  } catch (err) {
+    showMsg(`❌ Erreur: ${err.message}`, "err");
+    if (document.getElementById("revisionDocumentProgress")) {
+      document.getElementById("revisionDocumentProgress").style.display = "none";
+    }
+    if (document.getElementById("submitRevisionDocumentBtn")) {
+      document.getElementById("submitRevisionDocumentBtn").disabled = false;
+    }
+  }
+}
+
 async function uploadRevisionDocument(input) {
   const file = input?.files?.[0];
   const immatriculation = editingRevisionImmat;
@@ -7045,19 +7188,24 @@ function editCtDocument(docId) {
 }
 
 function handleCtFileSelection(input) {
+  const fileName = document.getElementById("ctDocumentFileName");
   const message = document.getElementById("uploadCtMessage");
   const submit = document.getElementById("submitUploadCtBtn");
   const hasFile = !!input?.files?.length;
   if (submit) submit.disabled = !hasFile;
-  if (!message) return;
+  
   if (hasFile) {
     const file = input.files[0];
-    message.textContent = `✓ ${file.name} sélectionné (${Math.ceil(file.size / 1024)} Ko)`;
-    message.style.color = "#2e7d46";
-    message.style.display = "block";
+    if (fileName) {
+      fileName.textContent = `✅ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+      fileName.style.color = "#2e7d46";
+    }
+    if (message) message.style.display = "none";
   } else {
-    message.textContent = "";
-    message.style.display = "none";
+    if (fileName) {
+      fileName.textContent = "Aucun fichier sélectionné";
+      fileName.style.color = "#666";
+    }
   }
 }
 
