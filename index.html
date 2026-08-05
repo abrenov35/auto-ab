@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.67 - liaison dates Révisions/CT corrigée -->
+<!-- AB PARC AUTO v8.68 - toolbar harmonisée avec AB STOCK -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -1218,38 +1218,40 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     }
 
   
-    /* ===== HEADER V7.4 PROPRE ===== */
+    /* ===== HEADER V8.68 : TOOLBAR STYLE AB STOCK ===== */
     .app-header {
-      background: #0d3a66;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,.14);
       position: sticky;
       top: 0;
       z-index: 999;
+      background: transparent;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.14);
     }
 
     .app-header-top {
+      min-height: 72px;
       display: flex;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
-      padding: 8px 16px 4px;
+      padding: 0 24px;
+      background: #0b478b;
     }
 
     .app-brand {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      justify-content: flex-start;
+      gap: 10px;
       min-width: 0;
     }
 
     .app-brand-icon {
-      font-size: 16px;
+      font-size: 22px;
       line-height: 1;
     }
 
     .app-brand-title {
-      font-size: 16px;
+      font-size: 25px;
       font-weight: 700;
       letter-spacing: .2px;
       white-space: nowrap;
@@ -1262,8 +1264,8 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       min-height: 20px;
       padding: 1px 7px;
       border-radius: 999px;
-      background: rgba(255,255,255,.12);
-      color: rgba(255,255,255,.82);
+      background: rgba(255,255,255,.14);
+      color: rgba(255,255,255,.86);
       font-size: 10px;
       font-weight: 600;
       line-height: 1;
@@ -1271,50 +1273,108 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     }
 
     .app-nav {
+      min-height: 54px;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 12px 8px;
-      overflow-x: auto;
-      scrollbar-width: thin;
+      align-items: stretch;
+      gap: 0;
+      padding: 0;
+      background: #fff;
+      border-bottom: 2px solid #d9dde3;
+      overflow: visible;
+    }
+
+    .app-nav-buttons {
+      display: flex;
+      align-items: stretch;
+      flex: 3 1 75%;
+      min-width: 0;
     }
 
     .app-nav .btn-toolbar {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 170px;
+      min-height: 52px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      min-height: 34px;
-      padding: 7px 12px;
+      gap: 8px;
       margin: 0;
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 7px;
-      color: #fff;
-      font-size: 12px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 0;
+      background: #fff !important;
+      color: #4b4f56 !important;
+      font-size: 14px;
       font-weight: 600;
       white-space: nowrap;
-      box-shadow: none;
-      transform: none;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .app-nav .btn-toolbar::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -2px;
+      height: 3px;
+      background: transparent;
     }
 
     .app-nav .btn-toolbar:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(0,0,0,.18);
+      color: #0b478b !important;
+      background: #f8fafc !important;
     }
 
-    .app-nav .nav-vehicles { background: #1976d2; }
-    .app-nav .nav-revisions { background: #2e7d46; }
-    .app-nav .nav-ct {
-      background: #00c853;
-      color: #ffffff;
-      box-shadow: 0 3px 10px rgba(0, 200, 83, 0.38);
+    .app-nav .btn-toolbar.active,
+    .app-nav .btn-toolbar:focus-visible {
+      color: #0b478b !important;
+      outline: none;
     }
-    .app-nav .nav-ct:hover,
-    .app-nav .nav-ct.active {
-      background: #00e676;
-      color: #073b1c;
-      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.48);
+
+    .app-nav .btn-toolbar.active::after,
+    .app-nav .btn-toolbar:focus-visible::after {
+      background: #0b478b;
+    }
+
+    .app-nav .btn-toolbar i {
+      font-size: 14px;
+    }
+
+    .vehicle-picker-wrap {
+      flex: 1 1 25%;
+      min-width: 250px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      margin: 0;
+      border-left: 1px solid #edf0f3;
+      background: #fff;
+    }
+
+    .vehicle-picker-wrap label {
+      display: none;
+    }
+
+    .vehicle-picker {
+      width: 100%;
+      min-width: 0;
+      height: 38px;
+      border: 1px solid #d7dce2;
+      border-radius: 6px;
+      background: #fff;
+      color: #4b4f56;
+      padding: 0 34px 0 11px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .vehicle-picker:focus {
+      border-color: #0b478b;
+      box-shadow: 0 0 0 3px rgba(11,71,139,.12);
+      outline: none;
     }
 
     /* Neutralise totalement l'ancien composant toolbar */
@@ -1322,21 +1382,36 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       display: none !important;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
       .app-header-top {
-        justify-content: flex-start;
-      }
-
-      .app-nav {
-        justify-content: flex-start;
+        min-height: 62px;
+        padding: 0 16px;
       }
 
       .app-brand-title {
-        font-size: 15px;
+        font-size: 20px;
+      }
+
+      .app-nav {
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+
+      .app-nav-buttons {
+        flex: 0 0 auto;
+      }
+
+      .app-nav .btn-toolbar {
+        flex: 0 0 auto;
+        min-width: 175px;
+      }
+
+      .vehicle-picker-wrap {
+        flex: 0 0 260px;
+        min-width: 260px;
       }
     }
 
-  
     /* ===== AJUSTEMENTS V7.5 : ACTIONS + ÉCHÉANCES ===== */
 
     /* Même largeur et même centrage pour la colonne Actions */
@@ -2559,6 +2634,62 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     line-height: 1.15;
   }
 }
+
+
+/* ===== V8.62 : REGROUPEMENT DES 4 COMMANDES DE NAVIGATION ===== */
+.app-nav {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: nowrap !important;
+}
+
+.app-nav-buttons {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+}
+
+.app-nav .vehicle-picker-wrap {
+  position: static !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding-left: 0 !important;
+  border-left: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+.app-nav .vehicle-picker {
+  width: 230px !important;
+  min-width: 230px !important;
+  height: 40px !important;
+}
+
+@media (max-width: 900px) {
+  .app-nav {
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .app-nav-buttons {
+    width: auto !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .app-nav .vehicle-picker-wrap {
+    width: auto !important;
+    max-width: none !important;
+  }
+}
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2626,13 +2757,13 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.61</span>
+      <span class="version" id="appVersionBadge">v8.68</span>
     </div>
   </div>
 
   <nav class="app-nav" aria-label="Navigation principale">
     <div class="app-nav-buttons">
-      <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles" onclick="openVehicleManagementModal()">
+      <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles active" onclick="openVehicleManagementModal()">
         <i class="bi bi-card-list"></i>
         <span>Gestion Véhicules</span>
       </button>
