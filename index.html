@@ -3290,7 +3290,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 
 <script>
 // 🚀 v6.3.46: Auto-detect CORS issues et fallback au proxy si nécessaire
-let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYI7rCqLhrf1lErQvAjBkalYTYKFSKXHFgi6h0qiD9z37uIKdz0USXfm_iU81OXIMo/exec";
+let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysRNgAIN-C5y88FBzC0PKfUX9bx5dRAJxRpV3aRGzefOvKii90LvuFCPNRpG0DIFdW/exec";
 
 // Fonction stub - APPS_SCRIPT_URL est toujours disponible
 async function tryQuietServerConnection() {
@@ -5058,6 +5058,7 @@ function renderVehiclesPage() {
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.conducteur || "—"}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"}</div>
     <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">
+      <button type="button" class="ab-icon-btn view" title="Voir" aria-label="Voir détails" onclick="openVehicleDetailPage('${v.immatriculation}')"><i class="bi bi-eye"></i></button>
       <button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditVehiculeModal('${v.immatriculation}')"><i class="bi bi-pencil"></i></button>
     </div>
   `).join("");
