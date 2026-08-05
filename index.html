@@ -1,3 +1,4 @@
+<!-- AB PARC AUTO v8.67 - liaison dates Révisions/CT corrigée -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -3418,10 +3419,22 @@ async function fetchDataFromServer() {
       vehicules: Array.isArray(backendData.vehicules) ? backendData.vehicules : [],
       documents: Array.isArray(backendData.documents) ? backendData.documents : [],
       categories: Array.isArray(backendData.categories) ? backendData.categories : [],
-      revisions: Array.isArray(backendData.revisions) ? backendData.revisions : [],
-      controlsTk: Array.isArray(backendData.controlsTk)
+      // Normalisation des noms de champs reçus du nouveau backend Apps Script.
+      // L'interface historique utilise dernierDate/prochainDate ; le Sheet renvoie
+      // dateDerniereRevision/dateProchaineRevision et dateDernierCT/dateProchainCT.
+      revisions: (Array.isArray(backendData.revisions) ? backendData.revisions : []).map(r => ({
+        ...r,
+        dernierDate: r.dernierDate || r.dateDerniereRevision || "",
+        prochainDate: r.prochainDate || r.dateProchaineRevision || ""
+      })),
+      controlsTk: (Array.isArray(backendData.controlsTk)
         ? backendData.controlsTk
-        : (Array.isArray(backendData.controls) ? backendData.controls : [])
+        : (Array.isArray(backendData.controls) ? backendData.controls : [])).map(ct => ({
+          ...ct,
+          dernierDate: ct.dernierDate || ct.dateDernierCT || "",
+          prochainDate: ct.prochainDate || ct.dateProchainCT || "",
+          lienCt: ct.lienCt || ct.lienCT || ""
+        }))
     };
 
     console.log("✅ Données du backend reçues:", newData);
@@ -7829,7 +7842,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.62';
+  const APP_VERSION = 'v8.67';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
