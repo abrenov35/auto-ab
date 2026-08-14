@@ -1,0 +1,33 @@
+name: Fix vehicle placeholder v8.72
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-vehicle-placeholder-v872.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Mettre le libellé du champ véhicule vide
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('v8.71', 'v8.72')
+          s = s.replace('Sélectionner un véhicule', '(choisir un véhicule)')
+          p.write_text(s, encoding='utf-8')
+      - name: Commit et push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix: libellé véhicule vide v8.72"
+          git push
