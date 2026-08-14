@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.73 - sélecteur véhicule corrigé -->
+<!-- AB PARC AUTO v8.74 - fond sélecteur véhicule forcé -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -3011,6 +3011,13 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   color: #1f2937 !important;
 }
 
+
+/* V8.74 */
+.planning-auto-header .vehicle-picker-wrap{background:#1e3a8a!important;background-color:#1e3a8a!important;}
+.planning-auto-header #vehicleQuickSelect,.planning-auto-header select#vehicleQuickSelect,.planning-auto-header .vehicle-picker{-webkit-appearance:none!important;appearance:none!important;background:#1e3a8a!important;background-color:#1e3a8a!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid rgba(255,255,255,.42)!important;box-shadow:inset 0 0 0 1000px #1e3a8a!important;opacity:1!important;}
+.planning-auto-header #vehicleQuickSelect:hover,.planning-auto-header #vehicleQuickSelect:focus{background:#24448f!important;background-color:#24448f!important;box-shadow:inset 0 0 0 1000px #24448f!important;color:#fff!important;-webkit-text-fill-color:#fff!important;}
+.planning-auto-header #vehicleQuickSelect option{background:#fff!important;color:#1f2937!important;-webkit-text-fill-color:#1f2937!important;}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -3100,7 +3107,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       </div>
     </nav>
 
-    <span class="version planning-version" id="appVersionBadge">v8.73</span>
+    <span class="version planning-version" id="appVersionBadge">v8.74</span>
   </div>
 </header>
 
@@ -8290,7 +8297,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.73';
+  const APP_VERSION = 'v8.74';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
