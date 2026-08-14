@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.69 - bandeau compact style AB Planning -->
+<!-- AB PARC AUTO v8.70 - boutons toolbar corrigés style AB Planning -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -2860,6 +2860,60 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   }
 }
 
+
+
+/* ===== V8.70 : FIX PRIORITAIRE BOUTONS BANDEAU ===== */
+.planning-auto-header,
+.planning-auto-header .planning-auto-bar,
+.planning-auto-header .app-nav,
+.planning-auto-header .app-nav-buttons {
+  background-color: #24448f !important;
+}
+.planning-auto-header .btn-toolbar,
+.planning-auto-header button.btn-toolbar,
+.planning-auto-header .app-nav-buttons .btn-toolbar,
+.planning-auto-header .btn-toolbar:link,
+.planning-auto-header .btn-toolbar:visited {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: rgba(255,255,255,.055) !important;
+  background-color: rgba(255,255,255,.055) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.42) !important;
+  box-shadow: none !important;
+}
+.planning-auto-header .btn-toolbar i,
+.planning-auto-header .btn-toolbar span {
+  color: #fff !important;
+}
+.planning-auto-header .btn-toolbar:hover,
+.planning-auto-header .btn-toolbar:focus {
+  background: rgba(255,255,255,.11) !important;
+  background-color: rgba(255,255,255,.11) !important;
+  color: #fff !important;
+}
+.planning-auto-header .btn-toolbar.active,
+.planning-auto-header button.btn-toolbar.active,
+.planning-auto-header #btnVehicleManagement.active {
+  background: rgba(255,255,255,.16) !important;
+  background-color: rgba(255,255,255,.16) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.55) !important;
+  box-shadow: inset 0 -3px 0 #f3b61f !important;
+}
+.planning-auto-header .vehicle-picker,
+.planning-auto-header select.vehicle-picker {
+  appearance: auto !important;
+  background-color: rgba(255,255,255,.055) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.42) !important;
+}
+.planning-auto-header .planning-version,
+.planning-auto-header #appVersionBadge {
+  background: transparent !important;
+  color: rgba(255,255,255,.78) !important;
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2949,7 +3003,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       </div>
     </nav>
 
-    <span class="version planning-version" id="appVersionBadge">v8.69</span>
+    <span class="version planning-version" id="appVersionBadge">v8.70</span>
   </div>
 </header>
 
@@ -8139,7 +8193,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.67';
+  const APP_VERSION = 'v8.70';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
