@@ -1,0 +1,223 @@
+name: Align AB PARC AUTO toolbar v8.77
+
+on:
+  push:
+    paths:
+      - '.github/workflows/align-toolbar-v877.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply unified AB toolbar
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          s = s.replace('AB PARC AUTO v8.76 - bandeau exact AB STOCK', 'AB PARC AUTO v8.77 - bandeau unifié AB STOCK / Yaya', 1)
+          s = s.replace("const APP_VERSION = 'v8.76'", "const APP_VERSION = 'v8.77'")
+          s = s.replace('id="appVersionBadge">v8.76<', 'id="appVersionBadge">v8.77<')
+
+          css = r'''
+
+/* ===== V8.77 : BANDEAU STANDARD AB (AB STOCK / YAYA) ===== */
+.planning-auto-header {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 7px 12px !important;
+  margin: 0 !important;
+  background: #1e3a8a !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.planning-auto-bar {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+}
+
+.planning-auto-header .app-brand {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 12px 0 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border-right: 1px solid rgba(255,255,255,.32) !important;
+  flex: 0 0 auto !important;
+}
+
+.planning-auto-header .app-brand-icon {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.planning-auto-header .app-brand-title {
+  margin: 0 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+  letter-spacing: .01em !important;
+  color: #fff !important;
+  white-space: nowrap !important;
+}
+
+.planning-auto-header .app-nav,
+.planning-auto-header .app-nav-buttons {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: transparent !important;
+  flex: 0 0 auto !important;
+}
+
+.planning-auto-header .btn-toolbar,
+.planning-auto-header button.btn-toolbar {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 12px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(255,255,255,.42) !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+}
+
+.planning-auto-header .btn-toolbar:hover,
+.planning-auto-header .btn-toolbar:focus {
+  background: rgba(255,255,255,.10) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.planning-auto-header .btn-toolbar.active,
+.planning-auto-header button.btn-toolbar.active,
+.planning-auto-header #btnVehicleManagement.active {
+  background: rgba(255,255,255,.18) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.45) !important;
+  border-bottom: 3px solid #f59e0b !important;
+  box-shadow: none !important;
+}
+
+.planning-auto-header .vehicle-picker-wrap {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  flex: 0 0 auto !important;
+}
+
+.planning-auto-header #vehicleQuickSelect,
+.planning-auto-header select#vehicleQuickSelect,
+.planning-auto-header .vehicle-picker {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 32px 0 12px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(255,255,255,.42) !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
+
+.planning-auto-header #vehicleQuickSelect:hover,
+.planning-auto-header #vehicleQuickSelect:focus {
+  background: rgba(255,255,255,.10) !important;
+  background-color: rgba(255,255,255,.10) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.planning-auto-header #vehicleQuickSelect option {
+  background: #fff !important;
+  color: #1f2937 !important;
+  -webkit-text-fill-color: #1f2937 !important;
+}
+
+.planning-auto-header .planning-version,
+.planning-auto-header #appVersionBadge {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 4px !important;
+  margin: 0 0 0 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: #fff !important;
+  background: transparent !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  opacity: .72 !important;
+  flex: 0 0 auto !important;
+}
+
+@media (max-width: 900px) {
+  .planning-auto-header #vehicleQuickSelect,
+  .planning-auto-header select#vehicleQuickSelect,
+  .planning-auto-header .vehicle-picker {
+    width: 210px !important;
+    min-width: 210px !important;
+    max-width: 210px !important;
+  }
+}
+'''
+          s = s.replace('</style>', css + '\n</style>', 1)
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix: align toolbar with AB STOCK and Yaya v8.77"
+          git push
