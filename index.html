@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.71 - hauteur exacte AB Planning -->
+<!-- AB PARC AUTO v8.72 - hauteur exacte AB Planning -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -3068,13 +3068,13 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       </div>
 
       <div class="vehicle-picker-wrap">
-        <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="Sélectionner un véhicule" onchange="openVehicleDetailPage(this.value)">
-          <option value="">Sélectionner un véhicule</option>
+        <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="(choisir un véhicule)" onchange="openVehicleDetailPage(this.value)">
+          <option value="">(choisir un véhicule)</option>
         </select>
       </div>
     </nav>
 
-    <span class="version planning-version" id="appVersionBadge">v8.71</span>
+    <span class="version planning-version" id="appVersionBadge">v8.72</span>
   </div>
 </header>
 
@@ -3411,7 +3411,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-group">
       <label>Véhicule *</label>
       <select id="addCtVehicule" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-        <option value="">-- Sélectionner un véhicule --</option>
+        <option value="">-- (choisir un véhicule) --</option>
       </select>
     </div>
     
@@ -3440,7 +3440,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-group">
       <label>Véhicule *</label>
       <select id="addRevisionVehicule" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-        <option value="">-- Sélectionner un véhicule --</option>
+        <option value="">-- (choisir un véhicule) --</option>
       </select>
     </div>
 <div class="form-group">
@@ -6061,7 +6061,7 @@ function openAddRevisionModal() {
   );
 
   vehiculeSelect.innerHTML =
-    '<option value="">-- Sélectionner un véhicule --</option>';
+    '<option value="">-- (choisir un véhicule) --</option>';
 
   vehiculesDisponibles.forEach(v => {
     const option = document.createElement("option");
@@ -7361,7 +7361,7 @@ function openAddCtModal() {
   );
 
   vehiculeSelect.innerHTML =
-    '<option value="">-- Sélectionner un véhicule --</option>';
+    '<option value="">-- (choisir un véhicule) --</option>';
 
   vehiculesAvailables.forEach(v => {
     const option = document.createElement("option");
@@ -7669,7 +7669,7 @@ function populateVehicleQuickSelect(){
   const vehicles=(Array.isArray(data?.vehicules)?data.vehicules:[])
     .filter(v => (v.statut || 'Actif') !== 'Archivé')
     .sort((a,b)=>`${a.marque||''} ${a.modele||''}`.localeCompare(`${b.marque||''} ${b.modele||''}`,'fr'));
-  select.innerHTML='<option value="">Sélectionner un véhicule</option>'+vehicles.map(v=>`<option value="${safeText(v.immatriculation)}">${safeText(v.marque||'')} ${safeText(v.modele||'')} — ${safeText(v.immatriculation)}</option>`).join('');
+  select.innerHTML='<option value="">(choisir un véhicule)</option>'+vehicles.map(v=>`<option value="${safeText(v.immatriculation)}">${safeText(v.marque||'')} ${safeText(v.modele||'')} — ${safeText(v.immatriculation)}</option>`).join('');
   if(keep && vehicles.some(v=>v.immatriculation===keep)) select.value=keep;
 }
 function hideMainPages(){
@@ -8264,7 +8264,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.71';
+  const APP_VERSION = 'v8.72';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
