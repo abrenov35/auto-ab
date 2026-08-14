@@ -67,3 +67,5 @@ jobs:
           git add index.html
           git commit -m "fix: force fond bleu du sélecteur véhicule v8.74"
           git push
+
+# trigger 2
