@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.70 - boutons toolbar corrigés style AB Planning -->
+<!-- AB PARC AUTO v8.71 - hauteur exacte AB Planning -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -2914,6 +2914,77 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   color: rgba(255,255,255,.78) !important;
 }
 
+
+
+/* ===== V8.71 : HAUTEUR EXACTE AB PLANNING ===== */
+.planning-auto-header {
+  min-height: 43px !important;
+  height: 43px !important;
+  padding: 7px 12px !important;
+  background: #1e3a8a !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+  box-sizing: border-box !important;
+}
+.planning-auto-bar {
+  height: 28px !important;
+  min-height: 28px !important;
+  gap: 8px !important;
+  background: #1e3a8a !important;
+}
+.planning-auto-header .app-brand {
+  min-height: 24px !important;
+  height: 24px !important;
+  gap: 6px !important;
+  padding-right: 8px !important;
+}
+.planning-auto-header .app-brand-icon {
+  font-size: 16px !important;
+}
+.planning-auto-header .app-brand-title {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+.planning-auto-header .app-nav,
+.planning-auto-header .app-nav-buttons {
+  height: 28px !important;
+  min-height: 28px !important;
+  gap: 5px !important;
+  background: #1e3a8a !important;
+}
+.planning-auto-header .btn-toolbar,
+.planning-auto-header button.btn-toolbar {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 8px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  gap: 5px !important;
+}
+.planning-auto-header .btn-toolbar.active,
+.planning-auto-header button.btn-toolbar.active,
+.planning-auto-header #btnVehicleManagement.active {
+  background: rgba(255,255,255,.18) !important;
+  border-bottom: 2px solid #f59e0b !important;
+  box-shadow: none !important;
+}
+.planning-auto-header .vehicle-picker,
+.planning-auto-header select.vehicle-picker {
+  height: 28px !important;
+  min-height: 28px !important;
+  width: 230px !important;
+  min-width: 230px !important;
+  padding: 0 28px 0 8px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+}
+.planning-auto-header .planning-version,
+.planning-auto-header #appVersionBadge {
+  font-size: 9px !important;
+  padding: 0 3px !important;
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -3003,7 +3074,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       </div>
     </nav>
 
-    <span class="version planning-version" id="appVersionBadge">v8.70</span>
+    <span class="version planning-version" id="appVersionBadge">v8.71</span>
   </div>
 </header>
 
@@ -8193,7 +8264,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.70';
+  const APP_VERSION = 'v8.71';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
