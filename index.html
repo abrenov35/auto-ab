@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.68 - toolbar harmonisée avec AB STOCK -->
+<!-- AB PARC AUTO v8.69 - bandeau compact style AB Planning -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -2690,6 +2690,176 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     max-width: none !important;
   }
 }
+
+
+/* ===== V8.69 : BANDEAU COMPACT STYLE AB PLANNING ===== */
+.planning-auto-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 9999;
+  width: 100%;
+  min-height: 58px;
+  background: #24448f !important;
+  color: #fff;
+  box-shadow: none !important;
+  padding: 0 12px !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.planning-auto-bar {
+  min-width: max-content;
+  width: 100%;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.planning-auto-header .app-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding-right: 14px;
+  border-right: 1px solid rgba(255,255,255,.38);
+}
+
+.planning-auto-header .app-brand-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.planning-auto-header .app-brand-title {
+  color: #fff;
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .1px;
+  white-space: nowrap;
+}
+
+.planning-auto-header .app-nav {
+  position: static !important;
+  width: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+
+.planning-auto-header .app-nav-buttons {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+}
+
+.planning-auto-header .btn-toolbar {
+  position: relative;
+  height: 42px !important;
+  min-height: 42px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 17px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  border: 1px solid rgba(255,255,255,.42) !important;
+  border-radius: 7px !important;
+  background: rgba(255,255,255,.055) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  transform: none !important;
+}
+
+.planning-auto-header .btn-toolbar:hover {
+  background: rgba(255,255,255,.11) !important;
+  transform: none !important;
+}
+
+.planning-auto-header .btn-toolbar.active {
+  background: rgba(255,255,255,.16) !important;
+  border-color: rgba(255,255,255,.55) !important;
+  box-shadow: inset 0 -3px 0 #f3b61f !important;
+}
+
+.planning-auto-header .vehicle-picker-wrap {
+  position: static !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  transform: none !important;
+  flex: 0 0 auto !important;
+}
+
+.planning-auto-header .vehicle-picker {
+  width: 250px !important;
+  min-width: 250px !important;
+  height: 42px !important;
+  padding: 0 38px 0 15px !important;
+  border: 1px solid rgba(255,255,255,.42) !important;
+  border-radius: 7px !important;
+  background-color: rgba(255,255,255,.055) !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.planning-auto-header .vehicle-picker option {
+  color: #1f2937;
+  background: #fff;
+}
+
+.planning-auto-header .planning-version {
+  flex: 0 0 auto;
+  margin-left: 2px;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgba(255,255,255,.76) !important;
+  font-size: 12px !important;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .planning-auto-header {
+    padding: 0 8px !important;
+  }
+  .planning-auto-bar {
+    gap: 8px;
+  }
+  .planning-auto-header .app-brand {
+    padding-right: 10px;
+  }
+  .planning-auto-header .btn-toolbar {
+    padding: 0 12px !important;
+  }
+  .planning-auto-header .vehicle-picker {
+    width: 220px !important;
+    min-width: 220px !important;
+  }
+}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -2752,39 +2922,35 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
   Mise à jour
 </div>
 
-<header class="app-header">
-  <div class="app-header-top">
+<header class="app-header planning-auto-header">
+  <div class="planning-auto-bar">
     <div class="app-brand">
       <span class="app-brand-icon">🚗</span>
       <span class="app-brand-title">AB PARC AUTO</span>
-      <span class="version" id="appVersionBadge">v8.68</span>
     </div>
+
+    <nav class="app-nav" aria-label="Navigation principale">
+      <div class="app-nav-buttons">
+        <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles active" onclick="openVehicleManagementModal()">
+          <i class="bi bi-card-list"></i><span>Gestion Véhicules</span>
+        </button>
+        <button type="button" class="btn-toolbar nav-revisions" onclick="openRevisionModal()">
+          <i class="bi bi-wrench-adjustable"></i><span>Révision et Maintenance</span>
+        </button>
+        <button type="button" class="btn-toolbar nav-ct" onclick="openControleTkModal()">
+          <i class="bi bi-shield-check"></i><span>Contrôle Technique</span>
+        </button>
+      </div>
+
+      <div class="vehicle-picker-wrap">
+        <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="Sélectionner un véhicule" onchange="openVehicleDetailPage(this.value)">
+          <option value="">Sélectionner un véhicule</option>
+        </select>
+      </div>
+    </nav>
+
+    <span class="version planning-version" id="appVersionBadge">v8.69</span>
   </div>
-
-  <nav class="app-nav" aria-label="Navigation principale">
-    <div class="app-nav-buttons">
-      <button type="button" id="btnVehicleManagement" class="btn-toolbar nav-vehicles active" onclick="openVehicleManagementModal()">
-        <i class="bi bi-card-list"></i>
-        <span>Gestion Véhicules</span>
-      </button>
-
-      <button type="button" class="btn-toolbar nav-revisions" onclick="openRevisionModal()">
-        <i class="bi bi-wrench-adjustable"></i>
-        <span>Révision et Maintenance</span>
-      </button>
-
-      <button type="button" class="btn-toolbar nav-ct" onclick="openControleTkModal()">
-        <i class="bi bi-shield-check"></i>
-        <span>Contrôle Technique</span>
-      </button>
-    </div>
-
-    <div class="vehicle-picker-wrap">
-      <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="Sélectionner un véhicule" onchange="openVehicleDetailPage(this.value)">
-        <option value="">Sélectionner un véhicule</option>
-      </select>
-    </div>
-  </nav>
 </header>
 
 <!-- ALERTE CT -->
