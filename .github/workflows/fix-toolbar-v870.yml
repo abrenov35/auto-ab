@@ -1,0 +1,90 @@
+name: Fix AB PARC AUTO toolbar v8.70
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-toolbar-v870.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-toolbar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Corriger les boutons et la version
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('AB PARC AUTO v8.69 - bandeau compact style AB Planning', 'AB PARC AUTO v8.70 - boutons toolbar corrigés style AB Planning', 1)
+          s = s.replace('v8.69', 'v8.70')
+          s = s.replace('v8.68', 'v8.70')
+          s = s.replace('v8.67', 'v8.70')
+          css = r'''
+
+          /* ===== V8.70 : FIX PRIORITAIRE BOUTONS BANDEAU ===== */
+          .planning-auto-header,
+          .planning-auto-header .planning-auto-bar,
+          .planning-auto-header .app-nav,
+          .planning-auto-header .app-nav-buttons {
+            background-color: #24448f !important;
+          }
+          .planning-auto-header .btn-toolbar,
+          .planning-auto-header button.btn-toolbar,
+          .planning-auto-header .app-nav-buttons .btn-toolbar,
+          .planning-auto-header .btn-toolbar:link,
+          .planning-auto-header .btn-toolbar:visited {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: rgba(255,255,255,.055) !important;
+            background-color: rgba(255,255,255,.055) !important;
+            color: #fff !important;
+            border: 1px solid rgba(255,255,255,.42) !important;
+            box-shadow: none !important;
+          }
+          .planning-auto-header .btn-toolbar i,
+          .planning-auto-header .btn-toolbar span {
+            color: #fff !important;
+          }
+          .planning-auto-header .btn-toolbar:hover,
+          .planning-auto-header .btn-toolbar:focus {
+            background: rgba(255,255,255,.11) !important;
+            background-color: rgba(255,255,255,.11) !important;
+            color: #fff !important;
+          }
+          .planning-auto-header .btn-toolbar.active,
+          .planning-auto-header button.btn-toolbar.active,
+          .planning-auto-header #btnVehicleManagement.active {
+            background: rgba(255,255,255,.16) !important;
+            background-color: rgba(255,255,255,.16) !important;
+            color: #fff !important;
+            border-color: rgba(255,255,255,.55) !important;
+            box-shadow: inset 0 -3px 0 #f3b61f !important;
+          }
+          .planning-auto-header .vehicle-picker,
+          .planning-auto-header select.vehicle-picker {
+            appearance: auto !important;
+            background-color: rgba(255,255,255,.055) !important;
+            color: #fff !important;
+            border: 1px solid rgba(255,255,255,.42) !important;
+          }
+          .planning-auto-header .planning-version,
+          .planning-auto-header #appVersionBadge {
+            background: transparent !important;
+            color: rgba(255,255,255,.78) !important;
+          }
+          '''
+          s = s.replace('</style>', css + '\n</style>', 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit et push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix: boutons bandeau AB Planning et version v8.70"
+          git push
