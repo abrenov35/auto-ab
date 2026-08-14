@@ -1,0 +1,105 @@
+name: Fix AB PARC AUTO toolbar v8.71
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-toolbar-v871.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-toolbar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Aligner exactement la hauteur sur AB Planning
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('AB PARC AUTO v8.70 - boutons toolbar corrigés style AB Planning', 'AB PARC AUTO v8.71 - hauteur exacte AB Planning', 1)
+          s = s.replace('v8.70', 'v8.71')
+          css = r'''
+
+          /* ===== V8.71 : HAUTEUR EXACTE AB PLANNING ===== */
+          .planning-auto-header {
+            min-height: 43px !important;
+            height: 43px !important;
+            padding: 7px 12px !important;
+            background: #1e3a8a !important;
+            border-bottom: 1px solid rgba(255,255,255,.12) !important;
+            box-sizing: border-box !important;
+          }
+          .planning-auto-bar {
+            height: 28px !important;
+            min-height: 28px !important;
+            gap: 8px !important;
+            background: #1e3a8a !important;
+          }
+          .planning-auto-header .app-brand {
+            min-height: 24px !important;
+            height: 24px !important;
+            gap: 6px !important;
+            padding-right: 8px !important;
+          }
+          .planning-auto-header .app-brand-icon {
+            font-size: 16px !important;
+          }
+          .planning-auto-header .app-brand-title {
+            font-size: 13px !important;
+            font-weight: 800 !important;
+          }
+          .planning-auto-header .app-nav,
+          .planning-auto-header .app-nav-buttons {
+            height: 28px !important;
+            min-height: 28px !important;
+            gap: 5px !important;
+            background: #1e3a8a !important;
+          }
+          .planning-auto-header .btn-toolbar,
+          .planning-auto-header button.btn-toolbar {
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 5px !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            gap: 5px !important;
+          }
+          .planning-auto-header .btn-toolbar.active,
+          .planning-auto-header button.btn-toolbar.active,
+          .planning-auto-header #btnVehicleManagement.active {
+            background: rgba(255,255,255,.18) !important;
+            border-bottom: 2px solid #f59e0b !important;
+            box-shadow: none !important;
+          }
+          .planning-auto-header .vehicle-picker,
+          .planning-auto-header select.vehicle-picker {
+            height: 28px !important;
+            min-height: 28px !important;
+            width: 230px !important;
+            min-width: 230px !important;
+            padding: 0 28px 0 8px !important;
+            border-radius: 5px !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+          }
+          .planning-auto-header .planning-version,
+          .planning-auto-header #appVersionBadge {
+            font-size: 9px !important;
+            padding: 0 3px !important;
+          }
+          '''
+          s = s.replace('</style>', css + '\n</style>', 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit et push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix: hauteur bandeau identique AB Planning v8.71"
+          git push
