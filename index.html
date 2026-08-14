@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.75 - bandeau hauteur AB STOCK -->
+<!-- AB PARC AUTO v8.76 - bandeau exact AB STOCK -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -3032,6 +3032,24 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
 .planning-auto-header .planning-version,.planning-auto-header #appVersionBadge{font-size:9px!important;}
 .alert-banner:has(.alert-items:empty),.alert-banner-revision:has(.alert-items-revision:empty){display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;}
 
+
+/* V8.76 EXACT AB STOCK */
+.planning-auto-header{height:51px!important;min-height:51px!important;max-height:51px!important;padding:8px 0!important;margin:0!important;background:#24448f!important;border:0!important;box-shadow:none!important;overflow:hidden!important;box-sizing:border-box!important;}
+.planning-auto-bar{height:35px!important;min-height:35px!important;max-height:35px!important;width:100%!important;padding:0 12px!important;margin:0!important;display:flex!important;align-items:center!important;gap:8px!important;background:#24448f!important;box-sizing:border-box!important;}
+.planning-auto-header .app-brand{height:31px!important;min-height:31px!important;padding:0 10px 0 0!important;margin:0!important;gap:6px!important;border-right:1px solid rgba(255,255,255,.35)!important;}
+.planning-auto-header .app-brand-icon{font-size:16px!important;line-height:1!important;}
+.planning-auto-header .app-brand-title{font-size:14px!important;line-height:1!important;font-weight:800!important;}
+.planning-auto-header .app-nav,.planning-auto-header .app-nav-buttons{height:35px!important;min-height:35px!important;max-height:35px!important;padding:0!important;margin:0!important;gap:7px!important;background:transparent!important;align-items:center!important;}
+.planning-auto-header .btn-toolbar,.planning-auto-header button.btn-toolbar{height:35px!important;min-height:35px!important;max-height:35px!important;padding:0 13px!important;margin:0!important;border:1px solid rgba(255,255,255,.42)!important;border-radius:5px!important;background:transparent!important;color:#fff!important;font-size:11px!important;font-weight:700!important;line-height:1!important;box-shadow:none!important;transform:none!important;box-sizing:border-box!important;}
+.planning-auto-header .btn-toolbar:hover,.planning-auto-header .btn-toolbar:focus{background:rgba(255,255,255,.08)!important;box-shadow:none!important;}
+.planning-auto-header .btn-toolbar.active,.planning-auto-header button.btn-toolbar.active,.planning-auto-header #btnVehicleManagement.active{background:transparent!important;border:1px solid rgba(255,255,255,.42)!important;border-bottom:3px solid #f59e0b!important;box-shadow:none!important;transform:none!important;}
+.planning-auto-header .vehicle-picker-wrap{height:35px!important;min-height:35px!important;margin:0!important;padding:0!important;background:transparent!important;}
+.planning-auto-header #vehicleQuickSelect,.planning-auto-header select#vehicleQuickSelect,.planning-auto-header .vehicle-picker{height:35px!important;min-height:35px!important;max-height:35px!important;width:210px!important;min-width:210px!important;max-width:210px!important;padding:0 30px 0 12px!important;margin:0!important;border:1px solid rgba(255,255,255,.42)!important;border-radius:5px!important;background-color:transparent!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:11px!important;font-weight:700!important;line-height:1!important;box-shadow:none!important;box-sizing:border-box!important;}
+.planning-auto-header #vehicleQuickSelect:hover,.planning-auto-header #vehicleQuickSelect:focus{background-color:rgba(255,255,255,.08)!important;outline:none!important;box-shadow:none!important;}
+.planning-auto-header #vehicleQuickSelect option{background:#fff!important;color:#1f2937!important;-webkit-text-fill-color:#1f2937!important;}
+.planning-auto-header .planning-version,.planning-auto-header #appVersionBadge{height:35px!important;display:inline-flex!important;align-items:center!important;padding:0 4px!important;margin:0!important;font-size:9px!important;line-height:1!important;background:transparent!important;}
+.alert-banner:empty,.alert-banner-revision:empty,.alert-banner:has(.alert-items:empty),.alert-banner-revision:has(.alert-items-revision:empty){display:none!important;}
+
 </style>
 </head>
 <body class="app-booting is-loading">
@@ -3115,13 +3133,13 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       </div>
 
       <div class="vehicle-picker-wrap">
-        <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="(choisir un véhicule)" onchange="openVehicleDetailPage(this.value)">
-          <option value="">(choisir un véhicule)</option>
+        <select id="vehicleQuickSelect" class="vehicle-picker" aria-label="Choisir un véhicule" onchange="openVehicleDetailPage(this.value)">
+          <option value="">Choisir un véhicule</option>
         </select>
       </div>
     </nav>
 
-    <span class="version planning-version" id="appVersionBadge">v8.75</span>
+    <span class="version planning-version" id="appVersionBadge">v8.76</span>
   </div>
 </header>
 
@@ -3458,7 +3476,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-group">
       <label>Véhicule *</label>
       <select id="addCtVehicule" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-        <option value="">-- (choisir un véhicule) --</option>
+        <option value="">-- Choisir un véhicule --</option>
       </select>
     </div>
     
@@ -3487,7 +3505,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-group">
       <label>Véhicule *</label>
       <select id="addRevisionVehicule" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-        <option value="">-- (choisir un véhicule) --</option>
+        <option value="">-- Choisir un véhicule --</option>
       </select>
     </div>
 <div class="form-group">
@@ -6108,7 +6126,7 @@ function openAddRevisionModal() {
   );
 
   vehiculeSelect.innerHTML =
-    '<option value="">-- (choisir un véhicule) --</option>';
+    '<option value="">-- Choisir un véhicule --</option>';
 
   vehiculesDisponibles.forEach(v => {
     const option = document.createElement("option");
@@ -7408,7 +7426,7 @@ function openAddCtModal() {
   );
 
   vehiculeSelect.innerHTML =
-    '<option value="">-- (choisir un véhicule) --</option>';
+    '<option value="">-- Choisir un véhicule --</option>';
 
   vehiculesAvailables.forEach(v => {
     const option = document.createElement("option");
@@ -7716,7 +7734,7 @@ function populateVehicleQuickSelect(){
   const vehicles=(Array.isArray(data?.vehicules)?data.vehicules:[])
     .filter(v => (v.statut || 'Actif') !== 'Archivé')
     .sort((a,b)=>`${a.marque||''} ${a.modele||''}`.localeCompare(`${b.marque||''} ${b.modele||''}`,'fr'));
-  select.innerHTML='<option value="">(choisir un véhicule)</option>'+vehicles.map(v=>`<option value="${safeText(v.immatriculation)}">${safeText(v.marque||'')} ${safeText(v.modele||'')} — ${safeText(v.immatriculation)}</option>`).join('');
+  select.innerHTML='<option value="">Choisir un véhicule</option>'+vehicles.map(v=>`<option value="${safeText(v.immatriculation)}">${safeText(v.marque||'')} ${safeText(v.modele||'')} — ${safeText(v.immatriculation)}</option>`).join('');
   if(keep && vehicles.some(v=>v.immatriculation===keep)) select.value=keep;
 }
 function hideMainPages(){
@@ -8311,7 +8329,7 @@ async function archiveItem(action, immatriculation, label) {
 
 <script>
   // Version unique de l’application : modifier uniquement cette valeur à chaque production.
-  const APP_VERSION = 'v8.75';
+  const APP_VERSION = 'v8.76';
   document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('appVersionBadge');
     if (badge) badge.textContent = APP_VERSION;
