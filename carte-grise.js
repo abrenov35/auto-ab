@@ -1,4 +1,4 @@
-/* AUTO-AB v8.79 — Carte grise dédiée sur la fiche véhicule */
+/* AUTO-AB v8.80 — Carte grise dédiée sur la fiche véhicule */
 (function () {
   'use strict';
 
@@ -280,12 +280,22 @@
   function loadMaintenanceCostsModule() {
     if (document.querySelector('script[data-autoab-maintenance-costs]')) return;
     const script = document.createElement('script');
-    script.src = 'entretien-couts.js?v=879';
+    script.src = 'entretien-couts.js?v=880';
     script.async = false;
     script.dataset.autoabMaintenanceCosts = '1';
     document.body.appendChild(script);
   }
 
+  function forceDisplayedVersion() {
+    const badge = document.getElementById('appVersionBadge');
+    if (badge) badge.textContent = 'v8.80';
+    document.documentElement.dataset.appVersion = '8.80';
+  }
+
   injectStyles();
   loadMaintenanceCostsModule();
+  forceDisplayedVersion();
+  document.addEventListener('DOMContentLoaded', forceDisplayedVersion);
+  setTimeout(forceDisplayedVersion, 0);
+  setTimeout(forceDisplayedVersion, 500);
 })();
