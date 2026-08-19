@@ -1,0 +1,47 @@
+name: Intégrer carte grise AUTO-AB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'carte-grise.js'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ajouter le module carte grise à index.html
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="carte-grise.js?v=878"></script>'
+          if tag not in s:
+              if '</body>' not in s:
+                  raise SystemExit('Balise </body> introuvable')
+              s = s.replace('</body>', f'\n{tag}\n</body>', 1)
+          s = s.replace('v8.77', 'v8.78')
+          p.write_text(s, encoding='utf-8')
+
+      - name: Nettoyer le workflow temporaire
+        run: rm -f .github/workflows/inject-carte-grise.yml
+
+      - name: Publier la modification
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html carte-grise.js .github/workflows/inject-carte-grise.yml
+          if git diff --cached --quiet; then
+            echo "Aucune modification"
+            exit 0
+          fi
+          git commit -m "feat: ajouter la carte grise sur la fiche véhicule"
+          git push origin HEAD:main
