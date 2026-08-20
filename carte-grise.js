@@ -1,4 +1,4 @@
-/* AUTO-AB v8.85 — Carte grise dédiée + correctif entretien */
+/* AUTO-AB v8.86 — Carte grise dédiée + correctif entretien */
 (function () {
   'use strict';
   let currentCarteGrise=null,originalCloseDocModal=null,originalOpenAddDocumentModal=null;
@@ -17,36 +17,43 @@
 
   function loadMaintenanceCostsModule(){const old=document.querySelector('script[data-autoab-maintenance-costs]');if(old)old.remove();const script=document.createElement('script');script.src='entretien-couts.js?v=884';script.async=false;script.dataset.autoabMaintenanceCosts='1';script.onload=installMaintenanceSaveFix;document.body.appendChild(script);}
 
+  function fileToBase64Local(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=()=>reject(new Error('Lecture du fichier impossible'));r.onload=()=>{const b64=String(r.result||'').split(',').pop();if(!b64||b64.length<20)return reject(new Error('Lecture du fichier incomplète'));resolve(b64);};r.readAsDataURL(file);});}
+
   function installMaintenanceSaveFix(){
     window.saveMaintenanceInvoice=async function(){
-      const im=activeVehicle();
-      const get=id=>document.getElementById(id);
-      const n=id=>Number(get(id)?.value||0);
+      const im=activeVehicle(),get=id=>document.getElementById(id),n=id=>Number(get(id)?.value||0);
       const date=get('costDate')?.value||'',totalHT=n('costTotalHT'),revision=n('costRevision'),reparations=n('costRepairs'),pneus=n('costTyres'),autres=n('costOther'),file=get('costFile')?.files?.[0]||null;
       if(!date)return showMsg('La date est obligatoire','err');
       if(!(totalHT>0))return showMsg('Le montant HT doit être supérieur à 0','err');
       if(Math.abs((revision+reparations+pneus+autres)-totalHT)>.01)return showMsg('La ventilation doit correspondre au total HT','err');
       const supplier=String(get('costSupplier')?.value||'').trim(),km=Number(get('costKm')?.value)||'';
       const payload={date,totalHT,supplier,km,revision,reparations,pneus,autres,tyrePosition:pneus>0?(get('costTyrePosition')?.value||''):'',tyreKm:pneus>0?(Number(get('costTyreKm')?.value)||''):''};
-      const title=`Entretien ${date}${supplier?' - '+supplier:''}`;
-      const body={action:'createDocument',immatriculation:im,idVehicule:im,categorie:'Entretien coût',nom:title,nomFichier:title,date,description:'AUTOAB_COST_V1:'+JSON.stringify(payload),lienDrive:''};
-      const btn=get('costSaveBtn'),state=get('costSaveState');if(btn){btn.disabled=true;btn.textContent='Enregistrement…';}if(state)state.textContent='Enregistrement de la dépense…';
+      const title=`Entretien ${date}${supplier?' - '+supplier:''}`,description='AUTOAB_COST_V1:'+JSON.stringify(payload),btn=get('costSaveBtn'),state=get('costSaveState');
+      if(btn){btn.disabled=true;btn.textContent='Enregistrement…';}if(state)state.textContent=file?'Envoi de la facture et enregistrement…':'Enregistrement de la dépense…';
       try{
-        const result=await Promise.race([postAppsScriptJson(body),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Délai serveur dépassé')),15000))]);
-        const savedId=result?.id||result?.idDocument||('local-'+Date.now());
+        let result,link='';
+        if(file){
+          const base64=await fileToBase64Local(file);
+          const response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'uploadDocument',immatriculation:im,idVehicule:im,categorie:'Entretien coût',nom:title,nomFichier:title,fileName:file.name,mimeType:file.type||'application/octet-stream',fileBase64:base64,date,description})});
+          const raw=await response.text();
+          try{result=raw?JSON.parse(raw):{};}catch(_){throw new Error('Réponse serveur illisible');}
+          if(!response.ok||result?.ok===false||result?.success===false)throw new Error(result?.error||result?.message||'Enregistrement impossible');
+          link=result?.url||result?.lienDrive||result?.fileUrl||'';
+        }else{
+          result=await postAppsScriptJson({action:'createDocument',immatriculation:im,idVehicule:im,categorie:'Entretien coût',nom:title,nomFichier:title,date,description,lienDrive:''});
+        }
+        const savedId=result?.id||result?.idDocument||result?.documentId||('local-'+Date.now());
         if(!Array.isArray(window.data.documents))window.data.documents=[];
-        window.data.documents.push({...body,id:savedId,statut:'Actif'});
+        window.data.documents.push({id:savedId,immatriculation:im,idVehicule:im,categorie:'Entretien coût',nom:title,nomFichier:title,date,description,lienDrive:link,statut:'Actif',dateUpload:new Date().toISOString()});
         if(typeof writeDataCache==='function')writeDataCache(window.data);
         if(typeof closeMaintenanceInvoiceModal==='function')closeMaintenanceInvoiceModal();
         if(typeof renderMaintenanceCostPanel==='function')renderMaintenanceCostPanel();
-        showMsg(file?'Dépense enregistrée ✅ — justificatif en cours':'Dépense enregistrée ✅','ok');
-        if(file){
-          uploadFileToGoogleDrive(file).then(link=>postAppsScriptJson({action:'updateDocument',id:savedId,categorie:'Entretien coût',nom:title,date,description:body.description,lienDrive:link})).then(()=>{const d=window.data.documents.find(x=>String(x.id??x.idDocument)===String(savedId));if(d)d.lienDrive=d.lien=arguments[0]||d.lienDrive;if(typeof writeDataCache==='function')writeDataCache(window.data);showMsg('Justificatif ajouté ✅','ok');}).catch(err=>{console.warn('Justificatif entretien non ajouté',err);showMsg('Dépense enregistrée, mais justificatif non ajouté','err');});
-        }
+        if(typeof renderVehicleDetailDocuments==='function')renderVehicleDetailDocuments();
+        showMsg('Facture d’entretien enregistrée ✅','ok');
       }catch(e){if(state)state.textContent='Échec : '+(e?.message||e);showMsg('Erreur entretien : '+(e?.message||e),'err');if(btn){btn.disabled=false;btn.textContent='Enregistrer';}}
     };
   }
 
-  function forceDisplayedVersion(){const badge=document.getElementById('appVersionBadge');if(badge)badge.textContent='v8.85';document.documentElement.dataset.appVersion='8.85';}
+  function forceDisplayedVersion(){const badge=document.getElementById('appVersionBadge');if(badge)badge.textContent='v8.86';document.documentElement.dataset.appVersion='8.86';}
   injectStyles();loadMaintenanceCostsModule();forceDisplayedVersion();document.addEventListener('DOMContentLoaded',forceDisplayedVersion);setTimeout(forceDisplayedVersion,0);setTimeout(forceDisplayedVersion,500);
 })();
