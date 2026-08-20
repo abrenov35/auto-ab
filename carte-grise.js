@@ -1,4 +1,4 @@
-/* AUTO-AB v8.88 — Carte grise dédiée + synchronisation affichage entretien */
+/* AUTO-AB v8.89 — Carte grise dédiée + suppression des coûts entretien */
 (function () {
   'use strict';
   let currentCarteGrise=null,originalCloseDocModal=null,originalOpenAddDocumentModal=null;
@@ -8,7 +8,7 @@
   function appData(){return (typeof data!=='undefined'&&data)?data:null;}
   function syncMaintenanceData(){const d=appData();if(d)window.data=d;return d;}
   function findCarteGrise(immat){const d=appData();const docs=Array.isArray(d?.documents)?d.documents:[];return docs.filter(x=>docVehicle(x)===immat&&(x.statut||'Actif')!=='Archivé'&&docCategory(x).includes('carte grise')).sort((a,b)=>String(b.dateUpload||b.date||'').localeCompare(String(a.dateUpload||a.date||'')))[0]||null;}
-  function injectStyles(){if(document.getElementById('carteGriseStyles'))return;const s=document.createElement('style');s.id='carteGriseStyles';s.textContent='.vehicle-registration-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:11px 13px;margin-bottom:12px;border:1px solid #dfe6ef;border-radius:9px;background:#f8fafc}.vehicle-registration-info{display:flex;align-items:center;gap:12px}.vehicle-registration-icon{width:36px;height:36px;border:1px solid #c9d7e8;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#185fa5}.vehicle-registration-title{font-size:13px;font-weight:800;color:#102a43}.vehicle-registration-meta{font-size:11px;color:#667085}.vehicle-registration-actions{display:flex;gap:7px}.vehicle-registration-btn{min-height:32px;padding:0 10px;border:1px solid #9eb9da;border-radius:7px;background:#fff;color:#185fa5;font-size:11px;font-weight:700}.vehicle-registration-btn.primary{background:#185fa5;color:#fff;border-color:#185fa5}';document.head.appendChild(s);}
+  function injectStyles(){if(document.getElementById('carteGriseStyles'))return;const s=document.createElement('style');s.id='carteGriseStyles';s.textContent='.vehicle-registration-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:11px 13px;margin-bottom:12px;border:1px solid #dfe6ef;border-radius:9px;background:#f8fafc}.vehicle-registration-info{display:flex;align-items:center;gap:12px}.vehicle-registration-icon{width:36px;height:36px;border:1px solid #c9d7e8;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#185fa5}.vehicle-registration-title{font-size:13px;font-weight:800;color:#102a43}.vehicle-registration-meta{font-size:11px;color:#667085}.vehicle-registration-actions{display:flex;gap:7px}.vehicle-registration-btn{min-height:32px;padding:0 10px;border:1px solid #9eb9da;border-radius:7px;background:#fff;color:#185fa5;font-size:11px;font-weight:700}.vehicle-registration-btn.primary{background:#185fa5;color:#fff;border-color:#185fa5}.maintenance-delete-btn{width:32px;height:32px;border:1px solid #d92d20;border-radius:7px;background:#fff;color:#d92d20;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-left:6px}.maintenance-delete-btn:hover{background:#fff1f0}.maintenance-actions-cell{white-space:nowrap}';document.head.appendChild(s);}
   window.renderVehicleDetailDocuments=function(){const box=document.getElementById('vehicleDetailDocuments');if(!box)return;const im=activeVehicle(),cg=findCarteGrise(im);box.innerHTML=cg?`<div class="vehicle-registration-row"><div class="vehicle-registration-info"><span class="vehicle-registration-icon"><i class="bi bi-card-text"></i></span><div><div class="vehicle-registration-title">Carte grise</div><div class="vehicle-registration-meta">${safeText(docName(cg))}</div></div></div><div class="vehicle-registration-actions"><button class="vehicle-registration-btn" onclick="viewCarteGriseFromDetail()">Voir</button><button class="vehicle-registration-btn" onclick="openCarteGriseFromDetail()">Remplacer</button></div></div>`:`<div class="vehicle-registration-row"><div class="vehicle-registration-info"><span class="vehicle-registration-icon"><i class="bi bi-card-text"></i></span><div><div class="vehicle-registration-title">Carte grise</div><div class="vehicle-registration-meta">Aucune carte grise enregistrée</div></div></div><div class="vehicle-registration-actions"><button class="vehicle-registration-btn primary" onclick="openCarteGriseFromDetail()">Ajouter</button></div></div>`;};
   function restoreDocumentModalButton(){const submit=document.querySelector('#docModal .form-actions .btn-success');if(submit){submit.onclick=window.submitDocument;submit.innerHTML='📤 Charger et enregistrer';}currentCarteGrise=null;}
   if(typeof window.closeDocModal==='function'){originalCloseDocModal=window.closeDocModal;window.closeDocModal=function(){const r=originalCloseDocModal.apply(this,arguments);restoreDocumentModalButton();return r;};}
@@ -17,13 +17,13 @@
   window.viewCarteGriseFromDetail=function(){const d=findCarteGrise(activeVehicle());if(!d||!docLink(d))return showMsg('Aucune carte grise disponible','err');viewDocument(docName(d),docLink(d),d.type||d.categorie||'Carte grise');};
   window.saveCarteGriseFromDetail=async function(){const im=activeVehicle(),file=typeof selectedFile!=='undefined'?selectedFile:null;if(!file)return showErrorInModal('docModal','Sélectionne la carte grise');try{const lienDrive=await uploadFileToGoogleDrive(file);await postAppsScriptJson({action:'createDocument',immatriculation:im,categorie:'Carte grise',nom:'Carte grise - '+im,date:'',description:'Carte grise du véhicule',lienDrive});await loadData();syncMaintenanceData();closeDocModal();renderVehicleDetailDocuments();showMsg('Carte grise enregistrée ✅','ok');}catch(e){showMsg('Erreur carte grise : '+(e?.message||e),'err');}};
 
-  function loadMaintenanceCostsModule(){syncMaintenanceData();const old=document.querySelector('script[data-autoab-maintenance-costs]');if(old)old.remove();const script=document.createElement('script');script.src='entretien-couts.js?v=888';script.async=false;script.dataset.autoabMaintenanceCosts='1';script.onload=()=>{syncMaintenanceData();installMaintenanceSaveFix();};document.body.appendChild(script);}
+  function loadMaintenanceCostsModule(){syncMaintenanceData();const old=document.querySelector('script[data-autoab-maintenance-costs]');if(old)old.remove();const script=document.createElement('script');script.src='entretien-couts.js?v=889';script.async=false;script.dataset.autoabMaintenanceCosts='1';script.onload=()=>{syncMaintenanceData();installMaintenanceSaveFix();installMaintenanceDeleteFix();};document.body.appendChild(script);}
   function fileToBase64Local(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=()=>reject(new Error('Lecture du fichier impossible'));r.onload=()=>{const b64=String(r.result||'').split(',').pop();if(!b64||b64.length<20)return reject(new Error('Lecture du fichier incomplète'));resolve(b64);};r.readAsDataURL(file);});}
 
   function installMaintenanceSaveFix(){
     const originalRender=window.renderMaintenanceCostPanel;
     if(typeof originalRender==='function'&&!originalRender.__syncPatched){
-      window.renderMaintenanceCostPanel=function(){syncMaintenanceData();return originalRender.apply(this,arguments);};
+      window.renderMaintenanceCostPanel=function(){syncMaintenanceData();const r=originalRender.apply(this,arguments);setTimeout(addMaintenanceDeleteButtons,0);return r;};
       window.renderMaintenanceCostPanel.__syncPatched=true;
     }
     window.saveMaintenanceInvoice=async function(){
@@ -63,6 +63,46 @@
     };
   }
 
-  function forceDisplayedVersion(){const badge=document.getElementById('appVersionBadge');if(badge)badge.textContent='v8.88';document.documentElement.dataset.appVersion='8.88';}
-  injectStyles();syncMaintenanceData();loadMaintenanceCostsModule();forceDisplayedVersion();document.addEventListener('DOMContentLoaded',()=>{syncMaintenanceData();forceDisplayedVersion();});setTimeout(()=>{syncMaintenanceData();forceDisplayedVersion();},0);setTimeout(()=>{syncMaintenanceData();forceDisplayedVersion();},500);
+  function maintenanceRecordsForCurrentView(){
+    const d=appData(),im=activeVehicle();
+    const all=(Array.isArray(d?.documents)?d.documents:[]).filter(x=>docVehicle(x)===im&&normalize(x?.categorie||x?.type).includes('entretien cout')&&String(x?.description||'').startsWith('AUTOAB_COST_V1:')).map(x=>{let p={};try{p=JSON.parse(String(x.description).slice('AUTOAB_COST_V1:'.length));}catch(_){p={};}return {...p,id:docId(x),_doc:x,date:p.date||x.date||''};}).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    const active=document.querySelector('.vehicle-cost-year.active')?.textContent?.trim()||'';
+    if(/^\d{4}$/.test(active))return all.filter(r=>String(r.date||'').startsWith(active));
+    return all;
+  }
+
+  function addMaintenanceDeleteButtons(){
+    const table=document.querySelector('#vehicleMaintenanceCostPanel .vehicle-cost-table');
+    if(!table)return;
+    const head=table.querySelector('thead tr');
+    if(head&&!head.querySelector('.maintenance-delete-head')){const th=document.createElement('th');th.className='maintenance-delete-head';th.textContent='Suppr.';head.appendChild(th);}
+    const rows=[...table.querySelectorAll('tbody tr')],records=maintenanceRecordsForCurrentView();
+    rows.forEach((tr,i)=>{
+      if(tr.querySelector('.maintenance-delete-btn'))return;
+      const rec=records[i];if(!rec||!rec.id)return;
+      const td=document.createElement('td');td.className='maintenance-actions-cell';
+      td.innerHTML=`<button type="button" class="maintenance-delete-btn" title="Supprimer cette facture" aria-label="Supprimer cette facture" onclick='deleteMaintenanceCost(${JSON.stringify(String(rec.id))})'><i class="bi bi-trash"></i></button>`;
+      tr.appendChild(td);
+    });
+  }
+
+  window.deleteMaintenanceCost=async function(id){
+    if(!id)return;
+    const confirmed=typeof showConfirm==='function'?await showConfirm('Supprimer cette facture d’entretien et son justificatif éventuel ?', {title:'Supprimer la facture',confirmText:'Supprimer',danger:true}):window.confirm('Supprimer cette facture d’entretien ?');
+    if(!confirmed)return;
+    try{
+      await postAppsScriptJson({action:'deleteDocument',id:String(id)});
+      const d=appData();
+      if(d&&Array.isArray(d.documents))d.documents=d.documents.filter(x=>String(docId(x))!==String(id));
+      syncMaintenanceData();
+      if(typeof writeDataCache==='function'&&d)writeDataCache(d);
+      if(typeof renderMaintenanceCostPanel==='function')renderMaintenanceCostPanel();
+      showMsg('Facture supprimée ✅','ok');
+    }catch(e){showMsg('Erreur suppression : '+(e?.message||e),'err');}
+  };
+
+  function installMaintenanceDeleteFix(){setTimeout(addMaintenanceDeleteButtons,0);}
+
+  function forceDisplayedVersion(){const badge=document.getElementById('appVersionBadge');if(badge)badge.textContent='v8.89';document.documentElement.dataset.appVersion='8.89';}
+  injectStyles();syncMaintenanceData();loadMaintenanceCostsModule();forceDisplayedVersion();document.addEventListener('DOMContentLoaded',()=>{syncMaintenanceData();forceDisplayedVersion();});setTimeout(()=>{syncMaintenanceData();forceDisplayedVersion();addMaintenanceDeleteButtons();},0);setTimeout(()=>{syncMaintenanceData();forceDisplayedVersion();addMaintenanceDeleteButtons();},500);
 })();
