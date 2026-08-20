@@ -1,4 +1,4 @@
-/* AUTO-AB v8.82 — Carte grise dédiée sur la fiche véhicule */
+/* AUTO-AB v8.83 — Carte grise dédiée sur la fiche véhicule */
 (function () {
   'use strict';
 
@@ -131,7 +131,7 @@
   function loadMaintenanceCostsModule() {
     if (document.querySelector('script[data-autoab-maintenance-costs]')) return;
     const script = document.createElement('script');
-    script.src = 'entretien-couts.js?v=882';
+    script.src = 'entretien-couts.js?v=883';
     script.async = false;
     script.dataset.autoabMaintenanceCosts = '1';
     document.body.appendChild(script);
@@ -139,8 +139,8 @@
 
   function forceDisplayedVersion() {
     const badge = document.getElementById('appVersionBadge');
-    if (badge) badge.textContent = 'v8.82';
-    document.documentElement.dataset.appVersion = '8.82';
+    if (badge) badge.textContent = 'v8.83';
+    document.documentElement.dataset.appVersion = '8.83';
   }
 
   injectStyles();
