@@ -1653,7 +1653,6 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       text-align: left;
     }
 
-    #btnDeleteVehiculeModal,
     #btnArchiverVehicule {
       align-items: center;
       justify-content: center;
@@ -3379,7 +3378,6 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
       <button class="btn btn-secondary" onclick="closeVehiculeModal()">Annuler</button>
       <button id="submitVehiculeBtn" class="btn btn-success" onclick="submitVehicule()">Enregistrer</button>
       <button id="btnArchiverVehicule" class="btn" title="Archiver le véhicule" style="background: transparent; color: #ef6c00; border: 1px solid #ef6c00; display: none;" onclick="archiveVehiculeFromModal()"><i class="bi bi-archive"></i> Archiver</button>
-      <button id="btnDeleteVehiculeModal" class="btn" title="Supprimer définitivement le véhicule" style="background: transparent; color: #d32f2f; border: 1px solid #d32f2f; display: none;" onclick="openDeleteVehicleConfirmModal()"><i class="bi bi-trash"></i> Supprimer</button>
     </div>
   </div>
 </div>
@@ -5209,9 +5207,7 @@ function openAddVehiculeModal() {
   document.getElementById("vehiculeStatut").value = "Actif";
 
   const archiveBtn = document.getElementById("btnArchiverVehicule");
-  const deleteBtn = document.getElementById("btnDeleteVehiculeModal");
   if (archiveBtn) archiveBtn.style.display = "none";
-  if (deleteBtn) deleteBtn.style.display = "none";
 
   document.getElementById("vehiculeModal").classList.add("active");
 }
@@ -5223,9 +5219,7 @@ function closeVehiculeModal(skipRefresh = false) {
   if (modal) modal.classList.remove("active");
 
   const archiveBtn = document.getElementById("btnArchiverVehicule");
-  const deleteBtn = document.getElementById("btnDeleteVehiculeModal");
   if (archiveBtn) archiveBtn.style.display = "none";
-  if (deleteBtn) deleteBtn.style.display = "none";
 
   window.editingImmat = null;
   window.currentVehiculeImmatriculation = null;
@@ -5663,9 +5657,8 @@ function openEditVehiculeModal(immatriculation) {
   document.getElementById("vehiculeStatut").value = v.statut;
   document.getElementById("vehiculeModal").classList.add("active");
   
-  // Afficher le bouton "Supprimer" et stocker l'immat
+  // Afficher le bouton "Archiver" et stocker l'immat
   document.getElementById("btnArchiverVehicule").style.display = "inline-flex";
-  document.getElementById("btnDeleteVehiculeModal").style.display = "inline-flex";
   window.currentVehiculeImmatriculation = immatriculation;
   
 }
