@@ -30,3 +30,56 @@ function patch(){if(typeof window.renderVehicleDetailPage!=='function'||window.r
 function forceVersion(){const badge=document.getElementById('appVersionBadge');if(badge&&badge.textContent==='v8.84')badge.textContent='v8.98';document.documentElement.dataset.appVersion='8.98';}
 styles();modal();patch();forceVersion();document.addEventListener('DOMContentLoaded',forceVersion);setTimeout(()=>{patch();renderMaintenanceCostPanel();forceVersion();},0);
 })();
+
+/* v8.100 — UX documents : modale compacte + description visible */
+(function(){
+'use strict';
+function injectDocUxStyles(){
+  let s=document.getElementById('docUxStylesV8100');
+  if(!s){s=document.createElement('style');s.id='docUxStylesV8100';document.head.appendChild(s);}
+  s.textContent=`
+#docModal .modal-content{width:min(620px,94vw)!important;max-width:620px!important;max-height:92vh!important;overflow-y:auto!important;padding:0!important;border-radius:12px!important}
+#docModal .modal-header{position:sticky!important;top:0!important;z-index:2!important;background:#fff!important;padding:16px 20px!important;margin:0!important;border-bottom:1px solid #e4e7ec!important;font-size:19px!important;font-weight:800!important;color:#0d3a66!important}
+#docModal .modal-content>div:nth-child(2){padding:16px 20px 10px!important}
+#docModal .form-group{margin-bottom:12px!important}
+#docModal .form-group label{display:block!important;margin-bottom:5px!important;font-size:12px!important;font-weight:750!important;color:#344054!important}
+#docModal #docNom,#docModal #docDate{height:40px!important;padding:8px 10px!important;border-radius:7px!important;font-size:13px!important}
+#docModal #docDescription{min-height:72px!important;max-height:110px!important;padding:9px 10px!important;border-radius:7px!important;font-size:13px!important;line-height:1.35!important;resize:vertical!important}
+#docModal .form-group+div[style*="dashed"]{padding:12px!important;margin:4px 0 8px!important;border:1.5px dashed #72a7d4!important;border-radius:9px!important;background:#f7fbff!important}
+#docModal .form-group+div[style*="dashed"]>div:first-child{font-size:12px!important;margin-bottom:7px!important;color:#344054!important}
+#docModal .form-group+div[style*="dashed"] .btn{height:38px!important;padding:0 12px!important;margin-bottom:5px!important;border-radius:7px!important;background:#155fa0!important;font-size:12px!important;font-weight:800!important}
+#docModal #docFileName{font-size:10.5px!important;color:#667085!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#docModal .form-actions{position:sticky!important;bottom:0!important;z-index:2!important;background:#fff!important;border-top:1px solid #e4e7ec!important;padding:11px 20px!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:nowrap!important}
+#docModal .form-actions .btn{height:38px!important;min-height:38px!important;padding:0 14px!important;border-radius:7px!important;font-size:12px!important;font-weight:800!important;white-space:nowrap!important}
+#docModal .form-actions .btn-success{background:#176b3a!important;border-color:#176b3a!important;color:#fff!important}
+#docModal #docDeleteBtn{margin-right:auto!important;height:38px!important}
+.vehicle-generic-doc-desc{margin-top:4px!important;font-size:11px!important;line-height:1.35!important;color:#344054!important;white-space:normal!important;overflow-wrap:anywhere!important}
+@media(max-width:640px){#docModal .modal-content{width:96vw!important}.vehicle-generic-doc-desc{font-size:10.5px!important}}
+`;
+}
+function appDocs(){try{return (typeof data!=='undefined'&&Array.isArray(data?.documents))?data.documents:(Array.isArray(window.data?.documents)?window.data.documents:[]);}catch(_){return Array.isArray(window.data?.documents)?window.data.documents:[];}}
+function currentImmat(){return String((typeof vehicleDetailImmat!=='undefined'&&vehicleDetailImmat)||(typeof selectedVehicule!=='undefined'&&selectedVehicule)||localStorage.getItem('activeVehicleAB')||'').trim();}
+function addDescriptions(){
+  const im=currentImmat(); if(!im)return;
+  const docs=appDocs().filter(d=>String(d.immatriculation||d.idVehicule||'').trim()===im);
+  document.querySelectorAll('#vehicleDetailDocuments .vehicle-generic-doc-row').forEach(row=>{
+    if(row.querySelector('.vehicle-generic-doc-desc'))return;
+    const title=row.querySelector('.vehicle-generic-doc-title')?.textContent?.trim();
+    if(!title)return;
+    const doc=docs.find(d=>String(d.nom||d.nomFichier||'').trim()===title);
+    const desc=String(doc?.description||'').trim();
+    if(!desc||desc.startsWith('AUTOAB_COST_V1:'))return;
+    const meta=row.querySelector('.vehicle-generic-doc-meta');
+    if(!meta)return;
+    const el=document.createElement('div');el.className='vehicle-generic-doc-desc';el.textContent=desc;meta.insertAdjacentElement('afterend',el);
+  });
+}
+function patchRender(){
+  const fn=window.renderVehicleDetailDocuments;
+  if(typeof fn!=='function'||fn.__descPatched)return;
+  window.renderVehicleDetailDocuments=function(){const r=fn.apply(this,arguments);setTimeout(addDescriptions,0);return r;};
+  window.renderVehicleDetailDocuments.__descPatched=true;
+}
+function forceVersion(){const b=document.getElementById('appVersionBadge');if(b)b.textContent='v8.100';document.documentElement.dataset.appVersion='8.100';}
+injectDocUxStyles();patchRender();forceVersion();document.addEventListener('DOMContentLoaded',()=>{injectDocUxStyles();patchRender();forceVersion();setTimeout(addDescriptions,0);});setTimeout(()=>{injectDocUxStyles();patchRender();forceVersion();addDescriptions();},600);setTimeout(addDescriptions,1400);
+})();
