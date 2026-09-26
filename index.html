@@ -5794,6 +5794,7 @@ async function submitInvite() {
     showLoadingAndReload(); // Actualiser après 500ms
   } catch (err) {
     showMsg("Erreur: " + err.message, "err");
+  } finally {
     isSubmitting = false;
   }
 }
@@ -7516,6 +7517,7 @@ async function submitAddCt() {
     isSubmitting = false;
     setModalButtonsDisabled("addCtModal", false); // Réactiver en cas d'erreur
   } finally {
+    isSubmitting = false;
     if (submitBtn) submitBtn.disabled = false;
   }
 }
@@ -7560,6 +7562,7 @@ async function submitControleTk() {
     isSubmitting = false;
     setModalButtonsDisabled("ctEditModal", false);
   } finally {
+    isSubmitting = false;
     if (submitBtn) submitBtn.disabled = false;
   }
 }
