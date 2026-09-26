@@ -8060,6 +8060,9 @@ async function submitUploadCt() {
       body: JSON.stringify({
         action: "uploadCtFile",
         immatriculation: immat,
+        nom: customName || file.name,
+        date: document.getElementById("ctDocumentDate")?.value || "",
+        description: document.getElementById("ctDocumentDescription")?.value.trim() || "",
         fileName: uploadedFileName,
         mimeType: file.type || "application/octet-stream",
         fileBase64: base64
