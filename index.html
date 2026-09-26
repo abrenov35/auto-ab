@@ -1,4 +1,4 @@
-<!-- AB PARC AUTO v8.78 - bandeau standard AB -->
+<!-- AB PARC AUTO - correctifs alertes et retour serveur (version affichée par entretien-couts.js) -->
 <!-- AB PARC AUTO v6.3.50 - Cache Local + Silent Server Connection (All Operations) -->
 <!-- AB PARC AUTO v8.66 - téléchargement révision corrigé -->
 <!-- AB PARC AUTO v8.62 - oeil revision + telecharger actif -->
@@ -3941,7 +3941,7 @@ async function fetchDataFromServer() {
         }))
     };
 
-    console.log("✅ Données du backend reçues:", newData);
+    console.log("✅ Données du backend reçues");
     console.log("  Véhicules:", newData.vehicules.length);
     console.log("  Révisions:", newData.revisions.length);
     console.log("  Contrôles techniques:", newData.controlsTk.length);
@@ -5767,7 +5767,7 @@ async function submitInvite() {
   isSubmitting = true;
   
   try {
-    await fetch(APPS_SCRIPT_URL, {
+    const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
         action: "createInvite",
@@ -5777,6 +5777,10 @@ async function submitInvite() {
         phone: phone
       })
     });
+    const result = await response.json();
+    if (!response.ok || result.ok !== true) {
+      throw new Error(result.error || result.message || "Enregistrement refusé par le serveur");
+    }
     
     document.getElementById("inviteName").value = "";
     document.getElementById("inviteEmail").value = "";
@@ -5803,6 +5807,10 @@ function calculateDaysUntilCT(dateString) {
   return diffDays;
 }
 
+function normaliserPlaque(value) {
+  return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
 function checkCtAlerts() {
   const alertBanner = document.getElementById("alertBanner");
   const alertItems = document.getElementById("alertItems");
@@ -5816,7 +5824,7 @@ function checkCtAlerts() {
   data.controlsTk.forEach(ct => {
     const daysLeft = calculateDaysUntilCT(ct.prochainDate);
     if (daysLeft !== null && daysLeft <= 30) {
-      const vehicule = data.vehicules.find(v => v.immatriculation === ct.immatriculation);
+      const vehicule = data.vehicules.find(v => normaliserPlaque(v.immatriculation) === normaliserPlaque(ct.immatriculation));
       alerts.push({
         immatriculation: ct.immatriculation,
         vehicule: vehicule ? `${vehicule.marque} ${vehicule.modele}` : "Véhicule inconnu",
@@ -5885,7 +5893,7 @@ function checkRevisionAlerts() {
   data.revisions.forEach(rev => {
     const daysLeft = calculateDaysUntilCT(rev.prochainDate);
     if (daysLeft !== null && daysLeft <= 30) {
-      const vehicule = data.vehicules.find(v => v.immatriculation === rev.immatriculation);
+      const vehicule = data.vehicules.find(v => normaliserPlaque(v.immatriculation) === normaliserPlaque(rev.immatriculation));
       alerts.push({
         immatriculation: rev.immatriculation,
         vehicule: vehicule ? `${vehicule.marque} ${vehicule.modele}` : "Véhicule inconnu",
@@ -7471,7 +7479,6 @@ function closeAddCtModal() {
 }
 
 async function submitAddCt() {
-  setModalButtonsDisabled("addCtModal", true);
   // Protection contre double-clics
   if (isSubmitting) return;
   
@@ -7486,6 +7493,7 @@ async function submitAddCt() {
   
   
   isSubmitting = true;
+  setModalButtonsDisabled("addCtModal", true);
   const submitBtn = document.getElementById("submitAddCtBtn");
   if (submitBtn) submitBtn.disabled = true;
   
@@ -7499,6 +7507,10 @@ async function submitAddCt() {
         prochainDate: prochainDate
       })
     });
+    const result = await response.json();
+    if (!response.ok || result.ok !== true) {
+      throw new Error(result.error || result.message || "Enregistrement refusé par le serveur");
+    }
     
     closeAddCtModal();
     showMsg("Contrôle Technique ajouté ✅", "ok");
@@ -7513,7 +7525,6 @@ async function submitAddCt() {
 }
 
 async function submitControleTk() {
-  setModalButtonsDisabled("ctEditModal", true);
   // Protection contre double-clics
   if (isSubmitting) return;
   
@@ -7531,6 +7542,7 @@ async function submitControleTk() {
   const dernierDate = ct.prochainDate || "";
   
   isSubmitting = true;
+  setModalButtonsDisabled("ctEditModal", true);
   const submitBtn = document.getElementById("submitCtBtn");
   if (submitBtn) submitBtn.disabled = true;
   
@@ -7544,6 +7556,10 @@ async function submitControleTk() {
         prochainDate: prochainDate  // Nouveau prochain
       })
     });
+    const result = await response.json();
+    if (!response.ok || result.ok !== true) {
+      throw new Error(result.error || result.message || "Enregistrement refusé par le serveur");
+    }
     
     closeCtEditModal();
     showMsg("Contrôle technique mis à jour ✅", "ok");
@@ -8206,7 +8222,7 @@ async function archiveRevisionFromModal() {
 
     const result = await response.json();
 
-    if (!response.ok || result.ok === false) {
+    if (!response.ok || result.ok !== true) {
       throw new Error(result.error || "Archivage impossible");
     }
 
@@ -8241,7 +8257,7 @@ async function archiveCtFromModal() {
 
     const result = await response.json();
 
-    if (!response.ok || result.ok === false) {
+    if (!response.ok || result.ok !== true) {
       throw new Error(result.error || "Archivage impossible");
     }
 
