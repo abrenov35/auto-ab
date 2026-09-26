@@ -8117,6 +8117,7 @@ async function loadDocumentsList(immat) {
     });
     if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
     const result = await response.json();
+    if (result?.ok !== true) throw new Error(result?.error || result?.message || "Chargement des documents impossible");
     const documents = Array.isArray(result) ? result : (Array.isArray(result?.documents) ? result.documents : []);
     currentCtDocuments = documents;
     if (!documents.length) {
