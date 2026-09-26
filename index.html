@@ -4162,7 +4162,7 @@ window.fetch = async function(input, init = {}) {
 
   try {
     const response = await nativeFetch(input, init);
-    if (method !== "GET" && response.ok) {
+    if (!isBackgroundLoad && response.ok) {
       DataCacheManager.invalidate();
       localStorage.removeItem(DATA_CACHE_KEY);
     }
