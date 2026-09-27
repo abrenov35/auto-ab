@@ -3771,7 +3771,7 @@ ID | VehiculeID | Nom | Type | Description | Fichier | DriveID | Lien | Taille |
     <div class="form-actions" style="justify-content:center; margin-top:22px;">
       <button class="btn btn-secondary" onclick="closeDeleteVehicleConfirmModal()">Annuler</button>
       <button id="confirmDeleteVehicleBtn" class="btn" style="background:#d32f2f;color:white;" onclick="confirmDeleteVehiclePermanent()">
-        <i class="bi bi-trash"></i> Supprimer définitivement
+        <i class="bi bi-trash"></i> Archiver
       </button>
     </div>
   </div>
@@ -5301,12 +5301,12 @@ async function confirmDeleteVehiclePermanent() {
     const result = await response.json();
 
     if (!response.ok || result.ok !== true) {
-      throw new Error(result.error || "Suppression impossible");
+      throw new Error(result.error || "Archivage impossible");
     }
 
     closeDeleteVehicleConfirmModal();
     closeVehiculeModal(true);
-    showMsg("Véhicule supprimé définitivement", "ok");
+    showMsg("Véhicule archivé", "ok");
     await loadData();
     renderVehiclesPage();
     checkCtAlerts();
@@ -5316,7 +5316,7 @@ async function confirmDeleteVehiclePermanent() {
   } finally {
     if (confirmBtn) {
       confirmBtn.disabled = false;
-      confirmBtn.innerHTML = '<i class="bi bi-trash"></i> Supprimer définitivement';
+      confirmBtn.innerHTML = '<i class="bi bi-trash"></i> Archiver';
     }
   }
 }
@@ -5541,7 +5541,20 @@ function renderVehicleManagement() {
 
 function renderVehiclesPage() {
   const vehiclesList = document.getElementById("vehiclesPageList");
-  const vehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
+  const sourceVehicules = Array.isArray(data.vehicules) ? data.vehicules : [];
+  if (!document.getElementById("abVehicleSearch")) {
+    const field = document.createElement("input");
+    field.id = "abVehicleSearch";
+    field.type = "search";
+    field.placeholder = "Rechercher véhicule, plaque ou conducteur";
+    field.setAttribute("aria-label", field.placeholder);
+    field.style.cssText = "width:100%;max-width:420px;min-height:34px;margin:0 0 10px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:4px";
+    vehiclesList.before(field);
+    field.addEventListener("input", () => renderVehiclesPage());
+  }
+  const query = (document.getElementById("abVehicleSearch").value || "").toLocaleLowerCase("fr").trim();
+  const vehicules = sourceVehicules.filter(v =>
+    [v.marque, v.modele, v.immatriculation, v.conducteur, v.statut].join(" ").toLocaleLowerCase("fr").includes(query));
 
   const sortByName = list => [...list].sort((a, b) =>
     `${a.marque || ""} ${a.modele || ""}`.localeCompare(
@@ -5572,10 +5585,11 @@ function renderVehiclesPage() {
     <div class="ab-table-cell vehicle-model" style="padding:10px 6px;border-bottom:1px solid #eef1f5;font-weight:700;color:#1d2939;">${v.modele || ""}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.immatriculation}</div>
     <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#475467;">${v.conducteur || "—"}</div>
-    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"}</div>
+    <div class="ab-table-cell" style="padding:10px 6px;border-bottom:1px solid #eef1f5;color:#2e7d46;">${v.statut || "Actif"} · ${formatKilometrage(v.kilometrage)}<br><small>${vehicleUpcomingSummary(v.immatriculation)}</small></div>
     <div class="ab-table-cell ab-actions" style="padding:10px 6px;border-bottom:1px solid #eef1f5;display:flex;gap:7px;justify-content:flex-end;">
       <button type="button" class="ab-icon-btn view" title="Voir" aria-label="Voir détails" onclick="openVehicleDetailPage('${v.immatriculation}')"><i class="bi bi-eye"></i></button>
       <button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditVehiculeModal('${v.immatriculation}')"><i class="bi bi-pencil"></i></button>
+      <button type="button" class="ab-icon-btn" title="Archiver" onclick="archiveItem('archiveVehicule','${v.immatriculation}','Véhicule')"><i class="bi bi-archive"></i></button>
     </div>
   `).join("");
 
@@ -5598,6 +5612,18 @@ function renderVehiclesPage() {
   `;
 }
 
+function vehicleUpcomingSummary(immat) {
+  const suivis = [
+    ["Révision", (data.revisions || []).find(r => r.immatriculation === immat && r.statut !== "Archivé")],
+    ["CT", (data.controlsTk || []).find(c => c.immatriculation === immat && c.statut !== "Archivé")]
+  ];
+  return suivis.map(([label, item]) => {
+    if (!item?.prochainDate) return "";
+    const jours = calculateDaysUntilCT(item.prochainDate);
+    return label + " " + formatFrDate(item.prochainDate) +
+      (jours !== null && jours <= 30 ? " ⚠ J" + (jours < 0 ? "+" + Math.abs(jours) : "-" + jours) : "");
+  }).filter(Boolean).join(" · ") || "Aucune échéance";
+}
 function markVehicleAsOut(immatriculation) {
   const v = data.vehicules.find(veh => veh.immatriculation === immatriculation);
   if (v) {
@@ -5697,7 +5723,7 @@ async function exitVehicleFromModal() {
 }
 
 async function deleteVehicule(immatriculation) {
-  if (!await showConfirm(`Supprimer le véhicule ${immatriculation} ?`, { title: "Supprimer le véhicule", confirmText: "Supprimer", danger: true })) return;
+  if (!await showConfirm(`Archiver le véhicule ${immatriculation} ?`, { title: "Archiver le véhicule", confirmText: "Supprimer", danger: true })) return;
   
   try {
     showLoadingOverlay("Suppression du véhicule…");
@@ -5716,14 +5742,14 @@ async function deleteVehicule(immatriculation) {
     
     const result = await response.json();
     if (result.ok !== true) {
-      throw new Error(result.error || "Suppression impossible");
+      throw new Error(result.error || "Archivage impossible");
     }
     
     await loadData();
     renderVehicleManagement();
     renderVehicules();
     renderInviteVehiculeSelect();
-    showMsg("Véhicule supprimé ✅", "ok");
+    showMsg("Véhicule archivé ✅", "ok");
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
   } finally {
@@ -6092,8 +6118,10 @@ function renderRevisionPage() {
       : null;
     const color = days !== null && days < 0 ? "#d32f2f" : days !== null && days < 30 ? "#f57c00" : "#2e7d46";
     const action = archived
-      ? `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`
+      ? (String(r.observations || "").includes("[HISTORIQUE_REVISION]") ? `<span title="Révision effectuée">Historique</span>` : `<button type="button" class="ab-icon-btn restore" title="Restaurer" aria-label="Restaurer" onclick="archiveItem('restoreRevision','${r.immatriculation}','Révision')"><i class="bi bi-arrow-counterclockwise"></i></button>`)
       : `<button type="button" class="ab-icon-btn edit" title="Modifier" aria-label="Modifier" onclick="openEditRevisionModal('${r.immatriculation}')"><i class="bi bi-pencil"></i></button>
+         <button type="button" class="ab-icon-btn" title="Nouvelle révision" onclick="openNewRevisionModal('${r.immatriculation}')"><i class="bi bi-plus"></i></button>
+         <button type="button" class="ab-icon-btn" title="Archiver" onclick="archiveItem('archiveRevision','${r.immatriculation}','Révision')"><i class="bi bi-archive"></i></button>
          <button type="button" class="ab-icon-btn view" title="Voir la dernière révision" aria-label="Voir la dernière révision" onclick="viewLatestRevisionDocument('${r.immatriculation}')"><i class="bi bi-eye"></i></button>`;
 
     return `
@@ -6171,7 +6199,8 @@ function openAddRevisionModal() {
   const revisionDernierReadonly = document.getElementById("addRevisionDernierDateReadonly");
   if (revisionDernierInput) {
     revisionDernierInput.style.display = "block";
-    revisionDernierInput.disabled = false;
+    revisionDernierInput.readOnly = true;
+    revisionDernierInput.style.pointerEvents = "none";
     revisionDernierInput.value = "";
   }
   if (revisionDernierReadonly) {
@@ -6231,7 +6260,7 @@ async function submitAddRevision() {
   );
 
   const conducteur = vehicule?.conducteur || "";
-  const action = editingRevisionImmat ? "updateRevision" : "createRevision";
+  const action = newRevisionMode ? "nouvelleRevision" : editingRevisionImmat ? "updateRevision" : "createRevision";
 
   isSubmitting = true;
   setModalButtonsDisabled("addRevisionModal", true);
@@ -6259,22 +6288,8 @@ async function submitAddRevision() {
 
     const wasEditing = Boolean(editingRevisionImmat);
 
-    // Mise à jour locale immédiate : évite un rechargement complet et accélère la sauvegarde.
-    const revisionPayload = {
-      immatriculation,
-      idVehicule: immatriculation,
-      conducteur,
-      dernierDate,
-      prochainDate,
-      statut: "Actif"
-    };
-    const revisions = Array.isArray(data.revisions) ? data.revisions : (data.revisions = []);
-    const revisionIndex = revisions.findIndex(r => r.immatriculation === immatriculation);
-    if (revisionIndex >= 0) {
-      data.revisions[revisionIndex] = { ...data.revisions[revisionIndex], ...revisionPayload };
-    } else {
-      data.revisions.push(revisionPayload);
-    }
+    DataCacheManager.invalidate();
+    await loadData();
 
     // Réinitialise impérativement l'état de soumission avant de fermer la fenêtre.
     isSubmitting = false;
@@ -6738,14 +6753,16 @@ async function downloadLatestRevisionDocument() {
 }
 
 
+let newRevisionMode = false;
 function openEditRevisionModal(immatriculation) {
+  newRevisionMode = false;
   const normalizeImmat = value =>
     String(value || "")
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "");
 
   const revision = (Array.isArray(data.revisions) ? data.revisions : []).find(r =>
-    normalizeImmat(r.immatriculation) === normalizeImmat(immatriculation)
+    normalizeImmat(r.immatriculation) === normalizeImmat(immatriculation) && r.statut !== "Archivé"
   );
 
   const vehicule = (Array.isArray(data.vehicules) ? data.vehicules : []).find(v =>
@@ -6805,8 +6822,20 @@ function openEditRevisionModal(immatriculation) {
   document.getElementById("addRevisionModal").classList.add("active");
 }
 
+function openNewRevisionModal(immatriculation) {
+  openEditRevisionModal(immatriculation);
+  const active = (data.revisions || []).find(r => r.immatriculation === immatriculation && r.statut !== "Archivé");
+  if (!active?.prochainDate) {
+    showMsg("Aucune date prévue à reporter", "err");
+    return;
+  }
+  newRevisionMode = true;
+  document.getElementById("addRevisionModalTitle").textContent = "Enregistrer une nouvelle révision";
+  document.getElementById("addRevisionDernierDate").value = active.prochainDate;
+  document.getElementById("addRevisionProchainDate").value = "";
+}
 async function deleteRevision(immatriculation) {
-  if (!await showConfirm(`Supprimer la révision de ${immatriculation} ?`, { title: "Supprimer la révision", confirmText: "Supprimer", danger: true })) return;
+  if (!await showConfirm(`Archiver la révision de ${immatriculation} ?`, { title: "Archiver la révision", confirmText: "Supprimer", danger: true })) return;
 
   try {
     const response = await fetch(APPS_SCRIPT_URL, {
@@ -6820,10 +6849,10 @@ async function deleteRevision(immatriculation) {
     const result = await response.json();
 
     if (!response.ok || result.ok !== true) {
-      throw new Error(result.error || "Suppression impossible");
+      throw new Error(result.error || "Archivage impossible");
     }
 
-    showMsg("Révision supprimée ✅", "ok");
+    showMsg("Révision archivée ✅", "ok");
     showLoadingAndReload();
   } catch (err) {
     showMsg("Erreur : " + err.message, "err");
@@ -6837,8 +6866,8 @@ async function deleteRevisionFromModal() {
   }
 
   const immatriculation = editingRevisionImmat;
-  if (!await showConfirm(`Supprimer définitivement la révision de ${immatriculation} ?`, {
-    title: "Supprimer la révision",
+  if (!await showConfirm(`Archiver la révision de ${immatriculation} ?`, {
+    title: "Archiver la révision",
     confirmText: "Supprimer",
     danger: true
   })) return;
@@ -6851,10 +6880,10 @@ async function deleteRevisionFromModal() {
     });
     const result = await response.json();
     if (!response.ok || result.ok !== true) {
-      throw new Error(result.error || "Suppression impossible");
+      throw new Error(result.error || "Archivage impossible");
     }
     await closeAddRevisionModal(true);
-    showMsg("Révision supprimée ✅", "ok");
+    showMsg("Révision archivée ✅", "ok");
     await refreshCurrentPageAfterModalClose();
   } catch (error) {
     setModalButtonsDisabled("addRevisionModal", false);
@@ -7015,6 +7044,8 @@ function openCtEditModal(immatriculation) {
   document.getElementById("ctEditTitle").textContent = `Modifier CT - ${immatriculation} ${vehicule ? vehicule.marque + " " + vehicule.modele : ""}`;
   
   document.getElementById("ctDernierDate").value = ct.dernierDate || "";
+  document.getElementById("ctDernierDate").readOnly = true;
+  document.getElementById("ctDernierDate").style.pointerEvents = "none";
   
   document.getElementById("ctProchainDate").value = ct.prochainDate || "";
 
@@ -7796,8 +7827,8 @@ function renderVehicleDetailPage(){
   </div>`;
   const rev=(Array.isArray(data?.revisions)?data.revisions:[]).find(r=>r.immatriculation===immat && r.statut!=='Archivé');
   const revisionDaysLeft = rev ? calculateDaysUntilCT(rev.prochainDate) : null;
-  const revisionAlertClass = revisionDaysLeft !== null && revisionDaysLeft <= 45 ? ' vehicle-ct-alert' : '';
-  const revisionBadge = revisionDaysLeft !== null && revisionDaysLeft <= 45
+  const revisionAlertClass = revisionDaysLeft !== null && revisionDaysLeft <= 30 ? ' vehicle-ct-alert' : '';
+  const revisionBadge = revisionDaysLeft !== null && revisionDaysLeft <= 30
     ? `<span class="vehicle-ct-alert-days">${revisionDaysLeft < 0 ? 'J' + revisionDaysLeft : 'J-' + revisionDaysLeft}</span>`
     : '';
   const revisionDocs = (Array.isArray(data?.documents) ? data.documents : [])
@@ -7810,12 +7841,45 @@ function renderVehicleDetailPage(){
     ? `<button type="button" class="vehicle-ct-eye" title="Voir le document de la dernière révision" aria-label="Voir le document de la dernière révision" onclick='viewDocument(${JSON.stringify(latestRevisionName)}, ${JSON.stringify(latestRevisionUrl)})'><i class="bi bi-eye"></i></button>`
     : `<button type="button" class="vehicle-ct-eye disabled" title="Aucun document de révision disponible" aria-label="Aucun document de révision disponible" disabled><i class="bi bi-eye"></i></button>`;
   document.getElementById('vehicleDetailRevision').innerHTML=rev?`<div class="vehicle-info-lines"><div class="vehicle-info-item vehicle-ct-last"><span class="vehicle-info-label">Dernière révision</span><span class="vehicle-info-value">${formatFrDate(rev.dernierDate)}</span>${revisionEye}</div><div class="vehicle-info-item${revisionAlertClass}"><span class="vehicle-info-label">Prochaine révision</span><span class="vehicle-info-value">${formatFrDate(rev.prochainDate)}</span>${revisionBadge}</div></div>`:'<div class="vehicle-empty">Aucune révision enregistrée</div>';
+  const revisionPanel = document.getElementById('vehicleDetailRevision');
+  if (rev && revisionPanel) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "vehicle-outline-action";
+    button.textContent = "Nouvelle révision";
+    button.onclick = () => openNewRevisionModal(immat);
+    revisionPanel.appendChild(button);
+  }
   const ct=(Array.isArray(data?.controlsTk)?data.controlsTk:[]).find(c=>c.immatriculation===immat && c.statut!=='Archivé');
   const ctDaysLeft = ct ? calculateDaysUntilCT(ct.prochainDate) : null;
   const ctAlertClass = ctDaysLeft !== null && ctDaysLeft <= 30 ? ' vehicle-ct-alert' : '';
   const ctDocumentLink = ct ? (ct.lienDrive || ct.lienCt || '') : '';
   document.getElementById('vehicleDetailCt').innerHTML=ct?`<div class="vehicle-info-lines vehicle-ct-lines"><div class="vehicle-info-item vehicle-ct-last"><span class="vehicle-info-label">Dernier contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.dernierDate)}</span>${ctDocumentLink?`<button type="button" class="vehicle-ct-eye" title="Voir le PV du contrôle technique" aria-label="Voir le PV du contrôle technique" onclick="viewCt('${safeText(immat)}','${safeText(ctDocumentLink)}')"><i class="bi bi-eye"></i></button>`:`<button type="button" class="vehicle-ct-eye disabled" title="Aucun PV disponible" aria-label="Aucun PV disponible" disabled><i class="bi bi-eye"></i></button>`}</div><div class="vehicle-info-item${ctAlertClass}"><span class="vehicle-info-label">Prochain contrôle</span><span class="vehicle-info-value">${formatFrDate(ct.prochainDate)}</span>${ctDaysLeft !== null && ctDaysLeft <= 30 ? `<span class="vehicle-ct-alert-days">${ctDaysLeft < 0 ? 'Dépassé' : 'J-' + ctDaysLeft}</span>` : ''}</div></div>`:'<div class="vehicle-empty">Aucun contrôle technique enregistré</div>';
   renderVehicleDetailDocuments();
+  renderVehicleHistory(immat);
+}
+function renderVehicleHistory(immat) {
+  let panel = document.getElementById("vehicleDetailHistory");
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.id = "vehicleDetailHistory";
+    panel.className = "vehicle-card";
+    document.getElementById("vehicleDetailDocuments")?.after(panel);
+  }
+  const rows = [];
+  for (const h of data.historiqueKilometrage || [])
+    if (h.immatriculation === immat) rows.push([h.date, "Kilométrage", formatKilometrage(h.ancien) + " → " + formatKilometrage(h.nouveau)]);
+  for (const h of data.historiqueAffectations || [])
+    if (h.immatriculation === immat) rows.push([h.date, "Affectation", String(h.ancien || "—") + " → " + String(h.nouveau || "—")]);
+  for (const r of data.revisions || [])
+    if (r.immatriculation === immat && r.statut === "Archivé") rows.push([r.dateModification || r.dateCreation, "Révision", formatFrDate(r.dateProchaineRevision || r.prochainDate)]);
+  for (const c of data.controlsTk || [])
+    if (c.immatriculation === immat && c.statut === "Archivé") rows.push([c.dateModification || c.dateCreation, "Contrôle archivé", formatFrDate(c.dernierDate)]);
+  rows.sort((a,b) => String(b[0] || "").localeCompare(String(a[0] || "")));
+  panel.innerHTML = '<h3>Historique</h3>' + (rows.length ? rows.map(([date,type,detail]) =>
+    '<div class="vehicle-info-item"><strong>' + safeText(type) + '</strong> · ' +
+    safeText(String(date || "").slice(0,10)) + ' · ' + safeText(detail) + '</div>').join("") :
+    '<div class="vehicle-empty">Aucun changement enregistré depuis cette version.</div>');
 }
 
 function normalizeTextValue(value) {
@@ -7858,8 +7922,8 @@ function renderVehicleDetailDocuments(){
     : '<div class="vehicle-empty">Aucun document enregistré</div>';
 }
 function openAddDocumentFromDetail(){ selectedVehicule=vehicleDetailImmat; openAddDocumentModal(); }
-function openVehicleRevisionFromDetail(){ selectedVehicule=vehicleDetailImmat; const rev=(data.revisions||[]).find(r=>r.immatriculation===vehicleDetailImmat); rev?openEditRevisionModal(vehicleDetailImmat):openAddRevisionModal(); }
-function openVehicleCtFromDetail(){ selectedVehicule=vehicleDetailImmat; const ct=(data.controlsTk||[]).find(c=>c.immatriculation===vehicleDetailImmat); ct?openCtEditModal(vehicleDetailImmat):openAddCtModal(); }
+function openVehicleRevisionFromDetail(){ selectedVehicule=vehicleDetailImmat; const rev=(data.revisions||[]).find(r=>r.immatriculation===vehicleDetailImmat && r.statut!=="Archivé"); rev?openEditRevisionModal(vehicleDetailImmat):openAddRevisionModal(); }
+function openVehicleCtFromDetail(){ selectedVehicule=vehicleDetailImmat; const ct=(data.controlsTk||[]).find(c=>c.immatriculation===vehicleDetailImmat && c.statut!=="Archivé"); ct?openCtEditModal(vehicleDetailImmat):openAddCtModal(); }
 async function changeVehicleDocumentStatus(id,action){
   const label=action==='archiveDocument'?'Archiver ce document ?':'Restaurer ce document ?';
   if(!await showConfirm(label,{title:action==='archiveDocument'?'Archiver le document':'Restaurer le document',confirmText:action==='archiveDocument'?'Archiver':'Restaurer'}))return;
@@ -7874,7 +7938,7 @@ async function changeVehicleDocumentStatus(id,action){
   try{await postAppsScriptJson({action,id});await loadData();populateVehicleQuickSelect();renderVehicleDetailPage();showMsg(action==='archiveDocument'?'Document archivé':'Document restauré','ok');}catch(err){showMsg('Erreur : '+err.message,'err');}
 }
 async function deleteVehicleDetailDocument(id){
-  if(!await showConfirm('Cette suppression est définitive.',{title:'Supprimer le document',confirmText:'Supprimer',danger:true}))return;
+  if(!await showConfirm('Confirmer l’archivage du document ?',{title:'Supprimer le document',confirmText:'Supprimer',danger:true}))return;
   
   // v6.3.50: Essayer serveur
   const serverAvailable = await tryQuietServerConnection();
@@ -8556,7 +8620,7 @@ async function archiveItem(action, immatriculation, label) {
     }
 
     const confirmed = await showConfirm(
-      `Supprimer définitivement « ${doc.nom || doc.nomFichier || 'ce document'} » ?`,
+      `Archiver « ${doc.nom || doc.nomFichier || 'ce document'} » ?`,
       { title: 'Supprimer le document', confirmText: 'Supprimer', danger: true }
     );
     if (!confirmed) return;
@@ -8569,7 +8633,7 @@ async function archiveItem(action, immatriculation, label) {
       if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
 
       const result = await response.json();
-      if (result && result.ok !== true) throw new Error(result.error || 'Suppression impossible');
+      if (result && result.ok !== true) throw new Error(result.error || 'Archivage impossible');
 
       await loadData();
       if (typeof populateVehicleQuickSelect === 'function') populateVehicleQuickSelect();
@@ -8731,7 +8795,7 @@ async function archiveItem(action, immatriculation, label) {
     }
 
     const confirmed = await showConfirm(
-      `Supprimer définitivement « ${documentName(doc) || 'ce document'} » ?`,
+      `Archiver « ${documentName(doc) || 'ce document'} » ?`,
       { title: 'Supprimer le document', confirmText: 'Supprimer', danger: true }
     );
     if (!confirmed) return;
@@ -8758,7 +8822,7 @@ async function archiveItem(action, immatriculation, label) {
 
       if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
       const result = await response.json();
-      if (result && result.ok !== true) throw new Error(result.error || 'Suppression impossible');
+      if (result && result.ok !== true) throw new Error(result.error || 'Archivage impossible');
 
       removeDocumentFromLocalData(doc);
       refreshAllDocumentViews();
