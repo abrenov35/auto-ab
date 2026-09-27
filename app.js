@@ -275,7 +275,12 @@ async function runAction(el){
   if(!mapping[action]||state.busy)return;
   if(!confirm((action.startsWith("archive")?"Archiver":"Restaurer")+" cet élément ?"))return;
   state.busy=true;el.disabled=true;
-  try{await request(mapping[action],{immatriculation:plate,id});await load({quiet:true});toast(action.startsWith("archive")?"Archivé.":"Restauré.")}
+  try{
+    await request(mapping[action],{immatriculation:plate,id});
+    if(action==="archiveVehicle"){state.view="vehicles";state.filter="archived";state.query=plate}
+    if(action==="restoreVehicle"){state.filter="active";state.query=plate}
+    await load({quiet:true});toast(action.startsWith("archive")?"Archivé.":"Restauré.");
+  }
   catch(e){toast(e.message,true);el.disabled=false}
   finally{state.busy=false}
 }
