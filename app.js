@@ -138,7 +138,8 @@ function renderVehicles(){
 }
 function field(label,value){return '<dl class="kv"><dt>'+escapeHtml(label)+'</dt><dd>'+escapeHtml(value??"—")+'</dd></dl>'}
 function documentRows(plate,category){
-  const docs=list("documents").filter(d=>samePlate(d.immatriculation||d.idVehicule,plate)&&(!category||String(d.categorie||d.type).toLocaleLowerCase("fr").includes(category)));
+  const vehId=vehicle(plate)?.id;
+  const docs=list("documents").filter(d=>(samePlate(d.immatriculation,plate)||Boolean(vehId&&String(d.idVehicule)===String(vehId)))&&(!category||String(d.categorie||d.type).toLocaleLowerCase("fr").includes(category)));
   return docs.sort((a,b)=>String(b.dateUpload||b.date||"").localeCompare(String(a.dateUpload||a.date||"")))
     .map(d=>{const url=safeLink(d.lienDrive||d.lien);return '<div class="history-row"><small>'+dateView(d.date||d.dateUpload)+'</small><span class="title">'+escapeHtml(d.nom||d.nomFichier||"Document")+'</span><span>'+escapeHtml(d.categorie||d.type||"")+'</span>'+(url?'<a class="button secondary" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">Voir</a>':"")+'</div>'}).join("");
 }
@@ -169,7 +170,7 @@ function renderDetail(){
     '<section class="panel"><h2>Entretien et réparation</h2>'+
     (maint.filter(x=>!archived(x)).length?maint.filter(x=>!archived(x)).map(m=>'<div class="history-row"><small>'+dateView(m.date)+'</small><span class="title">'+escapeHtml(m.type||"Entretien")+'</span><span>'+escapeHtml(m.description||"")+(m.prochaineDate?" · Prochain : "+dateView(m.prochaineDate):"")+'</span><button type="button" class="button quiet" data-action="archiveMaintenance" data-id="'+escapeHtml(m.id)+'">Archiver</button></div>').join(""):'<div class="empty">Aucune intervention enregistrée.</div>')+
     '<div class="section-actions">'+action("+ Enregistrer une intervention","addMaintenance",plate,"primary")+'</div></section></div>'+
-    '<section class="panel" style="margin-top:14px"><h2>Documents du véhicule</h2>'+(documentRows(plate)||'<div class="empty">Aucun document enregistré.</div>')+
+    '<section class="panel" style="margin-top:14px"><h2>Documents du véhicule</h2>'+(safeLink(v.lienCarteGrise)?'<div class="history-row"><small>—</small><span class="title">Carte grise</span><span>Document du véhicule</span><a class="button secondary" href="'+escapeHtml(safeLink(v.lienCarteGrise))+'" target="_blank" rel="noopener noreferrer">Voir</a></div>':"")+(documentRows(plate)||(!safeLink(v.lienCarteGrise)?'<div class="empty">Aucun document enregistré.</div>':""))+
     (c?'<div class="section-actions">'+action("Ajouter un PV de contrôle","uploadCt",plate,"secondary")+'</div>':"")+'</section>'+
     '<section class="panel"><h2>Historique</h2><h3>Révisions précédentes</h3>'+
     (revisions.length?revisions.map(x=>'<div class="history-row"><small>'+dateView(x.dateModification||x.dateCreation)+'</small><span class="title">Révision</span><span>Prévue le '+dateView(revDate(x))+'</span>'+
