@@ -2188,6 +2188,7 @@ function changerStatutSuivi_(ss, p, nomFeuille, archiver) {
     const lignes = sheet.getDataRange().getValues();
     const index = lignes.findIndex((ligne, i) => i > 0 &&
       normaliserPlaqueSuivi_(ligne[colonnePlaque]) === plaque &&
+      (!p.id || String(ligne[0]) === String(p.id)) &&
       (archiver ? ligne[colonneStatut - 1] !== "Archivé" : ligne[colonneStatut - 1] === "Archivé"));
     if (index < 0) throw new Error("Enregistrement introuvable : " + p.immatriculation);
     if (!archiver && lignes.some((ligne, i) => i > 0 && i !== index &&
