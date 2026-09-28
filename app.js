@@ -81,7 +81,7 @@ function toast(message,error=false){
   clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.className="toast",4500);
 }
 async function request(action,payload={}){
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),action==="loginParc"?60000:45000);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),action==="loginAndReadParc"?60000:45000);
   try{
     const res=await fetch(API_URL,{method:"POST",
       headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload,token:state.token}),
@@ -347,7 +347,7 @@ document.addEventListener("submit",async e=>{
   if(e.target.id==="loginForm"){
     e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;button.textContent="Connexion en cours…";
     const previous=e.target.parentElement.querySelector(".notice.error");if(previous)previous.remove();
-    try{const result=await request("loginParc",{pin:$("#accessPin").value});state.token=result.token;localStorage.setItem(SESSION_KEY,JSON.stringify({token:result.token,expiresAt:Date.now()+5*3600000+45*60000}));localStorage.removeItem(CACHE_KEY);await load()}
+    try{const result=await request("loginAndReadParc",{pin:$("#accessPin").value});const {token,...data}=result;state.token=token;state.data=data;state.lastSync=Date.now();state.stale=false;localStorage.setItem(SESSION_KEY,JSON.stringify({token,expiresAt:Date.now()+5*3600000+45*60000}));saveParcCache();render()}
     catch(error){button.disabled=false;button.textContent="Ouvrir le parc";const notice=document.createElement("p");notice.className="notice error";notice.textContent=error.message;e.target.after(notice)}
   }
   if(e.target.id==="mailSettingsForm"){

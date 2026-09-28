@@ -587,6 +587,12 @@ function doPost(e) {
 
     const action = String(p.action || "").trim();
 
+    if (action === "loginAndReadParc") {
+      const auth = JSON.parse(connecterParc_(p).getContent());
+      const parc = JSON.parse(doGet({parameter: {token: auth.token}}).getContent());
+      if (!parc.ok) return jsonResponse_(parc);
+      return jsonResponse_(Object.assign({}, parc, {token: auth.token}));
+    }
     if (action === "loginParc") return connecterParc_(p);
     verifierSessionParc_(p.token);
     if (action === "readParc") return doGet({parameter: {token: p.token}});
