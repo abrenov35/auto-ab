@@ -1,6 +1,7 @@
 "use strict";
 const API_URL = "https://script.google.com/macros/s/AKfycbwHL8O_Apgjv4gq8VKxxPcGcxeXQUeOSesN7vVlHOrdHRxbI2gf3kyajV64IuEbPuya/exec";
-const state = {data:null,view:"dashboard",vehicle:null,query:"",filter:"active",busy:false,form:null};
+const initialPlate=new URLSearchParams(location.search).get("vehicule");
+const state = {data:null,view:initialPlate?"detail":"dashboard",vehicle:initialPlate,query:"",filter:"active",busy:false,form:null};
 const $ = (s,root=document)=>root.querySelector(s);
 const escapeHtml = value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = value=>String(value??"").toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -48,13 +49,13 @@ function alertItems(){
   const rows=[];
   for(const v of list("vehicules").filter(x=>!archived(x))){
     const r=activeRevision(v.immatriculation),c=activeCt(v.immatriculation);
-    for(const [type,date] of [["Révision",revDate(r)],["Contrôle technique",ctDate(c)]]){
+    for(const [type,date,kind,item] of [["Révision",revDate(r),"revision",r],["Contrôle technique",ctDate(c),"ct",c]]){
       const n=days(date);
-      if(n!==null&&n<=30)rows.push({v,type,date,n});
+      if(n!==null&&n<=30)rows.push({v,type,date,n,kind,id:item?.id,acquit:item?.alerteMailAcquittee});
     }
     for(const m of list("maintenance").filter(x=>samePlate(x.immatriculation,v.immatriculation)&&!archived(x))){
       const date=iso(m.prochaineDate),n=days(date);
-      if(n!==null&&n<=30)rows.push({v,type:m.type||"Entretien",date,n});
+      if(n!==null&&n<=30)rows.push({v,type:m.type||"Entretien",date,n,kind:"maintenance",id:m.id,acquit:m.alerteMailAcquittee});
     }
   }
   return rows.sort((a,b)=>a.n-b.n||String(a.v.immatriculation).localeCompare(String(b.v.immatriculation)));
@@ -96,6 +97,7 @@ function render(){
 function $$(s,root=document){return [...root.querySelectorAll(s)]}
 function title(name,sub,button=""){return '<div class="page-title"><div><h1>'+escapeHtml(name)+'</h1><p>'+escapeHtml(sub)+'</p></div>'+button+'</div>'}
 function action(label,act,plate,kind="secondary"){return '<button type="button" class="button '+kind+'" data-action="'+escapeHtml(act)+'" data-plate="'+escapeHtml(plate)+'">'+escapeHtml(label)+'</button>'}
+function ackButton(plate,type,date,id,acquit){return '<button type="button" class="button quiet" data-action="ackMail" data-plate="'+escapeHtml(plate)+'" data-type="'+escapeHtml(type)+'" data-date="'+escapeHtml(date)+'" data-id="'+escapeHtml(id||"")+'" data-acquit="'+Boolean(acquit)+'">'+(acquit?"Réactiver les mails":"J’ai pris en charge")+'</button>'}
 function renderDashboard(){
   const vehicles=list("vehicules").filter(v=>!archived(v)),alerts=alertItems();
   const late=alerts.filter(x=>x.n<0),soon=alerts.filter(x=>x.n>=0);
@@ -103,10 +105,10 @@ function renderDashboard(){
   return title("À suivre","Les échéances des 30 prochains jours, sans calcul à faire.")+
     '<div class="metrics"><div class="metric"><b>'+vehicles.length+'</b><span>Véhicules suivis</span></div><div class="metric danger"><b>'+late.length+'</b><span>Échéances dépassées</span></div><div class="metric warning"><b>'+soon.length+'</b><span>À traiter sous 30 jours</span></div><div class="metric"><b>'+missing.length+'</b><span>Fiches à compléter</span></div></div>'+
     '<section class="panel"><h2>Échéances prioritaires</h2>'+
-    (alerts.length?'<div class="alert-list">'+alerts.map(({v,type,date,n})=>
+    (alerts.length?'<div class="alert-list">'+alerts.map(({v,type,date,n,kind,id,acquit})=>
       '<div class="alert-item"><div><strong>'+escapeHtml(v.marque+" "+v.modele)+'</strong><small>'+escapeHtml(v.immatriculation)+' · '+escapeHtml(v.conducteur||"Sans conducteur")+'</small></div>'+
       '<div>'+escapeHtml(type)+'</div><div>'+dateView(date)+' <span class="badge '+(n<0?"danger":"warning")+'">'+(n<0?"Retard "+Math.abs(n)+" j":"J-"+n)+'</span></div>'+
-      '<div class="row-actions">'+action("Ouvrir","detail",v.immatriculation,"quiet")+'</div></div>').join("")+'</div>':
+      '<div class="row-actions">'+(acquit?'<span class="badge ok">Pris en charge</span>':"")+ackButton(v.immatriculation,kind,date,id,acquit)+action("Ouvrir","detail",v.immatriculation,"quiet")+'</div></div>').join("")+'</div>':
       '<div class="empty">Aucune échéance dans les 30 jours.</div>')+'</section>'+
     (missing.length?'<section class="panel"><h2>Fiches à compléter</h2><p class="hint">Une date absente ne peut pas produire d’alerte.</p>'+
       '<div class="alert-list">'+missing.map(v=>'<div class="alert-item"><strong>'+escapeHtml(v.marque+" "+v.modele+" · "+v.immatriculation)+'</strong><span>'+
@@ -162,13 +164,13 @@ function renderDetail(){
     '<div class="section-actions">'+action("Modifier la fiche","editVehicle",plate,"quiet")+'</div></section>'+
     '<section class="panel"><h2>Révision</h2>'+field("Dernière effectuée",dateView(revLast(r)))+field("Prochaine",dateView(revDate(r)))+
     (r&&revDate(r)?'<p><span class="badge '+status(revDate(r)).tone+'">'+escapeHtml(status(revDate(r)).label)+'</span></p>':"")+
-    '<div class="section-actions">'+(r?action("Modifier la prochaine date","editRevision",plate)+action("Révision effectuée","newRevision",plate,"primary")+action("Archiver","archiveRevision",plate,"quiet"):action("+ Renseigner une révision","addRevision",plate,"primary"))+'</div></section>'+
+    '<div class="section-actions">'+(r?action("Modifier la prochaine date","editRevision",plate)+action("Révision effectuée","newRevision",plate,"primary")+(revDate(r)&&days(revDate(r))<=30?ackButton(plate,"revision",revDate(r),r.id,r.alerteMailAcquittee):"")+action("Archiver","archiveRevision",plate,"quiet"):action("+ Renseigner une révision","addRevision",plate,"primary"))+'</div></section>'+
     '<section class="panel"><h2>Contrôle technique</h2>'+field("Dernier effectué",dateView(ctLast(c)))+field("Prochain",dateView(ctDate(c)))+
     (c&&ctDate(c)?'<p><span class="badge '+status(ctDate(c)).tone+'">'+escapeHtml(status(ctDate(c)).label)+'</span></p>':"")+
     (c&&safeLink(c.lienCt||c.lienCT)?'<p><a class="button secondary" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(safeLink(c.lienCt||c.lienCT))+'">Voir le PV</a></p>':"")+
-    '<div class="section-actions">'+(c?action("Modifier la prochaine date","editCt",plate)+action("Ajouter le PV","uploadCt",plate)+action("Archiver","archiveCt",plate,"quiet"):action("+ Renseigner un CT","addCt",plate,"primary"))+'</div></section>'+
+    '<div class="section-actions">'+(c?action("Modifier la prochaine date","editCt",plate)+action("Ajouter le PV","uploadCt",plate)+(ctDate(c)&&days(ctDate(c))<=30?ackButton(plate,"ct",ctDate(c),c.id,c.alerteMailAcquittee):"")+action("Archiver","archiveCt",plate,"quiet"):action("+ Renseigner un CT","addCt",plate,"primary"))+'</div></section>'+
     '<section class="panel"><h2>Entretien et réparation</h2>'+
-    (maint.filter(x=>!archived(x)).length?maint.filter(x=>!archived(x)).map(m=>'<div class="history-row"><small>'+dateView(m.date)+'</small><span class="title">'+escapeHtml(m.type||"Entretien")+'</span><span>'+escapeHtml(m.description||"")+(m.prochaineDate?" · Prochain : "+dateView(m.prochaineDate):"")+'</span><button type="button" class="button quiet" data-action="archiveMaintenance" data-id="'+escapeHtml(m.id)+'">Archiver</button></div>').join(""):'<div class="empty">Aucune intervention enregistrée.</div>')+
+    (maint.filter(x=>!archived(x)).length?maint.filter(x=>!archived(x)).map(m=>'<div class="history-row"><small>'+dateView(m.date)+'</small><span class="title">'+escapeHtml(m.type||"Entretien")+'</span><span>'+escapeHtml(m.description||"")+(m.prochaineDate?" · Prochain : "+dateView(m.prochaineDate):"")+'</span><span class="row-actions">'+(m.prochaineDate&&days(m.prochaineDate)<=30?ackButton(plate,"maintenance",iso(m.prochaineDate),m.id,m.alerteMailAcquittee):"")+'<button type="button" class="button quiet" data-action="archiveMaintenance" data-id="'+escapeHtml(m.id)+'">Archiver</button></span></div>').join(""):'<div class="empty">Aucune intervention enregistrée.</div>')+
     '<div class="section-actions">'+action("+ Enregistrer une intervention","addMaintenance",plate,"primary")+'</div></section></div>'+
     '<section class="panel" style="margin-top:14px"><h2>Documents du véhicule</h2>'+(safeLink(v.lienCarteGrise)?'<div class="history-row"><small>—</small><span class="title">Carte grise</span><span>Document du véhicule</span><a class="button secondary" href="'+escapeHtml(safeLink(v.lienCarteGrise))+'" target="_blank" rel="noopener noreferrer">Voir</a></div>':"")+(documentRows(plate)||(!safeLink(v.lienCarteGrise)?'<div class="empty">Aucun document enregistré.</div>':""))+
     (c?'<div class="section-actions">'+action("Ajouter un PV de contrôle","uploadCt",plate,"secondary")+'</div>':"")+'</section>'+
@@ -269,6 +271,14 @@ async function runAction(el){
   if(action==="reload")return load();
   if(action==="back"){state.view="vehicles";render();return}
   if(action==="detail"){state.vehicle=plate;state.view="detail";render();scrollTo(0,0);return}
+  if(action==="ackMail"){
+    if(state.busy)return;
+    state.busy=true;el.disabled=true;
+    try{await request("setAlerteMail",{immatriculation:plate,type:el.dataset.type,date:el.dataset.date,id,acquitter:el.dataset.acquit!=="true"});await load({quiet:true});toast(el.dataset.acquit==="true"?"Rappels réactivés.":"Pris en charge : plus de mail pour cette échéance.")}
+    catch(e){toast(e.message,true);el.disabled=false}
+    finally{state.busy=false}
+    return;
+  }
   if(["newVehicle","editVehicle","addRevision","editRevision","newRevision","addCt","editCt","addMaintenance","uploadCt"].includes(action))return openForm(action,plate);
   const mapping={archiveVehicle:"archiveVehicule",restoreVehicle:"restoreVehicule",archiveRevision:"archiveRevision",restoreRevision:"restoreRevision",
     archiveCt:"archiveControleTk",restoreCt:"restoreControleTk",archiveMaintenance:"archiveMaintenance",restoreMaintenance:"restoreMaintenance"};
