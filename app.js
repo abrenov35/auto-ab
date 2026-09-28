@@ -65,7 +65,7 @@ function toast(message,error=false){
   clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.className="toast",4500);
 }
 async function request(action,payload={}){
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),action==="loginParc"?60000:45000);
   try{
     const res=await fetch(API_URL,{method:"POST",
       headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload,token:state.token}),
@@ -79,7 +79,7 @@ async function request(action,payload={}){
     }
     return result;
   }catch(e){
-    if(e.name==="AbortError")throw Error("Le serveur met trop de temps à répondre. Réessaie.");
+    if(e.name==="AbortError")throw Error("Le service Google tarde à répondre. Réessaie dans quelques instants.");
     if(e instanceof TypeError)throw Error("Connexion au service indisponible. Aucune modification enregistrée.");
     throw e;
   }finally{clearTimeout(timer)}
@@ -328,9 +328,10 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("submit",async e=>{
   if(e.target.id==="loginForm"){
-    e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;
+    e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;button.textContent="Connexion en cours…";
+    const previous=e.target.parentElement.querySelector(".notice.error");if(previous)previous.remove();
     try{const result=await request("loginParc",{pin:$("#accessPin").value});state.token=result.token;sessionStorage.setItem("autoAbToken",result.token);await load()}
-    catch(error){renderLogin(error.message)}
+    catch(error){button.disabled=false;button.textContent="Ouvrir le parc";const notice=document.createElement("p");notice.className="notice error";notice.textContent=error.message;e.target.after(notice)}
   }
   if(e.target.id==="mailSettingsForm"){
     e.preventDefault();const to=$$("#mailTo input").map(x=>x.value.trim()),cc=$$("#mailCc input").map(x=>x.value.trim());
