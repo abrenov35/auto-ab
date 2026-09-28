@@ -87,7 +87,7 @@ async function request(action,payload={}){
 async function load({quiet=false}={}){
   if(!state.token){renderLogin();return}
   if(!quiet)$("#app").innerHTML='<div class="loading"><span class="spinner"></span> Chargement du parc…</div>';
-  try{state.data=await request();render()}
+  try{state.data=await request("readParc");render()}
   catch(e){
     if(e.message.includes("Accès requis")){state.token="";sessionStorage.removeItem("autoAbToken");state.data=null;renderLogin();return}
     if(state.data){toast(e.message,true);return}
