@@ -2,7 +2,9 @@ const CONFIG = {
 
   SHEET_ID: "1fC7O-GIKq1qX81JP8EzDS1tXnBhVZKXX9unTYHZB79Y",
 
-  DRIVE_FOLDER_ID: "1RfbDWQf6ksMBLESuzum-OJRGCDwYSgEL"
+  DRIVE_FOLDER_ID: "1RfbDWQf6ksMBLESuzum-OJRGCDwYSgEL",
+  ALERTE_EMAIL: "abrenov03@gmail.com",
+  SITE_URL: "https://abrenov35.github.io/auto-ab/"
 
 };
 
@@ -350,7 +352,8 @@ function lireRevisions_(ss) {
 
       immatriculation: row[11] || "",
 
-      conducteur: row[12] || ""
+      conducteur: row[12] || "",
+      alerteMailAcquittee: Boolean(row[3] && row[13] && dateIsoSheet_(row[13]) === dateIsoSheet_(row[3]))
 
     });
 
@@ -420,7 +423,8 @@ function lireControlsTk_(ss) {
 
       dateModification: row[7] || "",
 
-      statut: row[8] || ""
+      statut: row[8] || "",
+      alerteMailAcquittee: Boolean(row[4] && row[9] && dateIsoSheet_(row[9]) === dateIsoSheet_(row[4]))
 
     });
 
@@ -693,6 +697,8 @@ function doPost(e) {
       case "archiveControleTk":
       case "restoreControleTk":
         return changerStatutSuivi_(ss, p, "Contrôles techniques", action === "archiveControleTk");
+      case "setAlerteMail":
+        return acquitterAlerteMail_(ss, p);
 
 
 
@@ -2274,7 +2280,7 @@ function dateIsoSheet_(valeur) {
 function lireMaintenance_(ss) {
   const feuille = ss.getSheetByName("Maintenance");
   if (!feuille || feuille.getLastRow() < 2) return [];
-  return feuille.getRange(2, 1, feuille.getLastRow() - 1, 14).getValues()
+  return feuille.getRange(2, 1, feuille.getLastRow() - 1, 15).getValues()
     .filter(ligne => ligne[1])
     .map(ligne => ({
       id: ligne[0], immatriculation: ligne[1], date: dateIsoSheet_(ligne[2]),
@@ -2283,7 +2289,8 @@ function lireMaintenance_(ss) {
       prestataire: ligne[7] || "", prochaineDate: dateIsoSheet_(ligne[8]),
       observations: ligne[9] || "", dateCreation: ligne[10] || "",
       dateModification: ligne[11] || "", lienFacture: ligne[12] || "",
-      statut: ligne[13] || "Actif"
+      statut: ligne[13] || "Actif",
+      alerteMailAcquittee: Boolean(ligne[8] && ligne[14] && dateIsoSheet_(ligne[14]) === dateIsoSheet_(ligne[8]))
     }));
 }
 
@@ -2430,4 +2437,109 @@ function uploadControleTk_(ss, p) {
   sheet.getRange(index + 1, 8).setValue(nowIso_());
   SpreadsheetApp.flush();
   return reponse;
+}
+
+// L'acquittement porte sur une échéance précise, jamais sur tout le véhicule.
+function acquitterAlerteMail_(ss, p) {
+  const definitions = {
+    revision: {nom: "Révisions", plaque: 12, date: 4, statut: 7, acquit: 14},
+    ct: {nom: "Contrôles techniques", plaque: 3, date: 5, statut: 9, acquit: 10},
+    maintenance: {nom: "Maintenance", plaque: 2, date: 9, statut: 14, acquit: 15}
+  };
+  const def = definitions[String(p.type || "")];
+  if (!def) throw new Error("Type d'échéance inconnu");
+  const feuille = ss.getSheetByName(def.nom);
+  if (!feuille) throw new Error("Feuille de suivi introuvable");
+  const plaque = normaliserPlaqueSuivi_(p.immatriculation);
+  const date = validerDateSuivi_(p.date, "Échéance");
+  if (!plaque || !date) throw new Error("Véhicule et échéance requis");
+  const verrou = LockService.getScriptLock();
+  verrou.waitLock(15000);
+  try {
+    const lignes = feuille.getDataRange().getValues();
+    const index = lignes.findIndex((ligne, i) => i > 0 &&
+      normaliserPlaqueSuivi_(ligne[def.plaque - 1]) === plaque &&
+      dateIsoSheet_(ligne[def.date - 1]) === date &&
+      String(ligne[def.statut - 1]) !== "Archivé" &&
+      (def.nom !== "Maintenance" || String(ligne[0]) === String(p.id || "")));
+    if (index < 0) throw new Error("Échéance introuvable ou déjà modifiée");
+    if (!feuille.getRange(1, def.acquit).getValue())
+      feuille.getRange(1, def.acquit).setValue("Alerte mail acquittée pour échéance");
+    feuille.getRange(index + 1, def.acquit).setValue(p.acquitter === true ? date : "");
+    SpreadsheetApp.flush();
+    return jsonResponse_({ok: true, success: true});
+  } finally {
+    verrou.releaseLock();
+  }
+}
+
+function elementsMailParc_(ss) {
+  const vehicules = lireVehicules_(ss).filter(v => v.statut !== "Archivé");
+  const revisions = lireRevisions_(ss), controles = lireControlsTk_(ss), interventions = lireMaintenance_(ss);
+  const aujourdhui = Utilities.formatDate(new Date(), "Europe/Paris", "yyyy-MM-dd");
+  const jour = iso => Math.round((Date.parse(iso + "T00:00:00Z") - Date.parse(aujourdhui + "T00:00:00Z")) / 86400000);
+  const elements = [];
+  vehicules.forEach(v => {
+    const plaque = normaliserPlaqueSuivi_(v.immatriculation);
+    const suivis = [
+      ...revisions.filter(x => normaliserPlaqueSuivi_(x.immatriculation) === plaque && x.statut !== "Archivé")
+        .map(x => ({type: "Révision", date: x.dateProchaineRevision, acquit: x.alerteMailAcquittee})),
+      ...controles.filter(x => normaliserPlaqueSuivi_(x.immatriculation) === plaque && x.statut !== "Archivé")
+        .map(x => ({type: "Contrôle technique", date: x.dateProchainCT, acquit: x.alerteMailAcquittee})),
+      ...interventions.filter(x => normaliserPlaqueSuivi_(x.immatriculation) === plaque && x.statut !== "Archivé")
+        .map(x => ({type: x.type || "Entretien", date: x.prochaineDate, acquit: x.alerteMailAcquittee}))
+    ];
+    suivis.forEach(s => {
+      if (!s.date || s.acquit) return;
+      const ecart = jour(s.date);
+      if (ecart <= 30) elements.push({vehicule: v, type: s.type, date: s.date, ecart});
+    });
+  });
+  return elements.sort((a, b) => a.ecart - b.ecart);
+}
+
+function envoyerAlerteParc() {
+  const verrou = LockService.getScriptLock();
+  verrou.waitLock(15000);
+  try {
+    const aujourdhui = Utilities.formatDate(new Date(), "Europe/Paris", "yyyy-MM-dd");
+    const proprietes = PropertiesService.getScriptProperties();
+    if (proprietes.getProperty("AUTO_AB_MAIL_DERNIER_JOUR") === aujourdhui) {
+      console.log("Récapitulatif déjà envoyé aujourd'hui");
+      return;
+    }
+    const elements = elementsMailParc_(SpreadsheetApp.openById(CONFIG.SHEET_ID));
+    if (!elements.length) {
+      console.log("Aucune échéance non acquittée à signaler");
+      return;
+    }
+    if (MailApp.getRemainingDailyQuota() < 1) throw new Error("Quota mail épuisé");
+    const esc = texte => String(texte || "").replace(/[&<>\"']/g, c =>
+      ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);
+    const dateFr = iso => iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4);
+    const sujet = "AB Parc Auto — " + elements.length + " échéance" + (elements.length > 1 ? "s" : "") + " à suivre · " + dateFr(aujourdhui);
+    const lignes = elements.map(e => {
+      const statut = e.ecart < 0 ? "En retard de " + Math.abs(e.ecart) + " j" : e.ecart === 0 ? "Aujourd'hui" : "J-" + e.ecart;
+      const nom = e.vehicule.marque + " " + e.vehicule.modele + " · " + e.vehicule.immatriculation;
+      return {statut, nom, type: e.type, date: dateFr(e.date), lien: CONFIG.SITE_URL + "?vehicule=" + encodeURIComponent(e.vehicule.immatriculation)};
+    });
+    const corps = "Bonjour Pascale,\n\nVoici les échéances du parc automobile à suivre :\n\n" +
+      lignes.map(x => (x.statut.startsWith("En retard") ? "🔴 " : "🟠 ") + x.type + " — " + x.nom + "\nPrévue le " + x.date + " · " + x.statut + "\n" + x.lien).join("\n\n") +
+      "\n\nOuvrir AB Parc Auto : " + CONFIG.SITE_URL + "\n\nLes échéances prises en charge ne sont plus rappelées par mail.";
+    const html = '<div style="font:14px Arial,sans-serif;color:#182330;max-width:640px"><h2 style="background:#1e3a8a;color:white;padding:12px;font-size:16px">AB Parc Auto</h2><p>Bonjour Pascale,</p><p>Voici les échéances du parc automobile à suivre :</p>' +
+      lignes.map(x => '<div style="border:1px solid #dfe5ec;border-radius:5px;padding:12px;margin:9px 0"><strong>' + esc(x.type) + ' — ' + esc(x.nom) + '</strong><br>Prévue le ' + esc(x.date) + ' · <b>' + esc(x.statut) + '</b><br><a href="' + esc(x.lien) + '">Ouvrir la fiche</a></div>').join("") +
+      '<p><a href="' + esc(CONFIG.SITE_URL) + '" style="background:#1e3a8a;color:white;padding:10px 14px;text-decoration:none;display:inline-block">Ouvrir AB Parc Auto</a></p><p style="color:#667085">Les échéances prises en charge ne sont plus rappelées par mail.</p></div>';
+    MailApp.sendEmail({to: CONFIG.ALERTE_EMAIL, subject: sujet, body: corps, htmlBody: html, name: "AB Parc Auto"});
+    proprietes.setProperty("AUTO_AB_MAIL_DERNIER_JOUR", aujourdhui);
+    console.log("Mail envoyé à " + CONFIG.ALERTE_EMAIL + " : " + elements.length + " échéance(s)");
+  } finally {
+    verrou.releaseLock();
+  }
+}
+
+function installerAlerteParc() {
+  const existants = ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "envoyerAlerteParc");
+  if (!existants.length) ScriptApp.newTrigger("envoyerAlerteParc").timeBased()
+    .atHour(8).nearMinute(0).everyDays(1).inTimezone("Europe/Paris").create();
+  console.log("Déclencheur quotidien : " + (existants.length || 1));
 }
