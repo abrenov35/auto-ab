@@ -1,7 +1,23 @@
 "use strict";
 const API_URL = "https://script.google.com/macros/s/AKfycbwHL8O_Apgjv4gq8VKxxPcGcxeXQUeOSesN7vVlHOrdHRxbI2gf3kyajV64IuEbPuya/exec";
 const initialPlate=new URLSearchParams(location.search).get("vehicule");
-const state = {data:null,view:initialPlate?"detail":"dashboard",vehicle:initialPlate,query:"",filter:"active",busy:false,form:null,token:sessionStorage.getItem("autoAbToken")||"",mailSettings:null};
+const SESSION_KEY="autoAbSession",CACHE_KEY="autoAbParcCache";
+function storedSession(){
+  try{const session=JSON.parse(localStorage.getItem(SESSION_KEY)||"null");if(session?.token&&session.expiresAt>Date.now())return session.token}catch{}
+  localStorage.removeItem(SESSION_KEY);localStorage.removeItem(CACHE_KEY);
+  const previous=sessionStorage.getItem("autoAbToken");
+  if(previous){localStorage.setItem(SESSION_KEY,JSON.stringify({token:previous,expiresAt:Date.now()+30*60000}));return previous}
+  return "";
+}
+const state = {data:null,view:initialPlate?"detail":"dashboard",vehicle:initialPlate,query:"",filter:"active",busy:false,form:null,token:storedSession(),mailSettings:null,syncing:false,stale:false,lastSync:0};
+function clearAccess(){state.token="";state.data=null;state.syncing=false;state.stale=false;localStorage.removeItem(SESSION_KEY);localStorage.removeItem(CACHE_KEY);sessionStorage.removeItem("autoAbToken")}
+function saveParcCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({data:state.data,at:state.lastSync}))}catch{}}
+function restoreParcCache(){
+  if(!state.token)return;
+  try{const cache=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");
+    if(cache?.data&&cache.at>Date.now()-6*3600000){state.data=cache.data;state.lastSync=cache.at;state.syncing=true;state.stale=true}
+  }catch{localStorage.removeItem(CACHE_KEY)}
+}
 const $ = (s,root=document)=>root.querySelector(s);
 const escapeHtml = value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = value=>String(value??"").toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -74,7 +90,7 @@ async function request(action,payload={}){
     let result;try{result=JSON.parse(text)}catch{throw Error("Le service a renvoyé une réponse illisible.")}
     if(!res.ok||result.ok!==true){
       const message=result.error||result.message||"Enregistrement impossible";
-      if(message.includes("Accès requis")){state.token="";state.data=null;sessionStorage.removeItem("autoAbToken");renderLogin("Session expirée. Saisis de nouveau le code.")}
+      if(message.includes("Accès requis")){clearAccess();renderLogin("Session expirée. Saisis de nouveau le code.")}
       throw Error(message);
     }
     return result;
@@ -86,11 +102,11 @@ async function request(action,payload={}){
 }
 async function load({quiet=false}={}){
   if(!state.token){renderLogin();return}
-  if(!quiet)$("#app").innerHTML='<div class="loading"><span class="spinner"></span> Chargement du parc…</div>';
-  try{state.data=await request("readParc");render()}
+  if(!quiet&&!state.data)$("#app").innerHTML='<div class="loading"><span class="spinner"></span> Chargement du parc…</div>';
+  try{state.data=await request("readParc");state.lastSync=Date.now();state.syncing=false;state.stale=false;saveParcCache();render()}
   catch(e){
-    if(e.message.includes("Accès requis")){state.token="";sessionStorage.removeItem("autoAbToken");state.data=null;renderLogin();return}
-    if(state.data){toast(e.message,true);return}
+    if(e.message.includes("Accès requis")){clearAccess();renderLogin("Session expirée. Saisis de nouveau le code.");return}
+    if(state.data){state.syncing=false;state.stale=true;render();toast(e.message,true);return}
     $("#app").innerHTML='<div class="notice error"><strong>Le parc ne peut pas être chargé</strong><p>'+escapeHtml(e.message)+'</p><button class="button primary" type="button" data-action="reload">Réessayer</button></div>';
   }
 }
@@ -98,7 +114,8 @@ function render(){
   document.querySelector(".tabs").hidden=false;$("#refreshButton").hidden=false;$("#logoutButton").hidden=false;
   $$(".tab").forEach(el=>el.classList.toggle("active",el.dataset.view===state.view));
   if(state.view==="detail"&&state.vehicle&&!vehicle(state.vehicle)){state.view="vehicles";state.vehicle=null}
-  $("#app").innerHTML=state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():state.view==="settings"?renderSettings():renderDashboard();
+  const syncNote=state.stale&&state.lastSync?'<div class="sync-note" role="status">'+(state.syncing?"Actualisation en cours… · ":"Dernière synchronisation : ")+new Date(state.lastSync).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+' · <button type="button" data-action="reload">Actualiser</button></div>':"";
+  $("#app").innerHTML=syncNote+(state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():state.view==="settings"?renderSettings():renderDashboard());
   if(state.view==="vehicles"){const input=$("#search");if(input){input.value=state.query}}
 }
 function $$(s,root=document){return [...root.querySelectorAll(s)]}
@@ -330,7 +347,7 @@ document.addEventListener("submit",async e=>{
   if(e.target.id==="loginForm"){
     e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;button.textContent="Connexion en cours…";
     const previous=e.target.parentElement.querySelector(".notice.error");if(previous)previous.remove();
-    try{const result=await request("loginParc",{pin:$("#accessPin").value});state.token=result.token;sessionStorage.setItem("autoAbToken",result.token);await load()}
+    try{const result=await request("loginParc",{pin:$("#accessPin").value});state.token=result.token;localStorage.setItem(SESSION_KEY,JSON.stringify({token:result.token,expiresAt:Date.now()+5*3600000+45*60000}));localStorage.removeItem(CACHE_KEY);await load()}
     catch(error){button.disabled=false;button.textContent="Ouvrir le parc";const notice=document.createElement("p");notice.className="notice error";notice.textContent=error.message;e.target.after(notice)}
   }
   if(e.target.id==="mailSettingsForm"){
@@ -343,8 +360,8 @@ document.addEventListener("submit",async e=>{
 document.addEventListener("input",e=>{if(e.target.id==="search"){state.query=e.target.value;const pos=e.target.selectionStart;render();$("#search").focus();$("#search").setSelectionRange(pos,pos)}});
 document.addEventListener("change",e=>{if(e.target.id==="filter"){state.filter=e.target.value;render()}});
 $("#refreshButton").addEventListener("click",()=>load({quiet:true}));
-$("#logoutButton").addEventListener("click",()=>{state.token="";state.data=null;sessionStorage.removeItem("autoAbToken");renderLogin()});
+$("#logoutButton").addEventListener("click",()=>{clearAccess();renderLogin()});
 $("#closeDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#cancelDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#editorForm").addEventListener("submit",submitForm);
-load();
+restoreParcCache();if(state.data)render();load({quiet:Boolean(state.data)});
