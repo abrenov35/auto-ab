@@ -6,17 +6,19 @@
   <meta name="theme-color" content="#1e3a8a">
   <title>AB Parc Auto · AB RENOV 35</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="app.css?v=5">
-  <script src="app.js?v=5" defer></script>
+  <link rel="stylesheet" href="app.css?v=6">
+  <script src="app.js?v=6" defer></script>
 </head>
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">AB</span><span>Parc Auto <small>AB RENOV 35</small></span></div>
     <button id="refreshButton" class="top-action" type="button" title="Actualiser les données">Actualiser</button>
+    <button id="logoutButton" class="top-action" type="button" hidden>Quitter</button>
   </header>
   <nav class="tabs" aria-label="Navigation principale">
     <button type="button" class="tab active" data-view="dashboard">À suivre</button>
     <button type="button" class="tab" data-view="vehicles">Véhicules</button>
+    <button type="button" class="tab" data-view="settings">Paramètres</button>
   </nav>
   <main id="app" class="shell" aria-live="polite">
     <div class="loading"><span class="spinner"></span> Chargement du parc…</div>
