@@ -133,6 +133,7 @@ function findVehicleByImmat_(sheet, immatriculation) {
 function doGet(e) {
 
   try {
+    verifierSessionParc_(e && e.parameter && e.parameter.token);
 
     const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
 
@@ -585,6 +586,12 @@ function doPost(e) {
     const p = JSON.parse(e.postData.contents);
 
     const action = String(p.action || "").trim();
+
+    if (action === "loginParc") return connecterParc_(p);
+    verifierSessionParc_(p.token);
+    if (action === "readParc") return doGet({parameter: {token: p.token}});
+    if (action === "getMailSettings") return lireParametresMail_();
+    if (action === "saveMailSettings") return enregistrerParametresMail_(p);
 
 
 
@@ -2513,7 +2520,8 @@ function envoyerAlerteParc() {
       console.log("Aucune échéance non acquittée à signaler");
       return;
     }
-    if (MailApp.getRemainingDailyQuota() < 1) throw new Error("Quota mail épuisé");
+    const parametres = parametresMailParc_();
+    if (MailApp.getRemainingDailyQuota() < parametres.to.length + parametres.cc.length) throw new Error("Quota mail épuisé");
     const esc = texte => String(texte || "").replace(/[&<>\"']/g, c =>
       ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);
     const dateFr = iso => iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4);
@@ -2529,9 +2537,9 @@ function envoyerAlerteParc() {
     const html = '<div style="font:14px Arial,sans-serif;color:#182330;max-width:640px"><h2 style="background:#1e3a8a;color:white;padding:12px;font-size:16px">AB Parc Auto</h2><p>Bonjour Pascale,</p><p>Voici les échéances du parc automobile à suivre :</p>' +
       lignes.map(x => '<div style="border:1px solid #dfe5ec;border-radius:5px;padding:12px;margin:9px 0"><strong>' + esc(x.type) + ' — ' + esc(x.nom) + '</strong><br>Prévue le ' + esc(x.date) + ' · <b>' + esc(x.statut) + '</b><br><a href="' + esc(x.lien) + '">Ouvrir la fiche</a></div>').join("") +
       '<p><a href="' + esc(CONFIG.SITE_URL) + '" style="background:#1e3a8a;color:white;padding:10px 14px;text-decoration:none;display:inline-block">Ouvrir AB Parc Auto</a></p><p style="color:#667085">Les échéances prises en charge ne sont plus rappelées par mail.</p></div>';
-    MailApp.sendEmail({to: CONFIG.ALERTE_EMAIL, subject: sujet, body: corps, htmlBody: html, name: "AB Parc Auto"});
+    MailApp.sendEmail({to: parametres.to.join(","), cc: parametres.cc.join(","), subject: sujet, body: corps, htmlBody: html, name: "AB Parc Auto"});
     proprietes.setProperty("AUTO_AB_MAIL_DERNIER_JOUR", aujourdhui);
-    console.log("Mail envoyé à " + CONFIG.ALERTE_EMAIL + " : " + elements.length + " échéance(s)");
+    console.log("Mail envoyé à " + parametres.to.join(",") + " : " + elements.length + " échéance(s)");
   } finally {
     verrou.releaseLock();
   }
@@ -2542,4 +2550,69 @@ function installerAlerteParc() {
   if (!existants.length) ScriptApp.newTrigger("envoyerAlerteParc").timeBased()
     .atHour(8).nearMinute(0).everyDays(1).inTimezone("Europe/Paris").create();
   console.log("Déclencheur quotidien : " + (existants.length || 1));
+}
+
+// L'accès est vérifié côté serveur. Définir AUTO_AB_ACCESS_CODE dans les
+// propriétés du script avant le déploiement ; ne jamais publier le code dans GitHub.
+function connecterParc_(p) {
+  const proprietes = PropertiesService.getScriptProperties();
+  const code = proprietes.getProperty("AUTO_AB_ACCESS_CODE");
+  if (!code) throw new Error("Accès non configuré. Contacter l'administrateur.");
+  const verrou = LockService.getScriptLock();
+  verrou.waitLock(10000);
+  try {
+    const maintenant = Date.now();
+    const blocage = Number(proprietes.getProperty("AUTO_AB_LOGIN_BLOQUE_JUSQUA") || 0);
+    if (blocage > maintenant) throw new Error("Trop d'essais. Réessayer dans 15 minutes.");
+    if (String(p.pin || "") !== code) {
+      const essais = Number(proprietes.getProperty("AUTO_AB_LOGIN_ESSAIS") || 0) + 1;
+      proprietes.setProperty("AUTO_AB_LOGIN_ESSAIS", String(essais));
+      if (essais >= 5) {
+        proprietes.setProperty("AUTO_AB_LOGIN_BLOQUE_JUSQUA", String(maintenant + 15 * 60000));
+        proprietes.setProperty("AUTO_AB_LOGIN_ESSAIS", "0");
+      }
+      throw new Error("Code incorrect.");
+    }
+    proprietes.deleteProperty("AUTO_AB_LOGIN_ESSAIS");
+    proprietes.deleteProperty("AUTO_AB_LOGIN_BLOQUE_JUSQUA");
+    const token = Utilities.getUuid() + Utilities.getUuid();
+    CacheService.getScriptCache().put("AUTO_AB_SESSION_" + token, "1", 21600);
+    return jsonResponse_({ok: true, success: true, token});
+  } finally {
+    verrou.releaseLock();
+  }
+}
+
+function verifierSessionParc_(token) {
+  if (!token || !CacheService.getScriptCache().get("AUTO_AB_SESSION_" + String(token))) {
+    throw new Error("Accès requis. Saisir le code du parc.");
+  }
+}
+
+function parametresMailParc_() {
+  const proprietes = PropertiesService.getScriptProperties();
+  const to = JSON.parse(proprietes.getProperty("AUTO_AB_MAIL_TO") || "null") || [CONFIG.ALERTE_EMAIL];
+  const cc = JSON.parse(proprietes.getProperty("AUTO_AB_MAIL_CC") || "null") || [];
+  return {to, cc};
+}
+
+function lireParametresMail_() {
+  const parametres = parametresMailParc_();
+  return jsonResponse_({ok: true, success: true, to: parametres.to, cc: parametres.cc});
+}
+
+function enregistrerParametresMail_(p) {
+  const verifier = valeurs => {
+    if (!Array.isArray(valeurs)) throw new Error("Liste d'adresses invalide");
+    return valeurs.map(x => String(x || "").trim().toLowerCase()).filter(Boolean);
+  };
+  const to = verifier(p.to), cc = verifier(p.cc);
+  if (!to.length) throw new Error("Ajouter au moins un destinataire principal");
+  if (to.length + cc.length > 20) throw new Error("20 adresses maximum");
+  const toutes = to.concat(cc);
+  if (new Set(toutes).size !== toutes.length) throw new Error("Une adresse est présente deux fois");
+  if (toutes.some(x => !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(x))) throw new Error("Adresse e-mail non conforme");
+  const proprietes = PropertiesService.getScriptProperties();
+  proprietes.setProperties({AUTO_AB_MAIL_TO: JSON.stringify(to), AUTO_AB_MAIL_CC: JSON.stringify(cc)});
+  return jsonResponse_({ok: true, success: true, to, cc});
 }
