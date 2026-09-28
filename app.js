@@ -72,7 +72,11 @@ async function request(action,payload={}){
       cache:"no-store",signal:controller.signal});
     const text=await res.text();
     let result;try{result=JSON.parse(text)}catch{throw Error("Le service a renvoyé une réponse illisible.")}
-    if(!res.ok||result.ok!==true)throw Error(result.error||result.message||"Enregistrement impossible");
+    if(!res.ok||result.ok!==true){
+      const message=result.error||result.message||"Enregistrement impossible";
+      if(message.includes("Accès requis")){state.token="";state.data=null;sessionStorage.removeItem("autoAbToken");renderLogin("Session expirée. Saisis de nouveau le code.")}
+      throw Error(message);
+    }
     return result;
   }catch(e){
     if(e.name==="AbortError")throw Error("Le serveur met trop de temps à répondre. Réessaie.");
