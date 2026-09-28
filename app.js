@@ -1,7 +1,7 @@
 "use strict";
 const API_URL = "https://script.google.com/macros/s/AKfycbwHL8O_Apgjv4gq8VKxxPcGcxeXQUeOSesN7vVlHOrdHRxbI2gf3kyajV64IuEbPuya/exec";
 const initialPlate=new URLSearchParams(location.search).get("vehicule");
-const state = {data:null,view:initialPlate?"detail":"dashboard",vehicle:initialPlate,query:"",filter:"active",busy:false,form:null};
+const state = {data:null,view:initialPlate?"detail":"dashboard",vehicle:initialPlate,query:"",filter:"active",busy:false,form:null,token:sessionStorage.getItem("autoAbToken")||"",mailSettings:null};
 const $ = (s,root=document)=>root.querySelector(s);
 const escapeHtml = value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm = value=>String(value??"").toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -67,8 +67,8 @@ function toast(message,error=false){
 async function request(action,payload={}){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
   try{
-    const res=await fetch(API_URL,{method:action?"POST":"GET",
-      ...(action?{headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload})}:{}),
+    const res=await fetch(API_URL,{method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload,token:state.token}),
       cache:"no-store",signal:controller.signal});
     const text=await res.text();
     let result;try{result=JSON.parse(text)}catch{throw Error("Le service a renvoyé une réponse illisible.")}
@@ -81,21 +81,43 @@ async function request(action,payload={}){
   }finally{clearTimeout(timer)}
 }
 async function load({quiet=false}={}){
+  if(!state.token){renderLogin();return}
   if(!quiet)$("#app").innerHTML='<div class="loading"><span class="spinner"></span> Chargement du parc…</div>';
   try{state.data=await request();render()}
   catch(e){
+    if(e.message.includes("Accès requis")){state.token="";sessionStorage.removeItem("autoAbToken");state.data=null;renderLogin();return}
     if(state.data){toast(e.message,true);return}
     $("#app").innerHTML='<div class="notice error"><strong>Le parc ne peut pas être chargé</strong><p>'+escapeHtml(e.message)+'</p><button class="button primary" type="button" data-action="reload">Réessayer</button></div>';
   }
 }
 function render(){
+  document.querySelector(".tabs").hidden=false;$("#refreshButton").hidden=false;$("#logoutButton").hidden=false;
   $$(".tab").forEach(el=>el.classList.toggle("active",el.dataset.view===state.view));
   if(state.view==="detail"&&state.vehicle&&!vehicle(state.vehicle)){state.view="vehicles";state.vehicle=null}
-  $("#app").innerHTML=state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():renderDashboard();
+  $("#app").innerHTML=state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():state.view==="settings"?renderSettings():renderDashboard();
   if(state.view==="vehicles"){const input=$("#search");if(input){input.value=state.query}}
 }
 function $$(s,root=document){return [...root.querySelectorAll(s)]}
 function title(name,sub,button=""){return '<div class="page-title"><div><h1>'+escapeHtml(name)+'</h1><p>'+escapeHtml(sub)+'</p></div>'+button+'</div>'}
+function renderLogin(message=""){
+  document.querySelector(".tabs").hidden=true;$("#refreshButton").hidden=true;$("#logoutButton").hidden=true;
+  $("#app").innerHTML='<section class="panel access-card"><h1>Accès au parc</h1><p>Saisis le code pour consulter les véhicules.</p><form id="loginForm"><label for="accessPin">Code d’accès</label><input id="accessPin" type="password" inputmode="numeric" autocomplete="off" required maxlength="20"><button class="button primary" type="submit">Ouvrir le parc</button></form>'+(message?'<p class="notice error">'+escapeHtml(message)+'</p>':"")+'</section>';
+  $("#accessPin").focus();
+}
+function addressRow(kind,value=""){
+  return '<div class="address-row"><input type="email" required autocomplete="email" value="'+escapeHtml(value)+'" aria-label="Adresse '+(kind==="to"?"destinataire":"en copie")+'"><button type="button" class="button quiet" data-action="removeAddress" aria-label="Retirer cette adresse">Retirer</button></div>';
+}
+function renderSettings(){
+  const settings=state.mailSettings;
+  return title("Paramètres","Destinataires des alertes quotidiennes.")+
+    '<section class="panel mail-settings"><h2>Alertes par mail</h2><p class="hint">Les messages partent du compte AB RENOV 35. Chaque adresse reçoit le même récapitulatif.</p>'+
+    (settings?'<form id="mailSettingsForm"><h3>Destinataires</h3><div id="mailTo">'+settings.to.map(x=>addressRow("to",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="to">+ Ajouter une adresse</button><h3>En copie</h3><div id="mailCc">'+settings.cc.map(x=>addressRow("cc",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="cc">+ Ajouter une adresse en copie</button><div class="section-actions"><button class="button primary" type="submit">Enregistrer les adresses</button></div></form>':'<p>Chargement des adresses…</p>')+'</section>';
+}
+async function openSettings(){
+  state.view="settings";render();
+  try{state.mailSettings=await request("getMailSettings");render()}
+  catch(e){toast(e.message,true)}
+}
 function action(label,act,plate,kind="secondary"){return '<button type="button" class="button '+kind+'" data-action="'+escapeHtml(act)+'" data-plate="'+escapeHtml(plate)+'">'+escapeHtml(label)+'</button>'}
 function ackButton(plate,type,date,id,acquit){return '<button type="button" class="button quiet" data-action="ackMail" data-plate="'+escapeHtml(plate)+'" data-type="'+escapeHtml(type)+'" data-date="'+escapeHtml(date)+'" data-id="'+escapeHtml(id||"")+'" data-acquit="'+Boolean(acquit)+'">'+(acquit?"Réactiver les mails":"J’ai pris en charge")+'</button>'}
 function renderDashboard(){
@@ -268,6 +290,8 @@ async function submitForm(event){
 }
 async function runAction(el){
   const action=el.dataset.action,plate=el.dataset.plate||state.vehicle,id=el.dataset.id;
+  if(action==="addAddress"){$(el.dataset.kind==="to"?"#mailTo":"#mailCc").insertAdjacentHTML("beforeend",addressRow(el.dataset.kind));return}
+  if(action==="removeAddress"){el.closest(".address-row").remove();return}
   if(action==="reload")return load();
   if(action==="back"){state.view="vehicles";render();return}
   if(action==="detail"){state.vehicle=plate;state.view="detail";render();scrollTo(0,0);return}
@@ -296,11 +320,25 @@ async function runAction(el){
 }
 document.addEventListener("click",e=>{
   const button=e.target.closest("[data-action]");if(button)return runAction(button);
-  const tab=e.target.closest("[data-view]");if(tab){state.view=tab.dataset.view;state.vehicle=null;render();scrollTo(0,0)}
+  const tab=e.target.closest("[data-view]");if(tab){state.vehicle=null;if(tab.dataset.view==="settings")openSettings();else{state.view=tab.dataset.view;render()}scrollTo(0,0)}
+});
+document.addEventListener("submit",async e=>{
+  if(e.target.id==="loginForm"){
+    e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;
+    try{const result=await request("loginParc",{pin:$("#accessPin").value});state.token=result.token;sessionStorage.setItem("autoAbToken",result.token);await load()}
+    catch(error){renderLogin(error.message)}
+  }
+  if(e.target.id==="mailSettingsForm"){
+    e.preventDefault();const to=$$("#mailTo input").map(x=>x.value.trim()),cc=$$("#mailCc input").map(x=>x.value.trim());
+    const button=e.target.querySelector("button[type=submit]");button.disabled=true;
+    try{state.mailSettings=await request("saveMailSettings",{to,cc});render();toast("Adresses enregistrées.")}
+    catch(error){toast(error.message,true);button.disabled=false}
+  }
 });
 document.addEventListener("input",e=>{if(e.target.id==="search"){state.query=e.target.value;const pos=e.target.selectionStart;render();$("#search").focus();$("#search").setSelectionRange(pos,pos)}});
 document.addEventListener("change",e=>{if(e.target.id==="filter"){state.filter=e.target.value;render()}});
 $("#refreshButton").addEventListener("click",()=>load({quiet:true}));
+$("#logoutButton").addEventListener("click",()=>{state.token="";state.data=null;sessionStorage.removeItem("autoAbToken");renderLogin()});
 $("#closeDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#cancelDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#editorForm").addEventListener("submit",submitForm);
