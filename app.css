@@ -35,3 +35,5 @@ dialog{width:min(96vw,560px);max-height:min(90dvh,800px);border:0;border-radius:
 .button.quiet,.quiet{background:#e9eef6;border-color:#c5d1e2;color:#18345e}
 .tab{color:#263c5d}.tab.active{background:#e5edfc}
 .badge.warning{background:#ffe3a1;color:#673700}.badge.danger{background:#ffd2ce;color:#821912}
+
+.sync-note{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:7px 10px;margin-bottom:10px;border:1px solid #b8cbe6;border-radius:5px;background:#edf4ff;color:#243e68;font-size:12px}.sync-note button{border:0;background:none;color:#1e3a8a;font-weight:700;text-decoration:underline;padding:0 2px}
