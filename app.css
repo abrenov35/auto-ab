@@ -1,4 +1,6 @@
 :root{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#182330;background:#f3f5f8;font-size:14px;font-synthesis:none}
+[hidden]{display:none!important}#refreshButton{margin-left:auto}
+.access-card{max-width:430px;margin:7vh auto;padding:25px}.access-card h1{font-size:22px;color:#1e3a8a;margin:0}.access-card p{color:#667085}.access-card form{display:grid;gap:10px}.access-card label{font-weight:700}.access-card input,.address-row input{min-height:38px;padding:8px 10px;border:1px solid #bdc9d8;border-radius:4px;min-width:0}.access-card .button{margin-top:5px}.mail-settings{max-width:740px}.mail-settings h3{margin-top:22px}.address-row{display:flex;gap:8px;margin:8px 0}.address-row input{flex:1}.mail-settings .section-actions{margin-top:22px}
 *{box-sizing:border-box}body{margin:0;min-width:320px}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}a{color:#1e3a8a}
 .topbar{height:48px;background:#1e3a8a;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 max(16px,calc((100vw - 1160px)/2));box-shadow:0 2px 7px #14285222}
 .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:16px;white-space:nowrap}.brand small{display:block;font-size:10px;font-weight:550;letter-spacing:.045em;opacity:.8;line-height:1}
