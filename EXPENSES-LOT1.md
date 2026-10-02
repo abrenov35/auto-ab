@@ -1,6 +1,6 @@
 # Dépenses — bilan du 2 octobre 2026
 
-Statut : développement partiel du lot 1, enregistré dans une branche de travail. **Non déployé.** L'extraction automatique Intermarché/EasyPark reste bloquée par l'absence d'exemplaires représentatifs. Ne pas annoncer le lot terminé.
+Statut : développement du lot 1 et lecture assistée des formats fournis enregistrés dans une branche de travail. **Non déployé.** Les exemplaires Intermarché et EasyPark ont été examinés et les extracteurs testés localement ; les tests d’intégration Google et mobile restent à effectuer. Ne pas annoncer le lot terminé.
 
 ## Audit de l'application utilisée
 
@@ -20,10 +20,10 @@ Tous les indicateurs, opérations, cumuls, futurs comparatifs et exports sont ex
 
 - Navigation À suivre / Véhicules / Dépenses / Paramètres. Module chargé à l'ouverture de Dépenses seulement.
 - Mois, cumul annuel simple, véhicule (archives comprises), personne par identifiant stable, catégorie, suivi exclusivement HT. Synthèses et ouverture des opérations / facture. Montants connus et base manquante clairement distingués.
-- Import manuel vérifié de facture Intermarché ou EasyPark, relevé facultatif, PDF/JPEG/PNG (5 Mo par pièce, 2 pièces, 100 opérations). Aperçu modifiable, justificatif ouvrable, contrôle des totaux, confirmation explicite avant enregistrement.
-- Champs facture/opérations distincts ; période déclarée affichée quand la date de l'opération manque ; litres achetés, aucun L/100 calculé.
+- Import assisté de facture Intermarché ou EasyPark, avec lecture locale des PDF/images et correction manuelle, relevé facultatif, PDF/JPEG/PNG (5 Mo par pièce, 2 pièces, 100 opérations). Aperçu modifiable, justificatif ouvrable, contrôle des totaux, confirmation explicite avant enregistrement.
+- Champs facture/opérations distincts ; noms et identifiants lus conservés, plaques affectées uniquement si déjà connues, création explicite d’une personne depuis son identité fournisseur ; période déclarée affichée quand la date de l'opération manque ; litres achetés, aucun L/100 calculé.
 - Frais de service, abonnements et frais communs distincts. Non affecté inclus dans le total. Filtre À affecter.
-- Personnes identifiées par ID, nom complet et référence unique. Correspondances carte/utilisateur avec fournisseur, compte et intervalle de validité ; application explicite uniquement aux lignes datées, jamais depuis le conducteur actuel.
+- Personnes identifiées par ID, nom complet et référence unique. Correspondances carte/utilisateur avec fournisseur, compte et intervalle de validité ; application uniquement aux lignes datées ou périodes entièrement couvertes, jamais depuis le conducteur actuel.
 - Contrôles serveur : total exact en centimes sur chaque base fournie, aucun taux de TVA supposé, avoirs négatifs, identifiants connus, liens entretiens uniques, doublons de document (SHA-256), fournisseur/compte/numéro et contrôle supplémentaire sans numéro.
 - Verrou serveur ; identifiant de requête stable lors d'une nouvelle tentative ; une facture et toutes ses opérations dans un seul événement. Écritures append-only, corrections avec contrôle de version et motif, annulation conservant les justificatifs et l'historique.
 - Journal partagé « Dépenses journal ». Justificatifs dans le dossier documentaire existant, sans nouvelle permission de partage. Aucun service externe d'OCR.
@@ -33,15 +33,16 @@ Tous les indicateurs, opérations, cumuls, futurs comparatifs et exports sont ex
 ## Fichiers
 
 Modifiés : `index.html`, `app.js`, `app.css`, `auto-ab-apps-script.gs`.
-Ajoutés : `expenses-core.js`, `expenses-server.gs`, `expenses.js`, `tests/expenses.test.js`, `tests/expenses-ui.test.js`, ce bilan.
+Ajoutés : `expenses-core.js`, `expenses-server.gs`, `expenses.js`, `expenses-import.js`, `expenses-reader.js`, `tests/expenses-import.test.js`, `tests/expenses.test.js`, `tests/expenses-ui.test.js`, ce bilan.
 
 ## Vérifications effectuées
 
-20 tests isolés : 19 règles et simulations serveur, 1 parcours de rendu couvrant plusieurs écrans. Exécuter depuis le dépôt :
+31 tests isolés : 19 règles et simulations serveur, 11 tests d’extraction et 1 parcours de rendu couvrant plusieurs écrans. Exécuter depuis le dépôt :
 
 ```sh
 node tests/expenses.test.js
 node tests/expenses-ui.test.js
+node tests/expenses-import.test.js
 node --check app.js
 node --check expenses.js
 node --check expenses-core.js
@@ -53,13 +54,21 @@ Les services Google sont simulés dans les tests. Aucun faux document ni événe
 
 ## Limites à lever
 
-1. Fournir une facture Intermarché et une facture EasyPark, avec relevé EasyPark si séparé. Aucun extracteur fournisseur n'est encore développé : la saisie préparée est manuelle et l'annonce explicitement.
+1. Formats des deux exemplaires testés : scans reconnus avec PDF.js et Tesseract.js (traitement local, aucun envoi à un service d’OCR). D’autres versions de facture peuvent nécessiter une adaptation ; tous les imports restent à vérifier. Les dépendances PDF.js 5.6.205, Tesseract.js 7.0.0 et son moteur 7.0.0 se chargent à la demande depuis jsDelivr ; le modèle de langue suit le chemin par défaut de Tesseract.js. La version du modèle utilisée par le navigateur et sa connectivité restent à vérifier en intégration. Maximum 15 pages. Les exemples réels et leurs OCR ne sont pas dans le dépôt public.
 2. Contrôler visuellement les écrans sur ordinateur et téléphone, portrait/paysage et clavier ouvert ; tester l'intégration contre un **classeur et dossier Drive de test**, avec une copie du projet Apps Script.
 3. Mesurer les consultations/enregistrements via Google ; objectif < 5 secondes non encore vérifié. Le journal complet est relu actuellement : pagination/indexation à prévoir si son volume le justifie.
 4. Aucun contrôle d'identité individuelle supplémentaire : droits du code partagé conservés. Définir des rôles séparés avant tout besoin de confidentialité entre utilisateurs du parc.
 5. Les correspondances sont ajoutées avec leurs dates ; modification/fermeture ultérieure d'une correspondance existante reste à compléter. Aucune réattribution rétroactive silencieuse.
 6. Vue historique disponible, mais pas de remplacement de pièce ni d'ajout tardif de relevé après validation ; joindre le relevé durant l'import initial. Une annulation ne libère pas l'identité de facture : réimport bloqué pour éviter les doublons, réactivation contrôlée à compléter si nécessaire.
 7. Comparatifs, courbe 12 mois, exports, autres dépenses générales, kilométrages et lot 3 restent hors de cette livraison. Cumul annuel simple déjà présent.
+
+## Lecture des factures vérifiée localement
+
+Les deux PDF reçus ont été rendus et examinés. Deux chaînes de contrôle ont été exécutées : rendu Poppler puis Tesseract.js, et rendu PDF.js puis Tesseract.js. La seconde retrouve 13 lignes Intermarché et 38 lignes EasyPark, équilibrées en HT. Les résultats OCR incertains (libellé carburant et identifiant de transaction) restent signalés ; aucune correction financière silencieuse. Les fichiers client, coordonnées, comptes, numéros de facture et montants réels restent hors du dépôt public.
+
+Intermarché : HT des opérations calculé à partir du taux explicitement imprimé, rapproché de la synthèse HT et des sous-totaux de cartes ; frais de gestion et services séparés. Aucune plaque n’est inventée et les kilométrages lus ne sont pas ajoutés à l’historique.
+
+EasyPark : stationnement à sa date de début, abonnement à sa période de service, remises négatives, ajustement uniquement s’il est imprimé. Total HT reconstitué depuis les sous-totaux nominatifs, affiché comme tel et à vérifier ; ce document ne comporte pas de récapitulatif global HT isolé. Les répétitions d’un utilisateur sont conservées lorsque les transactions sont distinctes. Plusieurs numéros de facture dans une seule lecture sont refusés.
 
 ## Déploiement et retour arrière
 
