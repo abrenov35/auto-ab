@@ -12,10 +12,14 @@ Statut : développement partiel du lot 1, enregistré dans une branche de travai
 - Stockage existant : classeur Google Sheets et dossier Drive configurés côté serveur. Authentification par code partagé, session serveur. Pas de rôles individuels existants dans le code examiné. Ne pas inventer une identité d'auteur personnelle : journal libellé « Session authentifiée du parc ».
 - Maintenance contient des montants sans indication HT/TTC. Ils restent visibles séparément tant que leur base n'est pas vérifiée ; liaison d'une opération importée à l'entretien existant pour éviter le double comptage. Les fonctions d'alertes, véhicules, documents et historiques sont laissées intactes.
 
+## Consigne confirmée : suivi exclusivement hors taxes
+
+Tous les indicateurs, opérations, cumuls, futurs comparatifs et exports sont exclusivement HT. Aucun sélecteur TTC dans le suivi. Un HT absent reste à vérifier : aucun remplacement par le montant payé et aucune conversion avec un taux supposé. Les autres montants du justificatif peuvent rester conservés pour les seuls contrôles d’import, dans une section facultative repliée.
+
 ## Réalisé dans le code
 
 - Navigation À suivre / Véhicules / Dépenses / Paramètres. Module chargé à l'ouverture de Dépenses seulement.
-- Mois, cumul annuel simple, véhicule (archives comprises), personne par identifiant stable, catégorie, HT/TTC. Synthèses et ouverture des opérations / facture. Montants connus et base manquante clairement distingués.
+- Mois, cumul annuel simple, véhicule (archives comprises), personne par identifiant stable, catégorie, suivi exclusivement HT. Synthèses et ouverture des opérations / facture. Montants connus et base manquante clairement distingués.
 - Import manuel vérifié de facture Intermarché ou EasyPark, relevé facultatif, PDF/JPEG/PNG (5 Mo par pièce, 2 pièces, 100 opérations). Aperçu modifiable, justificatif ouvrable, contrôle des totaux, confirmation explicite avant enregistrement.
 - Champs facture/opérations distincts ; période déclarée affichée quand la date de l'opération manque ; litres achetés, aucun L/100 calculé.
 - Frais de service, abonnements et frais communs distincts. Non affecté inclus dans le total. Filtre À affecter.
