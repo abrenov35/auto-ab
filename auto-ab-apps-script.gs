@@ -610,6 +610,8 @@ function doPost(e) {
 
 
 
+    if (["readExpenses","saveExpenseInvoice","cancelExpenseInvoice","saveExpensePerson","saveExpenseMapping","setExpenseCompletion"].includes(action)) return depHandle_(ss, p);
+
     switch (action) {
 
 
@@ -2622,3 +2624,4 @@ function enregistrerParametresMail_(p) {
   proprietes.setProperties({AUTO_AB_MAIL_TO: JSON.stringify(to), AUTO_AB_MAIL_CC: JSON.stringify(cc)});
   return jsonResponse_({ok: true, success: true, to, cc});
 }
+
