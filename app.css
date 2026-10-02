@@ -37,3 +37,11 @@ dialog{width:min(96vw,560px);max-height:min(90dvh,800px);border:0;border-radius:
 .badge.warning{background:#ffe3a1;color:#673700}.badge.danger{background:#ffd2ce;color:#821912}
 
 .sync-note{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:7px 10px;margin-bottom:10px;border:1px solid #b8cbe6;border-radius:5px;background:#edf4ff;color:#243e68;font-size:12px}.sync-note button{border:0;background:none;color:#1e3a8a;font-weight:700;text-decoration:underline;padding:0 2px}
+
+
+/* Expenses use the main page for editing: no stacked dialogs. */
+.expense-filters,.expense-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px;margin-bottom:16px}
+.expense-grid{min-width:0}.expense-grid .field,.expense-filters .field{min-width:0}.expense-grid input,.expense-grid select,.expense-filters input,.expense-filters select{max-width:100%;min-width:0}
+.expense-lines{display:grid;gap:8px}.expense-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;padding:10px 0;border-bottom:1px solid #dce2e9;align-items:center;overflow-wrap:anywhere}.expense-row small{display:block;color:#42536b}.metric[type=button]{text-align:left;cursor:pointer}.panel summary{cursor:pointer;font-weight:700;color:#18345e}.expense-grid legend{font-weight:700;color:#18345e}
+@media(max-width:550px){.tab{padding:0 6px;font-size:13px}.expense-row{grid-template-columns:1fr auto}.expense-row>:nth-child(2){grid-column:1/-1;grid-row:2}.page-title{flex-wrap:wrap}.expense-grid input,.expense-grid select{font-size:16px}.section-actions .button{white-space:normal}}
+.expense-extra{grid-column:1/-1}.expense-extra>.expense-grid{margin-top:12px}
