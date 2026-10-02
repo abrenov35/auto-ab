@@ -49,3 +49,83 @@ dialog{width:min(96vw,560px);max-height:min(90dvh,800px);border:0;border-radius:
 
 
 .expense-trend-row{display:grid;grid-template-columns:6rem minmax(3rem,1fr) minmax(7rem,auto);gap:.6rem;align-items:center;padding:.6rem 0;border-bottom:1px solid #dde2ec}.expense-trend-row meter{width:100%}.expense-trend-row small{grid-column:1/-1;color:#59667b}.expense-trend-row strong{text-align:right;font-size:.9rem}@media(max-width:480px){.expense-trend-row{grid-template-columns:5rem minmax(1rem,1fr) 7rem;gap:.3rem}}
+
+
+/* Alignement professionnel des formulaires Dépenses */
+.expense-grid,
+.expense-filters{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:14px;
+  row-gap:12px;
+  align-items:start;
+}
+.expense-grid>.field,
+.expense-filters>.field{
+  grid-column:span 4;
+  min-width:0;
+  display:grid;
+  grid-template-rows:minmax(2.45em,auto) 40px;
+  gap:5px;
+}
+.expense-grid>.field.wide,
+.expense-filters>.field.wide,
+.expense-grid>.expense-extra,
+.expense-filters>.expense-extra,
+.expense-grid>.expense-source,
+.expense-grid>#expenseOcrProgress{
+  grid-column:1/-1;
+}
+.expense-grid>.field.wide,
+.expense-filters>.field.wide{
+  grid-template-rows:minmax(2.45em,auto) auto;
+}
+.expense-grid .field label,
+.expense-filters .field label{
+  display:flex;
+  align-items:end;
+  line-height:1.2;
+  min-height:2.45em;
+}
+.expense-grid input,
+.expense-grid select,
+.expense-filters input,
+.expense-filters select{
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  margin:0;
+}
+.expense-grid textarea{min-height:84px}
+.expense-grid fieldset{min-width:0}
+.expense-grid>legend{grid-column:1/-1;line-height:1.2;margin-bottom:0}
+.expense-grid .button{align-self:end}
+.expense-extra>.expense-grid{grid-template-columns:repeat(12,minmax(0,1fr));margin-top:10px}
+.expense-extra>.expense-grid>.field{grid-column:span 4}
+
+@media(max-width:900px){
+  .expense-grid>.field,
+  .expense-filters>.field{grid-column:span 6}
+  .expense-grid>.field.wide,
+  .expense-filters>.field.wide,
+  .expense-grid>.expense-extra,
+  .expense-filters>.expense-extra,
+  .expense-grid>.expense-source,
+  .expense-grid>#expenseOcrProgress{grid-column:1/-1}
+}
+@media(max-width:550px){
+  .expense-grid,
+  .expense-filters,
+  .expense-extra>.expense-grid{grid-template-columns:1fr;gap:10px}
+  .expense-grid>.field,
+  .expense-filters>.field,
+  .expense-extra>.expense-grid>.field{grid-column:1}
+  .expense-grid>.field,
+  .expense-filters>.field{grid-template-rows:auto 42px}
+  .expense-grid .field label,
+  .expense-filters .field label{min-height:0}
+  .expense-grid input,
+  .expense-grid select,
+  .expense-filters input,
+  .expense-filters select{font-size:16px}
+}
