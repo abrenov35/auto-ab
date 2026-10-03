@@ -43,6 +43,11 @@ function depCheckLinks_(i,snapshot,ss) {
   var vehicles=lireVehicules_(ss),maintenance=lireMaintenance_(ss),used={};
   snapshot.invoices.filter(function(x){return x.id!==i.id&&x.status!=='cancelled';}).forEach(function(x){x.lines.forEach(function(l){if(l.maintenanceId)used[l.maintenanceId]=true;});});
   i.lines.forEach(function(l){
+    var person=snapshot.people.find(function(p){return p.id===l.personId;});
+    if(person&&person.archived){
+      var previous=snapshot.invoices.find(function(x){return x.id===i.id;});
+      if(!previous||!previous.lines.some(function(x){return x.id===l.id&&x.personId===l.personId;}))throw Error('Conducteur archivé : choisir un conducteur actif');
+    }
     if(l.personId&&!snapshot.people.some(function(p){return p.id===l.personId;}))throw Error('Personne inconnue : utiliser un identifiant enregistré');
     if(l.plate&&!vehicles.some(function(v){return ExpenseRules.plate(v.immatriculation)===l.plate;}))throw Error('Véhicule inconnu');
     if(l.maintenanceId){if(used[l.maintenanceId])throw Error('Entretien déjà lié à une opération');var m=maintenance.find(function(x){return String(x.id)===l.maintenanceId;});if(!m||l.category!=='maintenance'||ExpenseRules.plate(m.immatriculation)!==l.plate)throw Error('Lien entretien invalide');used[l.maintenanceId]=true;}
@@ -52,11 +57,11 @@ function depHandle_(ss,p) {
   if(p.action==='readExpenses'){
     var sh=ss.getSheetByName('Dépenses journal'),last=sh?sh.getLastRow():0;
     // The journal is append-only: every mutation changes the cache key.
-    var cache=CacheService.getScriptCache(),key='AUTO_AB_DEP_READ_V1_'+CONFIG.SHEET_ID+'_'+last;
+    var cache=CacheService.getScriptCache(),key='AUTO_AB_DEP_READ_V2_'+CONFIG.SHEET_ID+'_'+last;
     var cached=cache.get(key);
     if(cached)return ContentService.createTextOutput(cached).setMimeType(ContentService.MimeType.JSON);
     var events=last<2?[]:sh.getRange(2,1,last-1,1).getValues().map(function(r){return JSON.parse(r[0]);});
-    var result=Object.assign({ok:true,version:1,manualEntry:true,manualMaintenanceDate:true},depSnapshot_(events));
+    var result=Object.assign({ok:true,version:1,manualEntry:true,manualMaintenanceDate:true,driverArchiving:true},depSnapshot_(events));
     var serialized=JSON.stringify(result);
     if(serialized.length<=22000){try{cache.put(key,serialized,60);}catch(ignored){}}
     return jsonResponse_(result);
@@ -96,9 +101,23 @@ function depHandle_(ss,p) {
       if(!String(p.reason||'').trim())throw Error('Motif d’annulation requis');
       value=Object.assign({},existing,{revision:existing.revision+1,status:'cancelled'});type='invoice';
     } else if(p.action==='saveExpensePerson') {
+      if(p.operation==='setArchived'){
+        if(typeof p.archived!=='boolean')throw Error('Statut conducteur invalide');
+        var person=snap.people.find(function(x){return x.id===String(p.id||'');});
+        if(!person&&p.fleetKey){
+          var driver=lireVehicules_(ss).find(function(v){return ExpenseRules.key(v.conducteur)===String(p.fleetKey);});
+          if(!driver)throw Error('Conducteur introuvable');
+          var matches=snap.people.filter(function(x){return ExpenseRules.key(x.name)===String(p.fleetKey);});
+          if(matches.length>1)throw Error('Plusieurs conducteurs correspondent à ce nom');
+          person=matches[0]||{id:Utilities.getUuid(),name:String(driver.conducteur).trim(),reference:'fleet-driver:'+String(p.fleetKey)};
+        }
+        if(!person)throw Error('Conducteur introuvable');
+        value=Object.assign({},person,{archived:p.archived});type='person';
+      }else{
       if(!String(p.name||'').trim()||!String(p.reference||'').trim())throw Error('Nom complet et référence unique requis');
       if(snap.people.some(function(x){return ExpenseRules.key(x.reference)===ExpenseRules.key(p.reference);}))throw Error('Référence déjà enregistrée');
       value={id:Utilities.getUuid(),name:String(p.name).trim().slice(0,150),reference:String(p.reference).trim().slice(0,150)};type='person';
+      }
     } else if(p.action==='saveExpenseMapping') {
       value={id:Utilities.getUuid(),supplier:p.supplier,account:String(p.account||'').trim(),kind:p.kind,source:String(p.source||'').trim(),from:ExpenseRules.date(p.from),to:p.to?ExpenseRules.date(p.to):'',plate:ExpenseRules.plate(p.plate),personId:String(p.personId||'')};
       if(!['intermarche','easypark'].includes(value.supplier)||!value.account||!['card','user'].includes(value.kind)||!value.source||(!value.plate&&!value.personId)||(value.to&&value.to<value.from))throw Error('Correspondance incomplète ou dates invalides');
