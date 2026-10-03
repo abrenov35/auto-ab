@@ -30,7 +30,7 @@ function render(){
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
  return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1>'+btn('Importer une facture','new')+'</div>'+
- '<form id="expenseFilters" class="expense-filters">'+input('Mois','month',filter.month,'month',true)+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Personne','personId',[['','Tout le monde'],...persons().slice(1)],filter.personId)+'</form>'+
+ '<form id="expenseFilters" class="expense-filters">'+'<div class="field month-field"><label for="expenseMonth">Mois</label><div class="month-control"><button type="button" data-exp="previousMonth" aria-label="Mois précédent">‹</button><input id="expenseMonth" name="month" type="month" required value="'+E(filter.month)+'"><button type="button" data-exp="nextMonth" aria-label="Mois suivant">›</button></div></div>'+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Personne','personId',[['','Tout le monde'],...persons().slice(1)],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses suivies','')+'</div>'+
  '<p>'+(!lines.length&&!coverage.complete?'Litres à renseigner':sum.litres.toLocaleString('fr-FR')+' litres achetés')+(sum.missing?' · '+sum.missing+' montant(s) '+'HT'+' manquant(s), total partiel.':'')+'</p>'+
  '<div class="toolbar">'+select('Catégorie','category',[['','Toutes'],...Object.entries(R.categories)],filter.category)+btn(filter.unassigned?'Toutes les affectations':'À affecter','unassigned')+btn('Personnes et correspondances','references')+btn('Vérifier les imports du mois','completion')+btn('Exporter CSV','csv')+btn('Exporter PDF','pdf')+'</div>'+renderReporting()+
@@ -90,6 +90,11 @@ async function loadExpenses(){error='';data=null;renderApp();try{data=await requ
 function renderApp(){if(state.view==='expenses'&&state.token!=="")window.render();}
 async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{await request(action,{...payload,requestId:pending.id});data=await request('readExpenses');pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
+ if(act==='previousMonth'||act==='nextMonth'){
+ const [year,month]=filter.month.split('-').map(Number);
+ const next=new Date(Date.UTC(year,month-1+(act==='nextMonth'?1:-1),1));
+ filter.month=next.toISOString().slice(0,7);renderApp();return;
+ }
  if(act==='readInvoice')return readInvoice();
  if(act==='csv'||act==='pdf'){exportView(act);return;}
  if(act==='createReadPerson'){collect();const l=draft.invoice.lines[Number(el.dataset.index)];if(!l?.sourcePerson||!l.externalId)return;if(!confirm('Ajouter '+l.sourcePerson+' avec la référence '+l.externalId+' ?'))return;const existing=data.people.find(p=>p.reference===l.externalId);if(existing)l.personId=existing.id;else if(await mutate('saveExpensePerson',{name:l.sourcePerson,reference:l.externalId})){const person=data.people.find(p=>p.reference===l.externalId);if(person)draft.invoice.lines.forEach(x=>{if(x.externalId===l.externalId&&!x.personId)x.personId=person.id;});}renderApp();return;}
