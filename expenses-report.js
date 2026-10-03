@@ -17,7 +17,7 @@ var ExpenseReport=(function(){
    }
   }
   if(sum.missing)reasons.push('Montants HT manquants');
-  if(f.plate||f.personId){const wider=select(data,{...f,plate:'',personId:'',unassigned:false});if(wider.some(l=>l.scope!=='common'&&((f.plate&&!l.plate)||(f.personId&&!l.personId))))reasons.push('Affectations incomplètes');}
+  if(f.plate||f.personId){const wider=select(data,{...f,plate:'',personId:'',unassigned:false});if(wider.some(l=>l.scope!=='common'&&((f.plate&&R.assignmentKind(l)!=='driver'&&!l.plate)||(f.personId&&R.assignmentKind(l)!=='vehicle'&&!l.personId))))reasons.push('Affectations incomplètes');}
   if(f.unassigned)reasons.push('Vue limitée aux opérations à affecter');
   return {complete:!reasons.length,reasons:[...new Set(reasons)],lines,sum};
  }
