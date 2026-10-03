@@ -29,7 +29,7 @@ function render(){
   if(!accounts.length)completeness+='<p>'+supplier(s)+' : <strong>À recevoir</strong> · compte à renseigner</p>';
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
- return title('Dépenses suivies HT','Tous les montants sont hors taxes. Un HT manquant reste à vérifier et n’est pas converti automatiquement.',btn('Importer une facture','new'))+
+ return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1>'+btn('Importer une facture','new')+'</div>'+
  '<form id="expenseFilters" class="expense-filters">'+input('Mois','month',filter.month,'month',true)+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Personne','personId',[['','Tout le monde'],...persons().slice(1)],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses suivies','')+'</div>'+
  '<p>'+(!lines.length&&!coverage.complete?'Litres à renseigner':sum.litres.toLocaleString('fr-FR')+' litres achetés')+(sum.missing?' · '+sum.missing+' montant(s) '+'HT'+' manquant(s), total partiel.':'')+'</p>'+
