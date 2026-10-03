@@ -160,11 +160,22 @@ async function submitManual(form){
 }
 
 
+function confirmExpenseDeletion(invoice,label){
+ return new Promise(resolve=>{
+  const dialog=document.createElement('dialog');dialog.className='expense-delete-confirm';
+  dialog.setAttribute('aria-labelledby','expenseDeleteTitle');dialog.setAttribute('aria-describedby','expenseDeleteText');
+  dialog.innerHTML='<div class="expense-delete-content"><div class="expense-delete-icon" aria-hidden="true">🗑️</div><h2 id="expenseDeleteTitle">Supprimer cette dépense ?</h2><p id="expenseDeleteText">Cette entrée de '+E(label)+' sera retirée de vos dépenses.</p><div class="expense-delete-amount">'+E(euro(invoice.totals.ht))+' <small>HT</small></div><p class="expense-delete-note">L’historique restera conservé.</p></div><div class="expense-delete-actions"><button type="button" class="button secondary" data-answer="cancel" autofocus>Annuler</button><button type="button" class="button expense-delete-submit" data-answer="delete">Supprimer</button></div>';
+  dialog.addEventListener('click',e=>{const button=e.target.closest('[data-answer]');if(button)dialog.close(button.dataset.answer);});
+  dialog.addEventListener('close',()=>{const confirmed=dialog.returnValue==='delete';dialog.remove();resolve(confirmed);},{once:true});
+  document.body.append(dialog);dialog.showModal();
+ });
+}
+
 async function deleteManual(form){
  const invoice=data.invoices.find(i=>i.id===form.dataset.invoiceId);
  if(!invoice||invoice.status==='cancelled')return;
  const label={fuel:'carburant',parking:'stationnement',maintenance:'entretien'}[invoice.lines[0].category]||'dépense';
- if(!confirm('Supprimer cette entrée de '+label+' de '+euro(invoice.totals.ht)+' HT ?'))return;
+ if(!await confirmExpenseDeletion(invoice,label))return;
  const dialog=form.closest('dialog'),status=form.querySelector('#expenseManualStatus');
  form.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent='Suppression…';
  try{
