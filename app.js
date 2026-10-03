@@ -152,10 +152,39 @@ function addressRow(kind,value=""){
 }
 function renderSettings(){
   const settings=state.mailSettings;
-  return title("Paramètres","Destinataires des alertes quotidiennes.")+
+  return title("Paramètres","Conducteurs et alertes quotidiennes.")+
+    '<section class="panel"><h2>Conducteurs</h2><p class="hint">Ajoutez un conducteur pour ses dépenses de carburant et de stationnement, sans véhicule obligatoire.</p><button type="button" class="button primary" data-action="addDriver">+ Ajouter un conducteur</button></section>'+
     '<section class="panel mail-settings"><h2>Alertes par mail</h2><p class="hint">Les messages partent du compte AB RENOV 35. Chaque adresse reçoit le même récapitulatif.</p>'+
     (settings?'<form id="mailSettingsForm"><h3>Destinataires</h3><div id="mailTo">'+settings.to.map(x=>addressRow("to",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="to">+ Ajouter une adresse</button><h3>En copie</h3><div id="mailCc">'+settings.cc.map(x=>addressRow("cc",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="cc">+ Ajouter une adresse en copie</button><div class="section-actions"><button class="button primary" type="submit">Enregistrer les adresses</button></div></form>':'<p>Chargement des adresses…</p>')+'</section>';
 }
+function openDriverDialog(){
+ if(document.getElementById("driverDialog"))return;
+ const dialog=document.createElement("dialog");dialog.id="driverDialog";dialog.setAttribute("aria-labelledby","driverDialogTitle");
+ dialog.innerHTML='<form id="driverCreateForm"><div class="dialog-header"><h2 id="driverDialogTitle">Ajouter un conducteur</h2></div><div class="form-grid"><label class="field wide">Nom et prénom<input name="name" type="text" required maxlength="150" autocomplete="off" autofocus></label><p class="hint field wide" data-driver-status role="status"></p></div><div class="dialog-actions"><button type="button" class="button secondary" data-driver-cancel>Annuler</button><button type="submit" class="button primary">Enregistrer</button></div></form>';
+ const form=dialog.querySelector("form"),nameInput=form.elements.name,status=form.querySelector("[data-driver-status]");
+ let saving=false,pendingDriver=null;
+ dialog.querySelector("[data-driver-cancel]").addEventListener("click",()=>{if(!saving)dialog.close();});
+ dialog.addEventListener("cancel",e=>{if(saving)e.preventDefault();});
+ dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();if(saving||!form.reportValidity())return;
+  const name=nameInput.value.trim().replace(/\s+/g," ");
+  if(!name){status.textContent="Saisissez le nom du conducteur.";nameInput.focus();return;}
+  const key=name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("fr");
+  if(!pendingDriver||pendingDriver.key!==key)pendingDriver={key,requestId:crypto.randomUUID(),reference:"driver:"+key.slice(0,143)};
+  saving=true;nameInput.readOnly=true;form.querySelectorAll("button").forEach(b=>b.disabled=true);status.textContent="Enregistrement…";
+  try{
+   const snapshot=await request("readExpenses",{fresh:true});
+   const existing=snapshot.people.find(p=>p.name.trim().replace(/\s+/g," ").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("fr")===key);
+   if(existing){status.textContent="Ce conducteur existe déjà et peut être sélectionné dans les dépenses.";return;}
+   await request("saveExpensePerson",{name,reference:pendingDriver.reference,requestId:pendingDriver.requestId});
+   window.Expenses?.reset();dialog.close();toast("Conducteur ajouté.");
+  }catch(error){status.textContent=error.message+" La saisie est conservée ; vous pouvez réessayer.";}
+  finally{saving=false;nameInput.readOnly=false;form.querySelectorAll("button").forEach(b=>b.disabled=false);}
+ });
+ document.body.append(dialog);dialog.showModal();
+}
+
 async function openSettings(){
   state.view="settings";render();
   try{state.mailSettings=await request("getMailSettings");render()}
@@ -333,6 +362,7 @@ async function submitForm(event){
 }
 async function runAction(el){
   const action=el.dataset.action,plate=el.dataset.plate||state.vehicle,id=el.dataset.id;
+  if(action==="addDriver"){openDriverDialog();return}
   if(action==="addAddress"){$(el.dataset.kind==="to"?"#mailTo":"#mailCc").insertAdjacentHTML("beforeend",addressRow(el.dataset.kind));return}
   if(action==="removeAddress"){el.closest(".address-row").remove();return}
   if(action==="reload")return load();
