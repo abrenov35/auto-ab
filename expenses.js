@@ -26,6 +26,16 @@ const vehicles=()=>[['','Non affecté'],...list('vehicules').map(v=>[R.plate(v.i
 const assignmentLabel=l=>{const p=data.people.find(p=>p.id===l.personId);return l.scope==='common'?'Frais communs':R.assignmentKind(l)==='driver'?(p?p.name+' ('+p.reference+')':'Conducteur à affecter'):R.assignmentKind(l)==='vehicle'?(l.plate||'Véhicule à affecter'):[l.plate,p?.name].filter(Boolean).join(' · ')||'À affecter';};
 const number=n=>n===null||n===undefined?'':(n/100).toFixed(2);
 function blankLine(){return {category:'fuel',date:'',month:filter.month,label:'',plate:'',personId:'',scope:'unassigned',externalId:'',card:'',litres:null,fuelType:'',maintenanceId:'',amounts:{ht:null,vat:null,ttc:null}};}
+function monthOptions(){
+ const year=Number(todayParis().slice(0,4)),selectedYear=Number(filter.month.slice(0,4));
+ const years=[year-5,year+5,selectedYear,...data.invoices.flatMap(i=>i.lines.map(l=>Number(l.month.slice(0,4)))).filter(Number.isFinite)];
+ const first=Math.min(...years),last=Math.max(...years),choices=[];
+ for(let y=first;y<=last;y++)for(let m=1;m<=12;m++){
+  const value=y+'-'+String(m).padStart(2,'0');
+  choices.push([value,new Date(Date.UTC(y,m-1,1)).toLocaleDateString('fr-FR',{month:'long',year:'numeric',timeZone:'UTC'})]);
+ }
+ return choices;
+}
 function render(){
  if(error)return title('Dépenses',error)+btn('Réessayer','reload');
  if(!data)return '<div class="loading"><span class="spinner"></span> Chargement des dépenses…</div>';
@@ -42,7 +52,7 @@ function render(){
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
  return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions"><span id="expenseDownload" role="status"></span>'+btn('Actualiser / Tout afficher','resetFilters')+btn('Carburant','manualFuel')+btn('Stationnement','manualParking')+btn('Entretiens','manualMaintenance')+'</div></div>'+
- '<form id="expenseFilters" class="expense-filters">'+'<div class="field month-field"><label for="expenseMonth">Mois</label><div class="month-control"><button type="button" data-exp="previousMonth" aria-label="Mois précédent">‹</button><input id="expenseMonth" name="month" type="month" required value="'+E(filter.month)+'"><button type="button" data-exp="nextMonth" aria-label="Mois suivant">›</button></div></div>'+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
+ '<form id="expenseFilters" class="expense-filters">'+select('Mois','month',monthOptions(),filter.month)+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
  '<nav class="toolbar" aria-label="Catégories de dépenses"><div class="row-actions">'+[['fuel','Carburant'],['parking','Stationnement'],['maintenance','Entretiens']].map(([value,label])=>'<button type="button" class="button '+(filter.category===value?'primary':'secondary')+'" data-exp="category" data-category="'+value+'" aria-pressed="'+(filter.category===value)+'">'+label+'</button>').join('')+'</div></nav>'+renderReporting()+
