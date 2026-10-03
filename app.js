@@ -134,7 +134,7 @@ async function load({quiet=false}={}){
 let expensesLoading;
 async function openExpenses(){
  state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=2","expenses-report.js?v=2","expenses.js?v=32"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=2","expenses-report.js?v=2","expenses.js?v=33"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
@@ -150,10 +150,53 @@ function title(name,sub,button=""){return '<div class="page-title"><div><h1>'+es
 function addressRow(kind,value=""){
   return '<div class="address-row"><input type="email" required autocomplete="email" value="'+escapeHtml(value)+'" aria-label="Adresse '+(kind==="to"?"destinataire":"en copie")+'"><button type="button" class="button quiet" data-action="removeAddress" aria-label="Retirer cette adresse">Retirer</button></div>';
 }
+let driverSnapshot=null,driverListError="";
+const driverKey=value=>String(value||"").trim().normalize("NFKC").toLowerCase().replace(/\s+/g," ");
+function settingsDrivers(){
+ const people=(driverSnapshot?.people||[]).map(p=>({...p}));
+ const known=new Set(people.map(p=>driverKey(p.name)));
+ for(const v of list("vehicules")){
+  const name=String(v.conducteur||"").trim(),key=driverKey(name);
+  if(name&&!known.has(key)){people.push({id:"",fleetKey:key,name,archived:false});known.add(key);}
+ }
+ return people.sort((a,b)=>Number(Boolean(a.archived))-Number(Boolean(b.archived))||a.name.localeCompare(b.name,"fr"));
+}
+function renderDriverList(){
+ if(!driverSnapshot)return '<p class="hint">'+escapeHtml(driverListError||"Chargement des conducteurs…")+'</p>';
+ const people=settingsDrivers();
+ const rows=people.map((p,index)=>'<div class="expense-row" style="grid-template-columns:1fr auto"><span>'+escapeHtml(p.name)+(p.archived?' <span class="badge muted">Archivé</span>':'')+'</span><button type="button" class="button quiet" data-action="archiveDriver" data-index="'+index+'"'+(!driverSnapshot.driverArchiving?' disabled':'')+'>'+(p.archived?'Restaurer':'Archiver')+'</button></div>').join("");
+ return (!driverSnapshot.driverArchiving?'<p class="hint">Pour activer l’archivage, publiez la nouvelle version du serveur Dépenses.</p>':'')+(rows||'<p class="hint">Aucun conducteur enregistré.</p>');
+}
+async function loadDriverList(){
+ try{driverSnapshot=await request("readExpenses",{fresh:true});driverListError="";}
+ catch(e){driverListError=e.message;}
+ if(state.view==="settings")render();
+}
+function openDriverArchive(index){
+ const person=settingsDrivers()[index];if(!person||!driverSnapshot?.driverArchiving)return;
+ const archive=!person.archived,verb=archive?"Archiver":"Restaurer",dialog=document.createElement("dialog");
+ dialog.className="expense-delete-confirm";dialog.setAttribute("aria-labelledby","driverArchiveTitle");
+ dialog.innerHTML='<div class="expense-delete-content"><h2 id="driverArchiveTitle">'+verb+' ce conducteur ?</h2><div class="expense-delete-amount" style="font-size:20px">'+escapeHtml(person.name)+'</div><p>'+(archive?'Il sera retiré des choix pour les nouvelles dépenses. Son historique sera conservé.':'Il sera de nouveau disponible pour les nouvelles dépenses.')+'</p><p class="hint" data-driver-status role="status"></p></div><div class="expense-delete-actions"><button type="button" class="button secondary" data-cancel autofocus>Annuler</button><button type="button" class="button primary" data-confirm>'+verb+'</button></div>';
+ let saving=false;const requestId=crypto.randomUUID();
+ dialog.querySelector("[data-cancel]").addEventListener("click",()=>{if(!saving)dialog.close();});
+ dialog.addEventListener("cancel",e=>{if(saving)e.preventDefault();});
+ dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+ dialog.querySelector("[data-confirm]").addEventListener("click",async()=>{
+  if(saving)return;saving=true;dialog.querySelectorAll("button").forEach(b=>b.disabled=true);
+  const status=dialog.querySelector("[data-driver-status]");status.textContent="Enregistrement…";
+  try{
+   await request("saveExpensePerson",{operation:"setArchived",id:person.id,fleetKey:person.fleetKey||"",archived:archive,requestId});
+   window.Expenses?.reset();dialog.close();toast(archive?"Conducteur archivé.":"Conducteur restauré.");await loadDriverList();
+  }catch(e){status.textContent=e.message+" Vous pouvez réessayer.";}
+  finally{saving=false;dialog.querySelectorAll("button").forEach(b=>b.disabled=false);}
+ });
+ document.body.append(dialog);dialog.showModal();
+}
+
 function renderSettings(){
   const settings=state.mailSettings;
   return title("Paramètres","Conducteurs et alertes quotidiennes.")+
-    '<section class="panel"><h2>Conducteurs</h2><p class="hint">Ajoutez un conducteur pour ses dépenses de carburant et de stationnement, sans véhicule obligatoire.</p><button type="button" class="button primary" data-action="addDriver">+ Ajouter un conducteur</button></section>'+
+    '<section class="panel"><h2>Conducteurs</h2>'+renderDriverList()+'<p class="hint">Ajoutez un conducteur pour ses dépenses de carburant et de stationnement, sans véhicule obligatoire.</p><button type="button" class="button primary" data-action="addDriver">+ Ajouter un conducteur</button></section>'+
     '<section class="panel mail-settings"><h2>Alertes par mail</h2><p class="hint">Les messages partent du compte AB RENOV 35. Chaque adresse reçoit le même récapitulatif.</p>'+
     (settings?'<form id="mailSettingsForm"><h3>Destinataires</h3><div id="mailTo">'+settings.to.map(x=>addressRow("to",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="to">+ Ajouter une adresse</button><h3>En copie</h3><div id="mailCc">'+settings.cc.map(x=>addressRow("cc",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="cc">+ Ajouter une adresse en copie</button><div class="section-actions"><button class="button primary" type="submit">Enregistrer les adresses</button></div></form>':'<p>Chargement des adresses…</p>')+'</section>';
 }
@@ -176,9 +219,9 @@ function openDriverDialog(){
   try{
    const snapshot=await request("readExpenses",{fresh:true});
    const existing=snapshot.people.find(p=>p.name.trim().replace(/\s+/g," ").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("fr")===key);
-   if(existing){status.textContent="Ce conducteur existe déjà et peut être sélectionné dans les dépenses.";return;}
+   if(existing){status.textContent=existing.archived?"Ce conducteur est archivé. Utilisez Restaurer dans Paramètres.":"Ce conducteur existe déjà et peut être sélectionné dans les dépenses.";return;}
    await request("saveExpensePerson",{name,reference:pendingDriver.reference,requestId:pendingDriver.requestId});
-   window.Expenses?.reset();dialog.close();toast("Conducteur ajouté.");
+   window.Expenses?.reset();dialog.close();toast("Conducteur ajouté.");await loadDriverList();
   }catch(error){status.textContent=error.message+" La saisie est conservée ; vous pouvez réessayer.";}
   finally{saving=false;nameInput.readOnly=false;form.querySelectorAll("button").forEach(b=>b.disabled=false);}
  });
@@ -186,7 +229,7 @@ function openDriverDialog(){
 }
 
 async function openSettings(){
-  state.view="settings";render();
+  state.view="settings";render();loadDriverList();
   try{state.mailSettings=await request("getMailSettings");render()}
   catch(e){toast(e.message,true)}
 }
@@ -362,6 +405,7 @@ async function submitForm(event){
 }
 async function runAction(el){
   const action=el.dataset.action,plate=el.dataset.plate||state.vehicle,id=el.dataset.id;
+  if(action==="archiveDriver"){openDriverArchive(Number(el.dataset.index));return}
   if(action==="addDriver"){openDriverDialog();return}
   if(action==="addAddress"){$(el.dataset.kind==="to"?"#mailTo":"#mailCc").insertAdjacentHTML("beforeend",addressRow(el.dataset.kind));return}
   if(action==="removeAddress"){el.closest(".address-row").remove();return}
