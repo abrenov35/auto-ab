@@ -21,7 +21,7 @@ function render(){
  const lines=P.select(data,filter),sum=R.summary(lines,'ht'),coverage=P.status(data,filter,todayParis());
  const linked=new Set(data.invoices.filter(i=>i.status!=='cancelled').flatMap(i=>i.lines.map(l=>l.maintenanceId).filter(Boolean)));
  const old=list('maintenance').filter(m=>!linked.has(String(m.id))&&m.montant!==''&&m.montant!==null&&m.montant!==undefined&&(filter.annual?(iso(m.date).startsWith(filter.month.slice(0,4))&&iso(m.date).slice(0,7)<=filter.month):iso(m.date).startsWith(filter.month))&&(!filter.plate||R.plate(m.immatriculation)===filter.plate)&&!filter.personId);
- const card=(label,category)=>{const f={...filter,category:category||filter.category},c=P.status(data,f,todayParis()),s=c.sum;const amount=!c.lines.length&&!c.complete?'À recevoir':s.missing&&!c.lines.some(l=>l.amounts.ht!==null)?'HT à vérifier':euro(s.total);return '<button class="metric" type="button" data-exp="category" data-category="'+category+'"><b>'+amount+'</b><span>'+label+' · HT'+(!c.complete?' · incomplet':'')+'</span></button>';};
+ const card=(label,category)=>{const f={...filter,category:category||filter.category},c=P.status(data,f,todayParis()),s=c.sum;const amount=!c.lines.length&&!c.complete?'À recevoir':s.missing&&!c.lines.some(l=>l.amounts.ht!==null)?'HT à vérifier':euro(s.total);return '<button class="metric" type="button" data-exp="category" data-category="'+category+'"><b>'+amount+'</b><span>'+label+' · HT'+'</span></button>';};
  const months=P.months(filter);
  let completeness='';
  for(const s of ['intermarche','easypark']){
