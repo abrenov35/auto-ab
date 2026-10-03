@@ -30,7 +30,10 @@ function monthOptions(){
  const year=Number(todayParis().slice(0,4)),selectedYear=Number(filter.month.slice(0,4));
  const years=[year-5,year+5,selectedYear,...data.invoices.flatMap(i=>i.lines.map(l=>Number(l.month.slice(0,4)))).filter(Number.isFinite)];
  const first=Math.min(...years),last=Math.max(...years),choices=[];
- for(let y=first;y<=last;y++)for(let m=1;m<=12;m++){
+ const orderedYears=[year];
+ for(let y=year-1;y>=first;y--)orderedYears.push(y);
+ for(let y=year+1;y<=last;y++)orderedYears.push(y);
+ for(const y of orderedYears)for(let m=1;m<=12;m++){
   const value=y+'-'+String(m).padStart(2,'0');
   choices.push([value,new Date(Date.UTC(y,m-1,1)).toLocaleDateString('fr-FR',{month:'long',year:'numeric',timeZone:'UTC'})]);
  }
