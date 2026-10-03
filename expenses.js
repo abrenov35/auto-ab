@@ -133,7 +133,7 @@ function openManual(category,invoice){
  dialog=document.createElement('dialog');dialog.id='expenseManualDialog';dialog.setAttribute('aria-labelledby','expenseManualTitle');
  const l=invoice?.lines[0],vehicle=category==='maintenance',label={fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[category];
  const choices=vehicle?vehicles():[['','Choisir un chauffeur'],...filterPersons()];
- dialog.innerHTML='<form id="expenseManual"><div class="dialog-header"><h2 id="expenseManualTitle">'+label+'</h2></div><div class="form-grid"><label class="field wide">'+(vehicle?'Véhicule':'Chauffeur')+'<select name="'+(vehicle?'plate':'personId')+'" required>'+opts(choices,vehicle?(l?.plate||''):(l?.personId||''))+'</select></label>'+(vehicle?input('Date (JJ/MM/AAAA)','date',l?(l.date?l.date.split('-').reverse().join('/'):''):todayParis().split('-').reverse().join('/'),'text',true):input('Mois','month',l?.month||filter.month,'month',true))+input('Montant HT (€)','amount',l?number(l.amounts.ht):'','text',true)+(vehicle?'<label class="field wide">Désignation / description<textarea name="description" maxlength="1000">'+E(l?.label||'')+'</textarea></label>':'')+'</div><p id="expenseManualStatus" class="hint" role="status" style="padding:0 16px;margin:0"></p><div class="dialog-actions"><button type="button" class="button secondary" data-exp="closeManual">Annuler</button><button type="submit" class="button primary">Enregistrer</button></div></form>';
+ dialog.innerHTML='<form id="expenseManual"><div class="dialog-header"><h2 id="expenseManualTitle">'+label+'</h2></div><div class="form-grid"><label class="field wide">'+(vehicle?'Véhicule':'Chauffeur')+'<select name="'+(vehicle?'plate':'personId')+'" required>'+opts(choices,vehicle?(l?.plate||''):(l?.personId||''))+'</select></label>'+(vehicle?input('Date (JJ/MM/AAAA)','date',l?(l.date?l.date.split('-').reverse().join('/'):''):todayParis().split('-').reverse().join('/'),'text',true):input('Mois','month',l?.month||filter.month,'month',true))+input('Montant HT (€)','amount',l?number(l.amounts.ht):'','text',true)+(vehicle?'<label class="field wide">Désignation / description<textarea name="description" maxlength="1000">'+E(l?.label||'')+'</textarea></label>':'')+'</div><p id="expenseManualStatus" class="hint" role="status" style="padding:0 16px;margin:0"></p><div class="dialog-actions">'+(invoice&&invoice.status!=='cancelled'?'<button type="button" class="button danger-btn" data-exp="deleteManual" style="margin-right:auto">Supprimer</button>':'')+'<button type="button" class="button secondary" data-exp="closeManual">Annuler</button><button type="submit" class="button primary">Enregistrer</button></div></form>';
  dialog.querySelector('[name="amount"]').setAttribute('inputmode','decimal');
  if(vehicle){const dateInput=dialog.querySelector('[name="date"]');dateInput.placeholder='JJ/MM/AAAA';dateInput.maxLength=10;}
  const form=dialog.querySelector('form');form.dataset.category=category;
@@ -159,6 +159,21 @@ async function submitManual(form){
  }finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
 }
 
+
+async function deleteManual(form){
+ const invoice=data.invoices.find(i=>i.id===form.dataset.invoiceId);
+ if(!invoice||invoice.status==='cancelled')return;
+ const label={fuel:'carburant',parking:'stationnement',maintenance:'entretien'}[invoice.lines[0].category]||'dépense';
+ if(!confirm('Supprimer cette entrée de '+label+' de '+euro(invoice.totals.ht)+' HT ?'))return;
+ const dialog=form.closest('dialog'),status=form.querySelector('#expenseManualStatus');
+ form.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent='Suppression…';
+ try{
+  const removed=await mutate('cancelExpenseInvoice',{id:invoice.id,expectedRevision:Number(form.dataset.revision),reason:'Suppression confirmée depuis la modale'});
+  if(removed){if(selected===invoice.id)selected='';dialog.close();renderApp();toast('Dépense supprimée.');}
+  else status.textContent='Suppression non confirmée. Vous pouvez réessayer.';
+ }finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
+}
+
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
  if(act==='chooseMonth'){filter.month=el.dataset.month;renderApp();document.querySelector('.expense-month-picker summary')?.focus();return;}
  if(act==='scrollMonths'){el.closest('.expense-month-menu').querySelector('.expense-month-list').scrollBy({top:Number(el.dataset.direction)*224,behavior:'smooth'});return;}
@@ -173,6 +188,7 @@ async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();retur
  if(invoice.supplier==='manual'){openManual(invoice.lines[0].category,invoice);return;}
  selected=invoice.id;return handle('edit',el);
  }
+ if(act==='deleteManual'){const form=el.closest('#expenseManual');if(form)return deleteManual(form);return;}
  if(act==='closeManual'){document.getElementById('expenseManualDialog')?.close();return;}
  if(['manualFuel','manualParking','manualMaintenance'].includes(act)){openManual({manualFuel:'fuel',manualParking:'parking',manualMaintenance:'maintenance'}[act]);return;}
  if(act==='edit'&&data.invoices.find(i=>i.id===selected)?.supplier==='manual'){const i=data.invoices.find(i=>i.id===selected);openManual(i.lines[0].category,i);return;}
