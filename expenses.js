@@ -119,8 +119,9 @@ function openManual(category,invoice){
  dialog=document.createElement('dialog');dialog.id='expenseManualDialog';dialog.setAttribute('aria-labelledby','expenseManualTitle');
  const l=invoice?.lines[0],vehicle=category==='maintenance',label={fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[category];
  const choices=vehicle?vehicles():[['','Choisir un chauffeur'],...filterPersons()];
- dialog.innerHTML='<form id="expenseManual"><div class="dialog-header"><h2 id="expenseManualTitle">'+label+'</h2></div><div class="form-grid"><label class="field wide">'+(vehicle?'Véhicule':'Chauffeur')+'<select name="'+(vehicle?'plate':'personId')+'" required>'+opts(choices,vehicle?(l?.plate||''):(l?.personId||''))+'</select></label>'+input('Mois','month',l?.month||filter.month,'month',true)+input('Montant HT (€)','amount',l?number(l.amounts.ht):'','text',true)+'</div><p id="expenseManualStatus" class="hint" role="status" style="padding:0 16px;margin:0"></p><div class="dialog-actions"><button type="button" class="button secondary" data-exp="closeManual">Annuler</button><button type="submit" class="button primary">Enregistrer</button></div></form>';
+ dialog.innerHTML='<form id="expenseManual"><div class="dialog-header"><h2 id="expenseManualTitle">'+label+'</h2></div><div class="form-grid"><label class="field wide">'+(vehicle?'Véhicule':'Chauffeur')+'<select name="'+(vehicle?'plate':'personId')+'" required>'+opts(choices,vehicle?(l?.plate||''):(l?.personId||''))+'</select></label>'+(vehicle?input('Date (JJ/MM/AAAA)','date',l?(l.date?l.date.split('-').reverse().join('/'):''):todayParis().split('-').reverse().join('/'),'text',true):input('Mois','month',l?.month||filter.month,'month',true))+input('Montant HT (€)','amount',l?number(l.amounts.ht):'','text',true)+(vehicle?'<label class="field wide">Désignation / description<textarea name="description" maxlength="1000">'+E(l?.label||'')+'</textarea></label>':'')+'</div><p id="expenseManualStatus" class="hint" role="status" style="padding:0 16px;margin:0"></p><div class="dialog-actions"><button type="button" class="button secondary" data-exp="closeManual">Annuler</button><button type="submit" class="button primary">Enregistrer</button></div></form>';
  dialog.querySelector('[name="amount"]').setAttribute('inputmode','decimal');
+ if(vehicle){const dateInput=dialog.querySelector('[name="date"]');dateInput.placeholder='JJ/MM/AAAA';dateInput.maxLength=10;}
  const form=dialog.querySelector('form');form.dataset.category=category;
  if(invoice){form.dataset.invoiceId=invoice.id;form.dataset.revision=invoice.revision;}
  dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
@@ -130,7 +131,11 @@ function openManual(category,invoice){
 async function submitManual(form){
  const fd=new FormData(form),amount=R.cents(fd.get('amount'));
  if(amount===null||amount<0)throw Error('Saisir un montant HT positif ou nul.');
- const manual={category:form.dataset.category,month:R.month(fd.get('month')),amount:(amount/100).toFixed(2),plate:String(fd.get('plate')||''),personId:String(fd.get('personId')||''),id:form.dataset.invoiceId||''};
+ const vehicle=form.dataset.category==='maintenance';
+ if(vehicle&&!data.manualMaintenanceDate)throw Error('Date et description : publiez la nouvelle version du serveur Apps Script, puis actualisez les dépenses.');
+ let date='';if(vehicle){const value=String(fd.get('date')||'').trim();if(!/^\d{2}\/\d{2}\/\d{4}$/.test(value))throw Error('Saisir la date au format JJ/MM/AAAA.');date=R.date(value.split('/').reverse().join('-'));}
+ const manual={category:form.dataset.category,month:vehicle?date.slice(0,7):R.month(fd.get('month')),amount:(amount/100).toFixed(2),plate:String(fd.get('plate')||''),personId:String(fd.get('personId')||''),id:form.dataset.invoiceId||''};
+ if(vehicle){manual.date=date;manual.description=String(fd.get('description')||'').trim();}
  const dialog=form.closest('dialog'),status=form.querySelector('#expenseManualStatus');
  form.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent='Enregistrement…';
  try{
