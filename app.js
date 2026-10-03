@@ -390,7 +390,7 @@ document.addEventListener("submit",async e=>{
 });
 document.addEventListener("input",e=>{if(e.target.id==="search"){state.query=e.target.value;const pos=e.target.selectionStart;render();$("#search").focus();$("#search").setSelectionRange(pos,pos)}});
 document.addEventListener("change",e=>{if(e.target.id==="filter"){state.filter=e.target.value;render()}});
-$("#refreshButton").addEventListener("click",()=>state.view==="expenses"?window.Expenses?.open():load({quiet:true}));
+$("#refreshButton").addEventListener("click",()=>state.view==="expenses"?window.Expenses?.open({fresh:true}):load({quiet:true}));
 $("#logoutButton").addEventListener("click",()=>{clearAccess();renderLogin()});
 $("#closeDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#cancelDialog").addEventListener("click",()=>$("#formDialog").close());
