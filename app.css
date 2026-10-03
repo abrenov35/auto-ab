@@ -88,3 +88,13 @@ dialog{width:min(96vw,560px);max-height:min(90dvh,800px);border:0;border-radius:
 .expense-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
 .expense-heading h1{margin:0}
 .expense-heading>.button{min-height:38px;max-width:100%;white-space:normal}
+
+/* Match filter widths to the summary cards and keep the month picker contained. */
+#expenseFilters{grid-template-columns:repeat(4,minmax(0,1fr))}
+#expenseFilters .month-field>label{font-size:14px;font-weight:650}
+.month-control{display:flex;align-items:center;min-width:0;width:100%;min-height:42px;background:#fff;border:1px solid #c8d2df;border-radius:4px;overflow:hidden}
+#expenseFilters .month-control input{flex:1 1 0;width:0;min-width:0;max-width:100%;min-height:40px;border:0;padding:5px 2px;font-size:16px}
+.month-control input::-webkit-date-and-time-value{text-align:center;min-width:0}
+.month-control button{flex:0 0 30px;min-height:42px;padding:0;border:0;background:#edf2fa;color:#1e3a8a;font-size:24px;line-height:1}
+#expenseFilters select{appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%231e3a8a' stroke-width='2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+@media(max-width:800px){#expenseFilters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 7px}}
