@@ -128,3 +128,16 @@ dialog{width:min(96vw,560px);max-height:min(90dvh,800px);border:0;border-radius:
 .expense-month-list>button{display:block;width:100%;height:32px;min-height:32px;padding:0 10px;border:0;background:#fff;color:#18345e;text-align:left;font-size:14px;font-weight:400}
 .expense-month-list>button[aria-current]{background:#dbeafe;font-weight:700}
 .expense-month-list>button:hover,.expense-month-list>button:focus-visible{background:#eaf1fc;outline:2px solid #7e9cca;outline-offset:-2px}
+
+dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px,calc(100vw - 28px));max-height:calc(100dvh - 28px);border:1px solid #d9e2ef;border-radius:16px;background:#fff;box-shadow:0 24px 70px #10265355;text-align:center;padding:0}
+.expense-delete-confirm::backdrop{background:#14243b80}
+.expense-delete-content{padding:26px 24px 18px}
+.expense-delete-icon{display:grid;place-items:center;margin:0 auto 14px;width:54px;height:54px;background:#fff0ed;border-radius:50%;font-size:26px}
+.expense-delete-content h2{margin:0 0 10px;color:#18345e;font-size:21px;line-height:1.25}
+.expense-delete-content p{margin:0;color:#52627a;line-height:1.5}
+.expense-delete-amount{margin:18px 0 12px;padding:12px;background:#f0f5fc;border-radius:10px;color:#1e3a8a;font-size:26px;font-weight:750}
+.expense-delete-amount small{font-size:14px}
+.expense-delete-content .expense-delete-note{font-size:12px}
+.expense-delete-actions{display:flex;gap:10px;padding:16px 24px 22px;border-top:1px solid #edf1f6}
+.expense-delete-actions .button{flex:1;min-width:0;min-height:42px;border-radius:8px}
+.expense-delete-submit{background:#b83d46;color:#fff;border-color:#b83d46}
