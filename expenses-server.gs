@@ -8,7 +8,7 @@ function depEvents_(ss) {
 function depSnapshot_(events) {
   var invoices={},people={},mappings={},completion={};
   events.forEach(function(e){
-    if(e.type==='invoice'){var previous=invoices[e.value.id];Object.keys(completion).forEach(function(k){if(k.startsWith(e.value.supplier+'|'+ExpenseRules.key(e.value.account)+'|')||(previous&&k.startsWith(previous.supplier+'|'+ExpenseRules.key(previous.account)+'|')))delete completion[k];});invoices[e.value.id]=e.value;}
+    if(e.type==='invoice'){if(e.value.manualPerson&&!people[e.value.manualPerson.id])people[e.value.manualPerson.id]=e.value.manualPerson;var previous=invoices[e.value.id];Object.keys(completion).forEach(function(k){if(k.startsWith(e.value.supplier+'|'+ExpenseRules.key(e.value.account)+'|')||(previous&&k.startsWith(previous.supplier+'|'+ExpenseRules.key(previous.account)+'|')))delete completion[k];});invoices[e.value.id]=e.value;}
     if(e.type==='person')people[e.value.id]=e.value;
     if(e.type==='mapping')mappings[e.value.id]=e.value;
     if(e.type==='completion')completion[e.value.key]=e.value;
@@ -48,7 +48,7 @@ function depCheckLinks_(i,snapshot,ss) {
   });
 }
 function depHandle_(ss,p) {
-  if(p.action==='readExpenses')return jsonResponse_(Object.assign({ok:true,version:1},depSnapshot_(depEvents_(ss))));
+  if(p.action==='readExpenses')return jsonResponse_(Object.assign({ok:true,version:1,manualEntry:true},depSnapshot_(depEvents_(ss))));
   if(!/^[a-zA-Z0-9-]{16,80}$/.test(String(p.requestId||'')))throw Error('Identifiant de requête requis');
   var lock=LockService.getScriptLock();lock.waitLock(10000);
   try {
@@ -56,22 +56,24 @@ function depHandle_(ss,p) {
     if(prior)return jsonResponse_({ok:true,id:prior.value.id,replayed:true});
     var snap=depSnapshot_(events),value,type;
     if(p.action==='saveExpenseInvoice') {
-      value=ExpenseRules.validate(p.invoice);value.id=p.invoice.id||Utilities.getUuid();
+      value=p.manual?depManual_(ss,p.manual,snap):ExpenseRules.validate(p.invoice);value.id=(p.manual?p.manual.id:p.invoice.id)||Utilities.getUuid();
       var old=snap.invoices.find(function(i){return i.id===value.id;});
       if(old&&old.revision!==p.expectedRevision)throw Error('Facture modifiée ailleurs. Actualisez avant de corriger.');
-      if(p.invoice.id&&!old)throw Error('Facture introuvable');
+      if((p.manual?p.manual.id:p.invoice.id)&&!old)throw Error('Facture introuvable');
       if(old&&old.status==='cancelled')throw Error('Facture annulée : correction impossible');
       if(old&&!String(p.reason||'').trim())throw Error('Motif de correction requis');
+      if(old&&Boolean(old.supplier==='manual')!==Boolean(p.manual))throw Error('Type de saisie incompatible');
       var docs=(p.documents||[]).map(function(d,index){return depDocument_(d,p.requestId,index);});
       if(old&&docs.length)throw Error('Les justificatifs d’une facture enregistrée sont conservés');
-      if(!old&&(docs.length<1||docs.length>2))throw Error('Joindre la facture et éventuellement son relevé');
+      if(p.manual&&docs.length)throw Error('Pièce non attendue pour la saisie simple');
+      if(!old&&!p.manual&&(docs.length<1||docs.length>2))throw Error('Joindre la facture et éventuellement son relevé');
       value.documents=old?old.documents:docs.map(function(d){return {hash:d.hash,name:d.name};});
       if(ExpenseRules.duplicate(value,snap.invoices))throw Error('Doublon possible : document, numéro ou justificatif sans numéro déjà enregistré, même annulé');
       depCheckLinks_(value,snap,ss);
       value.revision=old?old.revision+1:1;value.status='active';
       // Reject oversized events before creating files. The invoice is one atomic journal row.
       if(JSON.stringify(value).length>42000)throw Error('Facture trop volumineuse');
-      if(!old){var folder=DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID);value.documents=docs.map(function(d){
+      if(!old&&docs.length){var folder=DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID);value.documents=docs.map(function(d){
         var found=folder.getFilesByName(d.storageName);var file=found.hasNext()?found.next():folder.createFile(Utilities.newBlob(d.bytes,d.mime,d.storageName));
         return {id:file.getId(),url:file.getUrl(),name:d.name,hash:d.hash,mime:d.mime};
       });}
@@ -100,4 +102,31 @@ function depHandle_(ss,p) {
     var event={type:type,requestId:p.requestId,at:nowIso_(),actor:'Session authentifiée du parc',reason:String(p.reason||'').slice(0,1000),value:value};
     depAppend_(ss,event);return jsonResponse_({ok:true,id:value.id,revision:value.revision});
   } finally {lock.releaseLock();}
+}
+
+/* Monthly manual entries share the audited journal, without a fabricated invoice. */
+function depManual_(ss,m,snap){
+ var R=ExpenseRules,category=String(m.category||''),month=R.month(m.month),ht=R.cents(m.amount);
+ if(!['fuel','parking','maintenance'].includes(category))throw Error('Catégorie de saisie invalide');
+ if(ht===null||ht<0)throw Error('Montant HT positif ou nul requis');
+ var plate='',personId='',manualPerson=null;
+ if(category==='maintenance'){
+  plate=R.plate(m.plate);if(!plate)throw Error('Choisir un véhicule');
+ }else{
+  personId=String(m.personId||'');
+  if(personId.indexOf('fleet-driver:')===0){
+   var nameKey=personId.slice(13),v=lireVehicules_(ss).find(function(v){return R.key(v.conducteur)===nameKey;});
+   if(!v)throw Error('Conducteur introuvable dans le parc');
+   var matches=snap.people.filter(function(p){return R.key(p.name)===nameKey;});
+   if(matches.length>1)throw Error('Plusieurs conducteurs portent ce nom : choisir la personne enregistrée');
+   var person=matches[0];
+   if(!person){person={id:Utilities.getUuid(),name:String(v.conducteur).trim(),reference:'fleet-driver:'+nameKey};manualPerson=person;snap.people.push(person);}
+   personId=person.id;
+  }
+  if(!personId)throw Error('Choisir un chauffeur');
+ }
+ var label={fuel:'Carburant',parking:'Stationnement',maintenance:'Entretien'}[category];
+ var value={supplier:'manual',account:'Saisie mensuelle',number:m.id||Utilities.getUuid(),date:month+'-01',period:month,totals:{ht:ht,vat:null,ttc:null},note:'Saisie manuelle mensuelle HT',lines:[{id:'1',category:category,date:'',month:month,amounts:{ht:ht,vat:null,ttc:null},plate:plate,personId:personId,scope:'assigned',label:label,litres:null,maintenanceId:'',card:'',externalId:'',fuelType:''}]};
+ if(manualPerson)value.manualPerson=manualPerson;
+ return value;
 }

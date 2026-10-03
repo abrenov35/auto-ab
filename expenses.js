@@ -5,7 +5,7 @@ const R=ExpenseRules,P=ExpenseReport,E=escapeHtml;
 let data=null,error='',busy=false,reading=false,draft=null,selected='',filter={month:todayParis().slice(0,7),annual:false,plate:'',personId:'',category:'',unassigned:false},pending=null;
 let importModules,ocrController;
 const euro=n=>(n/100).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
-const supplier=s=>s==='intermarche'?'Intermarché':'EasyPark';
+const supplier=s=>s==='manual'?'Saisie manuelle':s==='intermarche'?'Intermarché':'EasyPark';
 const btn=(label,act,extra='')=>'<button type="button" class="button secondary" data-exp="'+act+'" '+extra+'>'+E(label)+'</button>';
 const input=(label,name,value='',type='text',required=false)=>'<label class="field">'+E(label)+'<input name="'+E(name)+'" type="'+type+'" value="'+E(value)+'" '+(required?'required':'')+'></label>';
 const opts=(items,value)=>items.map(([v,label])=>'<option value="'+E(v)+'"'+(String(v)===String(value)?' selected':'')+'>'+E(label)+'</option>').join('');
@@ -41,7 +41,7 @@ function render(){
   if(!accounts.length)completeness+='<p>'+supplier(s)+' : <strong>À recevoir</strong> · compte à renseigner</p>';
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
- return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions"><span id="expenseDownload" role="status"></span>'+btn('Exporter CSV','csv')+btn('Importer une facture','new')+'</div></div>'+
+ return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions"><span id="expenseDownload" role="status"></span>'+btn('Exporter CSV','csv')+btn('Carburant','manualFuel')+btn('Stationnement','manualParking')+btn('Entretiens','manualMaintenance')+'</div></div>'+
  '<form id="expenseFilters" class="expense-filters">'+'<div class="field month-field"><label for="expenseMonth">Mois</label><div class="month-control"><button type="button" data-exp="previousMonth" aria-label="Mois précédent">‹</button><input id="expenseMonth" name="month" type="month" required value="'+E(filter.month)+'"><button type="button" data-exp="nextMonth" aria-label="Mois suivant">›</button></div></div>'+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
@@ -66,7 +66,7 @@ function exportView(kind){
  const url=URL.createObjectURL(new Blob([content],{type:kind==='csv'?'text/csv;charset=utf-8':'application/pdf'})),a=document.createElement('a');a.href=url;a.download='ab-auto-depenses-ht-'+filter.month+'.'+kind;a.textContent='Télécharger le fichier '+kind.toUpperCase();a.className='button secondary';let box=document.getElementById('expenseDownload');if(!box){box=document.createElement('p');box.id='expenseDownload';box.setAttribute('role','status');document.getElementById('expenseFilters').after(box);}box.replaceChildren(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);if(a.isConnected)a.remove();},300000);
 }
 function renderLines(lines){return lines.length?'<div class="expense-lines">'+lines.map(l=>{const p=data.people.find(p=>p.id===l.personId);return '<article class="expense-row"><div><strong>'+E(l.date?dateView(l.date):l.month+' · période déclarée')+'</strong><small>'+E(R.categories[l.category]+' · '+l.label)+'</small></div><div>'+E(assignmentLabel(l))+'</div>'+btn(l.amounts.ht===null?'HT à vérifier':euro(l.amounts.ht)+' HT','invoice','data-id="'+E(l.invoiceId)+'"')+'</article>';}).join('')+'</div>':'<p class="empty">Aucune opération enregistrée pour ce filtre. Vérifiez la complétude des imports.</p>';}
-function renderInvoice(){const i=data.invoices.find(x=>x.id===selected);if(!i){selected='';return render();}return title(supplier(i.supplier)+' · '+(i.number||'Sans numéro'),'Facture du '+dateView(i.date)+' · '+i.account+' · version '+i.revision,btn('Retour','back'))+'<section class="panel">'+i.documents.map(d=>'<p><a href="'+E(safeLink(d.url))+'" target="_blank" rel="noopener">'+E(d.name)+'</a></p>').join('')+'<p>'+E(i.note)+'</p><p>'+E(i.status==='cancelled'?'Import annulé, conservé dans l’historique':'Import enregistré')+'</p>'+renderLines(i.lines.map(l=>({...l,invoiceId:i.id})))+'<details><summary>Historique des modifications</summary>'+data.audit.filter(a=>a.id===i.id).map(a=>'<p>'+E(a.at+' · version '+a.revision+' · '+(a.reason||'Création')+' · '+a.actor)+'</p>').join('')+'</details>'+(i.status!=='cancelled'?'<div class="section-actions">'+btn('Corriger','edit')+btn('Annuler cet import','void')+'</div>':'')+'</section>';}
+function renderInvoice(){const i=data.invoices.find(x=>x.id===selected);if(!i){selected='';return render();}if(i.supplier==='manual')return title(R.categories[i.lines[0].category],'Saisie mensuelle · '+i.period,btn('Retour','back'))+'<section class="panel">'+renderLines(i.lines.map(l=>({...l,invoiceId:i.id})))+(i.status==='cancelled'?'<p>Saisie annulée</p>':'<div class="section-actions">'+btn('Modifier','edit')+btn('Annuler cette saisie','void')+'</div>')+'</section>';return title(supplier(i.supplier)+' · '+(i.number||'Sans numéro'),'Facture du '+dateView(i.date)+' · '+i.account+' · version '+i.revision,btn('Retour','back'))+'<section class="panel">'+i.documents.map(d=>'<p><a href="'+E(safeLink(d.url))+'" target="_blank" rel="noopener">'+E(d.name)+'</a></p>').join('')+'<p>'+E(i.note)+'</p><p>'+E(i.status==='cancelled'?'Import annulé, conservé dans l’historique':'Import enregistré')+'</p>'+renderLines(i.lines.map(l=>({...l,invoiceId:i.id})))+'<details><summary>Historique des modifications</summary>'+data.audit.filter(a=>a.id===i.id).map(a=>'<p>'+E(a.at+' · version '+a.revision+' · '+(a.reason||'Création')+' · '+a.actor)+'</p>').join('')+'</details>'+(i.status!=='cancelled'?'<div class="section-actions">'+btn('Corriger','edit')+btn('Annuler cet import','void')+'</div>':'')+'</section>';}
 function renderDraft(){
  const d=draft,review=d.step==='review';
  if(d.kind==='references')return title('Personnes et correspondances','Aucune déduction à partir du conducteur actuel.',btn('Retour','back'))+
@@ -101,12 +101,44 @@ async function readInvoice(){
 async function loadExpenses(){error='';data=null;renderApp();try{data=await request('readExpenses');}catch(e){error=e.message.includes('Action')?'Le serveur Dépenses doit être déployé avant utilisation.':e.message;}renderApp();}
 function renderApp(){if(state.view==='expenses'&&state.token!=="")window.render();}
 async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{await request(action,{...payload,requestId:pending.id});data=await request('readExpenses');pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
+
+function openManual(category,invoice){
+ if(!data.manualEntry){toast('La mise à jour du serveur de saisie doit être publiée.',true);return;}
+ let dialog=document.getElementById('expenseManualDialog');
+ if(dialog)dialog.remove();
+ dialog=document.createElement('dialog');dialog.id='expenseManualDialog';dialog.setAttribute('aria-labelledby','expenseManualTitle');
+ const l=invoice?.lines[0],vehicle=category==='maintenance',label={fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[category];
+ const choices=vehicle?vehicles():[['','Choisir un chauffeur'],...filterPersons()];
+ dialog.innerHTML='<form id="expenseManual"><div class="dialog-header"><h2 id="expenseManualTitle">'+label+'</h2></div><div class="form-grid"><label class="field wide">'+(vehicle?'Véhicule':'Chauffeur')+'<select name="'+(vehicle?'plate':'personId')+'" required>'+opts(choices,vehicle?(l?.plate||''):(l?.personId||''))+'</select></label>'+input('Mois','month',l?.month||filter.month,'month',true)+input('Montant HT (€)','amount',l?number(l.amounts.ht):'','text',true)+'</div><p id="expenseManualStatus" class="hint" role="status" style="padding:0 16px;margin:0"></p><div class="dialog-actions"><button type="button" class="button secondary" data-exp="closeManual">Annuler</button><button type="submit" class="button primary">Enregistrer</button></div></form>';
+ dialog.querySelector('[name="amount"]').setAttribute('inputmode','decimal');
+ const form=dialog.querySelector('form');form.dataset.category=category;
+ if(invoice){form.dataset.invoiceId=invoice.id;form.dataset.revision=invoice.revision;}
+ dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
+ dialog.addEventListener('close',()=>dialog.remove());
+ document.body.append(dialog);dialog.showModal();
+}
+async function submitManual(form){
+ const fd=new FormData(form),amount=R.cents(fd.get('amount'));
+ if(amount===null||amount<0)throw Error('Saisir un montant HT positif ou nul.');
+ const manual={category:form.dataset.category,month:R.month(fd.get('month')),amount:(amount/100).toFixed(2),plate:String(fd.get('plate')||''),personId:String(fd.get('personId')||''),id:form.dataset.invoiceId||''};
+ const dialog=form.closest('dialog'),status=form.querySelector('#expenseManualStatus');
+ form.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent='Enregistrement…';
+ try{
+  const saved=await mutate('saveExpenseInvoice',{manual,expectedRevision:Number(form.dataset.revision||0),reason:manual.id?'Correction de saisie mensuelle':'Saisie mensuelle'});
+  if(saved){filter.month=manual.month;filter.category='';filter.plate='';filter.personId='';filter.unassigned=false;dialog.close();renderApp();toast('Dépense enregistrée.');}
+  else status.textContent='Enregistrement non confirmé. La saisie est conservée ; vous pouvez réessayer.';
+ }finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
+}
+
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
  if(act==='previousMonth'||act==='nextMonth'){
  const [year,month]=filter.month.split('-').map(Number);
  const next=new Date(Date.UTC(year,month-1+(act==='nextMonth'?1:-1),1));
  filter.month=next.toISOString().slice(0,7);renderApp();return;
  }
+ if(act==='closeManual'){document.getElementById('expenseManualDialog')?.close();return;}
+ if(['manualFuel','manualParking','manualMaintenance'].includes(act)){openManual({manualFuel:'fuel',manualParking:'parking',manualMaintenance:'maintenance'}[act]);return;}
+ if(act==='edit'&&data.invoices.find(i=>i.id===selected)?.supplier==='manual'){const i=data.invoices.find(i=>i.id===selected);openManual(i.lines[0].category,i);return;}
  if(act==='readInvoice')return readInvoice();
  if(act==='csv'||act==='pdf'){exportView(act);return;}
  if(act==='createReadPerson'){collect();const l=draft.invoice.lines[Number(el.dataset.index)];if(!l?.sourcePerson||!l.externalId)return;if(!confirm('Ajouter '+l.sourcePerson+' avec la référence '+l.externalId+' ?'))return;const existing=data.people.find(p=>p.reference===l.externalId);if(existing)l.personId=existing.id;else if(await mutate('saveExpensePerson',{name:l.sourcePerson,reference:l.externalId})){const person=data.people.find(p=>p.reference===l.externalId);if(person)draft.invoice.lines.forEach(x=>{if(x.externalId===l.externalId&&!x.personId)x.personId=person.id;});}renderApp();return;}
@@ -129,6 +161,7 @@ async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();retur
 }
 async function submit(form){
  if(busy||reading)return;
+ if(form.id==='expenseManual')return submitManual(form);
  if(form.id==='expenseDraft'){collect();const validated=R.validate(draft.invoice);draft.invoice={...draft.invoice,...validated};if(!draft.invoice.id&&!draft.files.length)throw Error('Joindre la facture');for(const f of draft.files)if(f.size>5*1024*1024||(!draft.invoice.id&&!['application/pdf','image/jpeg','image/png'].includes(f.type)))throw Error('Justificatif PDF/JPG/PNG, 5 Mo maximum');draft.step='review';renderApp();return;}
  if(form.id==='expenseCommit'){
   if(!form.reportValidity())return;
