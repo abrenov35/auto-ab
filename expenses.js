@@ -12,8 +12,8 @@ const opts=(items,value)=>items.map(([v,label])=>'<option value="'+E(v)+'"'+(Str
 const select=(label,name,items,value)=>'<label class="field">'+E(label)+'<select name="'+name+'">'+opts(items,value)+'</select></label>';
 const persons=()=>[['','Non affecté'],...data.people.map(p=>[p.id,p.name+' · '+p.reference])];
 // Offer the existing fleet drivers without inferring historical expense assignments.
-const filterPersons=()=>{
- const people=data.people.map(p=>[p.id,p.name]);
+const filterPersons=(activeOnly=false,selectedId='')=>{
+ const people=data.people.filter(p=>!activeOnly||!p.archived||p.id===selectedId).map(p=>[p.id,p.name+(p.archived?' (archivé)':'')]);
  const known=new Set(data.people.map(p=>R.key(p.name)));
  for(const v of list('vehicules')){
   const name=String(v.conducteur||'').trim(),key=R.key(name);
@@ -132,7 +132,7 @@ function openManual(category,invoice){
  if(dialog)dialog.remove();
  dialog=document.createElement('dialog');dialog.id='expenseManualDialog';dialog.setAttribute('aria-labelledby','expenseManualTitle');
  const l=invoice?.lines[0],vehicle=category==='maintenance',label={fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[category];
- const choices=vehicle?vehicles():[['','Choisir un chauffeur'],...filterPersons()];
+ const choices=vehicle?vehicles():[['','Choisir un chauffeur'],...filterPersons(true,l?.personId||'')];
  dialog.innerHTML='<form id="expenseManual"><div class="dialog-header"><h2 id="expenseManualTitle">'+label+'</h2></div><div class="form-grid"><label class="field wide">'+(vehicle?'Véhicule':'Chauffeur')+'<select name="'+(vehicle?'plate':'personId')+'" required>'+opts(choices,vehicle?(l?.plate||''):(l?.personId||''))+'</select></label>'+(vehicle?input('Date (JJ/MM/AAAA)','date',l?(l.date?l.date.split('-').reverse().join('/'):''):todayParis().split('-').reverse().join('/'),'text',true):input('Mois','month',l?.month||filter.month,'month',true))+input('Montant HT (€)','amount',l?number(l.amounts.ht):'','text',true)+(vehicle?'<label class="field wide">Désignation / description<textarea name="description" maxlength="1000">'+E(l?.label||'')+'</textarea></label>':'')+'</div><p id="expenseManualStatus" class="hint" role="status" style="padding:0 16px;margin:0"></p><div class="dialog-actions">'+(invoice&&invoice.status!=='cancelled'?'<button type="button" class="button danger-btn" data-exp="deleteManual" style="margin-right:auto">Supprimer</button>':'')+'<button type="button" class="button secondary" data-exp="closeManual">Annuler</button><button type="submit" class="button primary">Enregistrer</button></div></form>';
  dialog.querySelector('[name="amount"]').setAttribute('inputmode','decimal');
  if(vehicle){const dateInput=dialog.querySelector('[name="date"]');dateInput.placeholder='JJ/MM/AAAA';dateInput.maxLength=10;}
