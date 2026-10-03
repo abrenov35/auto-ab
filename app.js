@@ -195,8 +195,9 @@ function openDriverArchive(index){
 
 function renderSettings(){
   const settings=state.mailSettings;
+  const driversOpen=document.getElementById("settingsDriverList")?.open;
   return title("Paramètres","Conducteurs et alertes quotidiennes.")+
-    '<section class="panel"><h2>Conducteurs</h2>'+renderDriverList()+'<p class="hint">Ajoutez un conducteur pour ses dépenses de carburant et de stationnement, sans véhicule obligatoire.</p><button type="button" class="button primary" data-action="addDriver">+ Ajouter un conducteur</button></section>'+
+    '<section class="panel"><h2>Conducteurs</h2><details id="settingsDriverList"'+(driversOpen?' open':'')+'><summary>Liste des conducteurs'+(driverSnapshot?' ('+settingsDrivers().length+')':'')+'</summary>'+renderDriverList()+'</details><p class="hint">Ajoutez un conducteur pour ses dépenses de carburant et de stationnement, sans véhicule obligatoire.</p><button type="button" class="button primary" data-action="addDriver">+ Ajouter un conducteur</button></section>'+
     '<section class="panel mail-settings"><h2>Alertes par mail</h2><p class="hint">Les messages partent du compte AB RENOV 35. Chaque adresse reçoit le même récapitulatif.</p>'+
     (settings?'<form id="mailSettingsForm"><h3>Destinataires</h3><div id="mailTo">'+settings.to.map(x=>addressRow("to",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="to">+ Ajouter une adresse</button><h3>En copie</h3><div id="mailCc">'+settings.cc.map(x=>addressRow("cc",x)).join("")+'</div><button class="button secondary" type="button" data-action="addAddress" data-kind="cc">+ Ajouter une adresse en copie</button><div class="section-actions"><button class="button primary" type="submit">Enregistrer les adresses</button></div></form>':'<p>Chargement des adresses…</p>')+'</section>';
 }
