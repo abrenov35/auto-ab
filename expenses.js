@@ -3,7 +3,7 @@ window.Expenses=(function(){
 'use strict';
 const R=ExpenseRules,P=ExpenseReport,E=escapeHtml;
 let data=null,error='',busy=false,reading=false,draft=null,selected='',filter={month:todayParis().slice(0,7),annual:false,plate:'',personId:'',category:'',unassigned:false},pending=null;
-let importModules,ocrController;
+let importModules,ocrController,loadingExpenses=false,expenseLoad=null,loadEpoch=0;
 const euro=n=>(n/100).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
 const supplier=s=>s==='manual'?'Saisie manuelle':s==='intermarche'?'Intermarché':'EasyPark';
 const btn=(label,act,extra='')=>'<button type="button" class="button secondary" data-exp="'+act+'" '+extra+'>'+E(label)+'</button>';
@@ -56,7 +56,7 @@ function render(){
   if(!accounts.length)completeness+='<p>'+supplier(s)+' : <strong>À recevoir</strong> · compte à renseigner</p>';
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
- return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions"><span id="expenseDownload" role="status"></span>'+btn('Carburant','manualFuel')+btn('Stationnement','manualParking')+btn('Entretiens','manualMaintenance')+btn('Actualiser / Tout afficher','resetFilters')+'</div></div>'+
+ return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions"><span id="expenseDownload" role="status">'+(loadingExpenses?'Actualisation…':'')+'</span>'+btn('Carburant','manualFuel')+btn('Stationnement','manualParking')+btn('Entretiens','manualMaintenance')+btn('Actualiser / Tout afficher','resetFilters')+'</div></div>'+
  '<form id="expenseFilters" class="expense-filters">'+monthSelector()+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
@@ -113,7 +113,16 @@ async function readInvoice(){
   toast('Lecture terminée : vérifiez les montants et les affectations avant validation.');
  }catch(e){if(!window.ExpenseReader)importModules=null;toast(controller.signal.aborted?'Lecture annulée. Aucune facture enregistrée.':e.message,true);}finally{reading=false;ocrController=null;renderApp();}
 }
-async function loadExpenses(){error='';data=null;renderApp();try{data=await request('readExpenses');}catch(e){error=e.message.includes('Action')?'Le serveur Dépenses doit être déployé avant utilisation.':e.message;}renderApp();}
+async function loadExpenses({fresh=false}={}){
+ if(expenseLoad)return expenseLoad;
+ const token=state.token,epoch=loadEpoch;error='';loadingExpenses=true;renderApp();
+ const promise=(async()=>{
+  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch)data=result;}
+  catch(e){if(state.token!==token||loadEpoch!==epoch)return;const message=e.message.includes('Action')?'Le serveur Dépenses doit être déployé avant utilisation.':e.message;if(data)toast('Actualisation impossible. Les dernières données affichées sont conservées. '+message,true);else error=message;}
+  finally{if(loadEpoch===epoch){loadingExpenses=false;expenseLoad=null;renderApp();}}
+ })();
+ expenseLoad=promise;return promise;
+}
 function renderApp(){if(state.view==='expenses'&&state.token!=="")window.render();}
 async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{await request(action,{...payload,requestId:pending.id});data=await request('readExpenses');pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
 
@@ -170,7 +179,7 @@ async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();retur
  if(act==='readInvoice')return readInvoice();
  if(act==='csv'||act==='pdf'){exportView(act);return;}
  if(act==='createReadPerson'){collect();const l=draft.invoice.lines[Number(el.dataset.index)];if(!l?.sourcePerson||!l.externalId)return;if(!confirm('Ajouter '+l.sourcePerson+' avec la référence '+l.externalId+' ?'))return;const existing=data.people.find(p=>p.reference===l.externalId);if(existing)l.personId=existing.id;else if(await mutate('saveExpensePerson',{name:l.sourcePerson,reference:l.externalId})){const person=data.people.find(p=>p.reference===l.externalId);if(person)draft.invoice.lines.forEach(x=>{if(x.externalId===l.externalId&&!x.personId)x.personId=person.id;});}renderApp();return;}
- if(act==='resetFilters'){filter={month:todayParis().slice(0,7),annual:false,plate:'',personId:'',category:'',unassigned:false};return loadExpenses();}
+ if(act==='resetFilters'){filter={month:todayParis().slice(0,7),annual:false,plate:'',personId:'',category:'',unassigned:false};return loadExpenses({fresh:true});}
  if(act==='reload')return loadExpenses();
  if(act==='back'){if(draft?.kind==='invoice'&&!confirm('Quitter cette saisie non enregistrée ?'))return;draft=null;selected='';}
  if(act==='new'){draft={kind:'invoice',step:'edit',invoice:{supplier:'intermarche',account:'',number:'',date:todayParis(),period:filter.month,totals:{ht:null,vat:null,ttc:null},note:'',lines:[blankLine()]},files:[],reason:''};selected='';}
@@ -223,6 +232,6 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{const el=e.target.closest('[data-exp]');if(el){e.preventDefault();handle(el.dataset.exp,el).catch(e=>toast(e.message,true));}});
 document.addEventListener('submit',e=>{if(e.target.id.startsWith('expense')){e.preventDefault();if(e.target.reportValidity())submit(e.target).catch(e=>toast(e.message,true));}});
 document.addEventListener('change',e=>{if(e.target.closest('#expenseFilters')){filter={...filter,...Object.fromEntries(new FormData($('#expenseFilters')))};filter.annual=filter.annual==='yes';if(e.target.name==='plate'&&filter.plate)filter.personId='';if(e.target.name==='personId'&&filter.personId)filter.plate='';renderApp();}else if(e.target.name==='category'&&e.target.closest('#expenseDraft')){collect();renderApp();}else if(e.target.name==='category'&&!e.target.closest('#expenseDraft')){filter.category=e.target.value;renderApp();}});
-return {render,open:loadExpenses,allowLeave(){if(busy||reading){toast('Enregistrement en cours. Attendez la réponse du serveur.',true);return false;}if(draft?.kind==='invoice'){if(!confirm('Quitter la saisie non enregistrée ?'))return false;draft=null;}return true;},reset(){ocrController?.abort();data=null;draft=null;selected='';pending=null;error='';}};
+return {render,open:loadExpenses,allowLeave(){if(busy||reading){toast('Enregistrement en cours. Attendez la réponse du serveur.',true);return false;}if(draft?.kind==='invoice'){if(!confirm('Quitter la saisie non enregistrée ?'))return false;draft=null;}return true;},reset(){loadEpoch++;expenseLoad=null;loadingExpenses=false;ocrController?.abort();data=null;draft=null;selected='';pending=null;error='';}};
 })();
 
