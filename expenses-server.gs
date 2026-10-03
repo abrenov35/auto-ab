@@ -48,7 +48,7 @@ function depCheckLinks_(i,snapshot,ss) {
   });
 }
 function depHandle_(ss,p) {
-  if(p.action==='readExpenses')return jsonResponse_(Object.assign({ok:true,version:1,manualEntry:true},depSnapshot_(depEvents_(ss))));
+  if(p.action==='readExpenses')return jsonResponse_(Object.assign({ok:true,version:1,manualEntry:true,manualMaintenanceDate:true},depSnapshot_(depEvents_(ss))));
   if(!/^[a-zA-Z0-9-]{16,80}$/.test(String(p.requestId||'')))throw Error('Identifiant de requête requis');
   var lock=LockService.getScriptLock();lock.waitLock(10000);
   try {
@@ -106,7 +106,7 @@ function depHandle_(ss,p) {
 
 /* Monthly manual entries share the audited journal, without a fabricated invoice. */
 function depManual_(ss,m,snap){
- var R=ExpenseRules,category=String(m.category||''),month=R.month(m.month),ht=R.cents(m.amount);
+ var R=ExpenseRules,category=String(m.category||''),operationDate=category==='maintenance'&&m.date!==undefined?R.date(m.date):'',month=operationDate?operationDate.slice(0,7):R.month(m.month),ht=R.cents(m.amount);
  if(!['fuel','parking','maintenance'].includes(category))throw Error('Catégorie de saisie invalide');
  if(ht===null||ht<0)throw Error('Montant HT positif ou nul requis');
  var plate='',personId='',manualPerson=null;
@@ -125,8 +125,10 @@ function depManual_(ss,m,snap){
   }
   if(!personId)throw Error('Choisir un chauffeur');
  }
- var label={fuel:'Carburant',parking:'Stationnement',maintenance:'Entretien'}[category];
- var value={supplier:'manual',account:'Saisie mensuelle',number:m.id||Utilities.getUuid(),date:month+'-01',period:month,totals:{ht:ht,vat:null,ttc:null},note:'Saisie manuelle mensuelle HT',lines:[{id:'1',category:category,date:'',month:month,amounts:{ht:ht,vat:null,ttc:null},plate:plate,personId:personId,scope:'assigned',label:label,litres:null,maintenanceId:'',card:'',externalId:'',fuelType:''}]};
+ var description=category==='maintenance'?String(m.description||'').trim():'';
+ if(description.length>1000)throw Error('Description limitée à 1 000 caractères');
+ var label=description||{fuel:'Carburant',parking:'Stationnement',maintenance:'Entretien'}[category];
+ var value={supplier:'manual',account:'Saisie mensuelle',number:m.id||Utilities.getUuid(),date:operationDate||month+'-01',period:month,totals:{ht:ht,vat:null,ttc:null},note:'Saisie manuelle mensuelle HT',lines:[{id:'1',category:category,date:operationDate,month:month,amounts:{ht:ht,vat:null,ttc:null},plate:plate,personId:personId,scope:'assigned',label:label,litres:null,maintenanceId:'',card:'',externalId:'',fuelType:''}]};
  if(manualPerson)value.manualPerson=manualPerson;
  return value;
 }
