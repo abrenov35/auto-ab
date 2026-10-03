@@ -38,18 +38,9 @@ function monthOptions(){
 }
 
 function monthSelector(){
- const choices=monthOptions(),current=todayParis().slice(0,7);
- const [year,month]=current.split('-').map(Number);
- const last=new Date(Date.UTC(year,month-1+6,1)).toISOString().slice(0,7);
- const upcoming=choices.filter(([value])=>value>=current&&value<=last);
- const previous=choices.filter(([value])=>value<current).reverse();
- const later=choices.filter(([value])=>value>last);
- return '<label class="field">Mois<select name="month">'+
- '<optgroup label="Mois en cours et 6 suivants">'+opts(upcoming,filter.month)+'</optgroup>'+
- '<optgroup label="Mois antérieurs">'+opts(previous,filter.month)+'</optgroup>'+
- '<optgroup label="Mois suivants">'+opts(later,filter.month)+'</optgroup></select></label>';
+ const choices=monthOptions(),label=choices.find(([value])=>value===filter.month)?.[1]||filter.month;
+ return '<div class="field"><span id="expenseMonthLabel">Mois</span><input type="hidden" name="month" value="'+E(filter.month)+'"><details class="expense-month-picker"><summary aria-labelledby="expenseMonthLabel expenseMonthValue"><span id="expenseMonthValue">'+E(label)+'</span><span aria-hidden="true">⌄</span></summary><div class="expense-month-menu"><button type="button" data-exp="scrollMonths" data-direction="-1" aria-label="Voir les mois antérieurs">▲</button><div class="expense-month-list" aria-label="Choisir un mois">'+choices.map(([value,text])=>'<button type="button" data-exp="chooseMonth" data-month="'+E(value)+'"'+(value===filter.month?' aria-current="date"':'')+'>'+E(text)+'</button>').join('')+'</div><button type="button" data-exp="scrollMonths" data-direction="1" aria-label="Voir les mois suivants">▼</button></div></details></div>';
 }
-
 function render(){
  if(error)return title('Dépenses',error)+btn('Réessayer','reload');
  if(!data)return '<div class="loading"><span class="spinner"></span> Chargement des dépenses…</div>';
@@ -160,6 +151,8 @@ async function submitManual(form){
 }
 
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
+ if(act==='chooseMonth'){filter.month=el.dataset.month;renderApp();document.querySelector('.expense-month-picker summary')?.focus();return;}
+ if(act==='scrollMonths'){el.closest('.expense-month-menu').querySelector('.expense-month-list').scrollBy({top:Number(el.dataset.direction)*224,behavior:'smooth'});return;}
  if(act==='previousMonth'||act==='nextMonth'){
  const [year,month]=filter.month.split('-').map(Number);
  const next=new Date(Date.UTC(year,month-1+(act==='nextMonth'?1:-1),1));
@@ -207,6 +200,26 @@ async function submit(form){
  const payload=Object.fromEntries(new FormData(form));const action={expensePerson:'saveExpensePerson',expenseMapping:'saveExpenseMapping',expenseCompletion:'setExpenseCompletion'}[form.id];
  if(action){if(await mutate(action,payload)){toast('Enregistré.');if(form.id==='expenseCompletion')draft=null;}renderApp();}
 }
+document.addEventListener('toggle',e=>{
+ const picker=e.target;if(!picker.matches?.('.expense-month-picker')||!picker.open)return;
+ const list=picker.querySelector('.expense-month-list'),active=list.querySelector('[aria-current]');
+ if(active)list.scrollTop=active.offsetTop;
+},true);
+document.addEventListener('click',e=>{
+ document.querySelectorAll('.expense-month-picker[open]').forEach(p=>{if(!p.contains(e.target))p.open=false;});
+});
+document.addEventListener('keydown',e=>{
+ const picker=e.target.closest('.expense-month-picker');if(!picker)return;
+ if(e.key==='Escape'){picker.open=false;picker.querySelector('summary').focus();return;}
+ const list=picker.querySelector('.expense-month-list'),items=[...list.children];
+ if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){
+ e.preventDefault();picker.open=true;
+ const index=items.indexOf(document.activeElement),current=items.findIndex(x=>x.hasAttribute('aria-current'));
+ const next=e.key==='Home'?0:e.key==='End'?items.length-1:index<0?current:Math.max(0,Math.min(items.length-1,index+(e.key==='ArrowDown'?1:-1)));
+ items[next]?.focus({preventScroll:true});
+ if(items[next]){const top=items[next].offsetTop;if(top<list.scrollTop)list.scrollTop=top;else if(top+32>list.scrollTop+list.clientHeight)list.scrollTop=top+32-list.clientHeight;}
+ }
+});
 document.addEventListener('click',e=>{const el=e.target.closest('[data-exp]');if(el){e.preventDefault();handle(el.dataset.exp,el).catch(e=>toast(e.message,true));}});
 document.addEventListener('submit',e=>{if(e.target.id.startsWith('expense')){e.preventDefault();if(e.target.reportValidity())submit(e.target).catch(e=>toast(e.message,true));}});
 document.addEventListener('change',e=>{if(e.target.closest('#expenseFilters')){filter={...filter,...Object.fromEntries(new FormData($('#expenseFilters')))};filter.annual=filter.annual==='yes';if(e.target.name==='plate'&&filter.plate)filter.personId='';if(e.target.name==='personId'&&filter.personId)filter.plate='';renderApp();}else if(e.target.name==='category'&&e.target.closest('#expenseDraft')){collect();renderApp();}else if(e.target.name==='category'&&!e.target.closest('#expenseDraft')){filter.category=e.target.value;renderApp();}});
