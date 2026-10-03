@@ -47,9 +47,9 @@ function render(){
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
  '<div class="toolbar">'+'<label class="field"><select name="category" aria-label="Catégorie">'+opts([['','Catégorie'],...Object.entries(R.categories)],filter.category)+'</select></label>'+btn(filter.unassigned?'Toutes les affectations':'À affecter','unassigned')+btn('Conducteurs et correspondances','references')+btn('Vérifier les imports du mois','completion')+btn('Exporter PDF','pdf')+'</div>'+renderReporting()+
  '<section class="panel"><h2>Opérations · '+lines.length+'</h2>'+renderLines(lines)+'</section>'+
- '<details class="panel"><summary>Complétude des imports</summary>'+completeness+'<p class="hint">La validation est une vérification explicite de toutes les factures attendues. Les comparaisons sont affichées uniquement pour des périodes closes dont les imports sont validés.</p></details>'+
+
  (old.length?'<section class="panel"><h2>Entretiens existants · montant HT à vérifier</h2><p>Ces '+old.length+' montants ne sont pas additionnés au total '+'HT'+'. Lors de l’import, liez la ligne à l’entretien existant pour éviter une double saisie.</p>'+old.map(m=>'<p>'+E(dateView(m.date)+' · '+m.immatriculation+' · '+m.type)+' : '+E(String(m.montant))+' € · base à vérifier '+(safeLink(m.lienFacture)?'<a href="'+E(safeLink(m.lienFacture))+'" target="_blank" rel="noopener">Facture</a>':'')+'</p>').join('')+'</section>':'')+
- '<details class="panel"><summary>Factures et avoirs · historique</summary>'+data.invoices.map(i=>'<p>'+btn(supplier(i.supplier)+' · '+(i.number||'Sans numéro')+' · '+i.period+(i.status==='cancelled'?' · Annulé':''),'invoice','data-id="'+E(i.id)+'"')+'</p>').join('')+'</details>';
+ '';
 }
 function renderReporting(){
  const items=filter.annual?[['Même cumul année précédente',-12]]:[['Mois précédent',-1],['Même mois année précédente',-12]];
