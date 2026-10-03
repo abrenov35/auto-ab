@@ -10,7 +10,7 @@ function storedSession(){
   return "";
 }
 const state = {data:null,view:initialPlate?"detail":"dashboard",vehicle:initialPlate,query:"",filter:"active",busy:false,form:null,token:storedSession(),mailSettings:null,syncing:false,stale:false,lastSync:0};
-function clearAccess(){window.Expenses?.reset();state.token="";state.data=null;state.syncing=false;state.stale=false;localStorage.removeItem(SESSION_KEY);localStorage.removeItem(CACHE_KEY);sessionStorage.removeItem("autoAbToken")}
+function clearAccess(){invalidateExpenseReads();window.Expenses?.reset();state.token="";state.data=null;state.syncing=false;state.stale=false;localStorage.removeItem(SESSION_KEY);localStorage.removeItem(CACHE_KEY);sessionStorage.removeItem("autoAbToken")}
 function saveParcCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({data:state.data,at:state.lastSync}))}catch{}}
 function restoreParcCache(){
   if(!state.token)return;
@@ -80,7 +80,31 @@ function toast(message,error=false){
   const el=$("#toast");el.textContent=message;el.className="toast show"+(error?" error":"");
   clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.className="toast",4500);
 }
-async function request(action,payload={}){
+let expenseReadCache=null,expenseReadFlight=null,expenseReadEpoch=0;
+function invalidateExpenseReads(){expenseReadEpoch++;expenseReadCache=null;expenseReadFlight=null;}
+function request(action,payload={}){
+ if(action!=="readExpenses"){
+  if(["saveExpenseInvoice","cancelExpenseInvoice","saveExpensePerson","saveExpenseMapping","setExpenseCompletion"].includes(action)){
+   invalidateExpenseReads();
+   return requestNetwork(action,payload).finally(invalidateExpenseReads);
+  }
+  return requestNetwork(action,payload);
+ }
+ const token=state.token,epoch=expenseReadEpoch;
+ if(!payload.fresh&&expenseReadCache?.token===token&&Date.now()-expenseReadCache.at<60000)
+  return Promise.resolve(JSON.parse(JSON.stringify(expenseReadCache.data)));
+ if(expenseReadFlight?.token===token&&expenseReadFlight.epoch===epoch)return expenseReadFlight.promise.then(x=>JSON.parse(JSON.stringify(x)));
+ const flight={token,epoch,promise:null};
+ flight.promise=requestNetwork(action,{}).then(result=>{
+  if(state.token===token&&expenseReadEpoch===epoch)expenseReadCache={token,at:Date.now(),data:result};
+  return result;
+ }).finally(()=>{if(expenseReadFlight===flight)expenseReadFlight=null;});
+ expenseReadFlight=flight;
+ return flight.promise.then(x=>JSON.parse(JSON.stringify(x)));
+}
+function preloadExpenses(){if(state.token)request("readExpenses").catch(()=>{});}
+
+async function requestNetwork(action,payload={}){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),action==="loginAndReadParc"?60000:45000);
   try{
     const res=await fetch(API_URL,{method:"POST",
@@ -102,6 +126,7 @@ async function request(action,payload={}){
 }
 async function load({quiet=false}={}){
   if(!state.token){renderLogin();return}
+  preloadExpenses();
   if(!quiet&&!state.data)$("#app").innerHTML='<div class="loading"><span class="spinner"></span> Chargement du parc…</div>';
   try{state.data=await request("readParc");state.lastSync=Date.now();state.syncing=false;state.stale=false;saveParcCache();render()}
   catch(e){
@@ -113,7 +138,7 @@ async function load({quiet=false}={}){
 let expensesLoading;
 async function openExpenses(){
  state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=2","expenses-report.js?v=2","expenses.js?v=29"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=2","expenses-report.js?v=2","expenses.js?v=30"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
@@ -353,7 +378,7 @@ document.addEventListener("submit",async e=>{
   if(e.target.id==="loginForm"){
     e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;button.textContent="Connexion en cours…";
     const previous=e.target.parentElement.querySelector(".notice.error");if(previous)previous.remove();
-    try{const result=await request("loginAndReadParc",{pin:$("#accessPin").value});const {token,...data}=result;state.token=token;state.data=data;state.lastSync=Date.now();state.stale=false;localStorage.setItem(SESSION_KEY,JSON.stringify({token,expiresAt:Date.now()+5*3600000+45*60000}));saveParcCache();render()}
+    try{const result=await request("loginAndReadParc",{pin:$("#accessPin").value});const {token,...data}=result;state.token=token;state.data=data;state.lastSync=Date.now();state.stale=false;localStorage.setItem(SESSION_KEY,JSON.stringify({token,expiresAt:Date.now()+5*3600000+45*60000}));saveParcCache();render();preloadExpenses()}
     catch(error){button.disabled=false;button.textContent="Ouvrir le parc";const notice=document.createElement("p");notice.className="notice error";notice.textContent=error.message;e.target.after(notice)}
   }
   if(e.target.id==="mailSettingsForm"){
