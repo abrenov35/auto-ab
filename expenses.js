@@ -124,7 +124,7 @@ async function loadExpenses({fresh=false}={}){
  expenseLoad=promise;return promise;
 }
 function renderApp(){if(state.view==='expenses'&&state.token!=="")window.render();}
-async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{await request(action,{...payload,requestId:pending.id});data=await request('readExpenses');pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
+async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{const result=await request(action,{...payload,requestId:pending.id});loadEpoch++;expenseLoad=null;loadingExpenses=false;data=result.snapshot||await request('readExpenses',{fresh:true});pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
 
 function openManual(category,invoice){
  if(!data.manualEntry){toast('La mise à jour du serveur de saisie doit être publiée.',true);return;}
