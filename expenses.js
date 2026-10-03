@@ -11,6 +11,17 @@ const input=(label,name,value='',type='text',required=false)=>'<label class="fie
 const opts=(items,value)=>items.map(([v,label])=>'<option value="'+E(v)+'"'+(String(v)===String(value)?' selected':'')+'>'+E(label)+'</option>').join('');
 const select=(label,name,items,value)=>'<label class="field">'+E(label)+'<select name="'+name+'">'+opts(items,value)+'</select></label>';
 const persons=()=>[['','Non affecté'],...data.people.map(p=>[p.id,p.name+' · '+p.reference])];
+// Offer the existing fleet drivers without inferring historical expense assignments.
+const filterPersons=()=>{
+ const people=data.people.map(p=>[p.id,p.name]);
+ const known=new Set(data.people.map(p=>R.key(p.name)));
+ for(const v of list('vehicules')){
+  const name=String(v.conducteur||'').trim(),key=R.key(name);
+  if(!name||known.has(key))continue;
+  known.add(key);people.push(['fleet-driver:'+key,name]);
+ }
+ return people.sort((a,b)=>a[1].localeCompare(b[1],'fr',{sensitivity:'base'}));
+};
 const vehicles=()=>[['','Non affecté'],...list('vehicules').map(v=>[R.plate(v.immatriculation),v.immatriculation+' · '+v.marque+' '+v.modele+(archived(v)?' (archivé)':'')])];
 const assignmentLabel=l=>{const p=data.people.find(p=>p.id===l.personId);return l.scope==='common'?'Frais communs':R.assignmentKind(l)==='driver'?(p?p.name+' ('+p.reference+')':'Conducteur à affecter'):R.assignmentKind(l)==='vehicle'?(l.plate||'Véhicule à affecter'):[l.plate,p?.name].filter(Boolean).join(' · ')||'À affecter';};
 const number=n=>n===null||n===undefined?'':(n/100).toFixed(2);
@@ -31,7 +42,7 @@ function render(){
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
  return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions"><span id="expenseDownload" role="status"></span>'+btn('Exporter CSV','csv')+btn('Importer une facture','new')+'</div></div>'+
- '<form id="expenseFilters" class="expense-filters">'+'<div class="field month-field"><label for="expenseMonth">Mois</label><div class="month-control"><button type="button" data-exp="previousMonth" aria-label="Mois précédent">‹</button><input id="expenseMonth" name="month" type="month" required value="'+E(filter.month)+'"><button type="button" data-exp="nextMonth" aria-label="Mois suivant">›</button></div></div>'+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...persons().slice(1)],filter.personId)+'</form>'+
+ '<form id="expenseFilters" class="expense-filters">'+'<div class="field month-field"><label for="expenseMonth">Mois</label><div class="month-control"><button type="button" data-exp="previousMonth" aria-label="Mois précédent">‹</button><input id="expenseMonth" name="month" type="month" required value="'+E(filter.month)+'"><button type="button" data-exp="nextMonth" aria-label="Mois suivant">›</button></div></div>'+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
  '<div class="toolbar">'+'<label class="field"><select name="category" aria-label="Catégorie">'+opts([['','Catégorie'],...Object.entries(R.categories)],filter.category)+'</select></label>'+btn(filter.unassigned?'Toutes les affectations':'À affecter','unassigned')+btn('Conducteurs et correspondances','references')+btn('Vérifier les imports du mois','completion')+btn('Exporter PDF','pdf')+'</div>'+renderReporting()+
