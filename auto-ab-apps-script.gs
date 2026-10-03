@@ -2562,39 +2562,12 @@ function installerAlerteParc() {
 
 // L'accès est vérifié côté serveur. Définir AUTO_AB_ACCESS_CODE dans les
 // propriétés du script avant le déploiement ; ne jamais publier le code dans GitHub.
+// Public access explicitly requested by the application owner.
 function connecterParc_(p) {
-  const proprietes = PropertiesService.getScriptProperties();
-  const code = proprietes.getProperty("AUTO_AB_ACCESS_CODE");
-  if (!code) throw new Error("Accès non configuré. Contacter l'administrateur.");
-  const verrou = LockService.getScriptLock();
-  verrou.waitLock(10000);
-  try {
-    const maintenant = Date.now();
-    const blocage = Number(proprietes.getProperty("AUTO_AB_LOGIN_BLOQUE_JUSQUA") || 0);
-    if (blocage > maintenant) throw new Error("Trop d'essais. Réessayer dans 15 minutes.");
-    if (String(p.pin || "") !== code) {
-      const essais = Number(proprietes.getProperty("AUTO_AB_LOGIN_ESSAIS") || 0) + 1;
-      proprietes.setProperty("AUTO_AB_LOGIN_ESSAIS", String(essais));
-      if (essais >= 5) {
-        proprietes.setProperty("AUTO_AB_LOGIN_BLOQUE_JUSQUA", String(maintenant + 15 * 60000));
-        proprietes.setProperty("AUTO_AB_LOGIN_ESSAIS", "0");
-      }
-      throw new Error("Code incorrect.");
-    }
-    proprietes.deleteProperty("AUTO_AB_LOGIN_ESSAIS");
-    proprietes.deleteProperty("AUTO_AB_LOGIN_BLOQUE_JUSQUA");
-    const token = Utilities.getUuid() + Utilities.getUuid();
-    CacheService.getScriptCache().put("AUTO_AB_SESSION_" + token, "1", 21600);
-    return jsonResponse_({ok: true, success: true, token});
-  } finally {
-    verrou.releaseLock();
-  }
+  return jsonResponse_({ok: true, success: true, token: "public-access"});
 }
-
 function verifierSessionParc_(token) {
-  if (!token || !CacheService.getScriptCache().get("AUTO_AB_SESSION_" + String(token))) {
-    throw new Error("Accès requis. Saisir le code du parc.");
-  }
+  // No code or session is required to access the park.
 }
 
 function parametresMailParc_() {
