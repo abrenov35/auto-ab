@@ -83,3 +83,8 @@ dialog{width:min(96vw,560px);max-height:min(90dvh,800px);border:0;border-radius:
  .expense-grid,.expense-filters{grid-template-columns:minmax(0,1fr);gap:10px}
  .expense-grid>.button{justify-self:stretch}
 }
+
+/* Compact expense heading without explanatory subtitle. */
+.expense-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.expense-heading h1{margin:0}
+.expense-heading>.button{min-height:38px;max-width:100%;white-space:normal}
