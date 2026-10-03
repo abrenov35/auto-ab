@@ -3,14 +3,12 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwHL8O_Apgjv4gq8VKxxPcG
 const initialPlate=new URLSearchParams(location.search).get("vehicule");
 const SESSION_KEY="autoAbSession",CACHE_KEY="autoAbParcCache";
 function storedSession(){
+  // Retain an existing session during the server deployment transition.
   try{const session=JSON.parse(localStorage.getItem(SESSION_KEY)||"null");if(session?.token&&session.expiresAt>Date.now())return session.token}catch{}
-  localStorage.removeItem(SESSION_KEY);localStorage.removeItem(CACHE_KEY);
-  const previous=sessionStorage.getItem("autoAbToken");
-  if(previous){localStorage.setItem(SESSION_KEY,JSON.stringify({token:previous,expiresAt:Date.now()+30*60000}));return previous}
-  return "";
+  return "public-access";
 }
 const state = {data:null,view:initialPlate?"detail":"dashboard",vehicle:initialPlate,query:"",filter:"active",busy:false,form:null,token:storedSession(),mailSettings:null,syncing:false,stale:false,lastSync:0};
-function clearAccess(){invalidateExpenseReads();window.Expenses?.reset();state.token="";state.data=null;state.syncing=false;state.stale=false;localStorage.removeItem(SESSION_KEY);localStorage.removeItem(CACHE_KEY);sessionStorage.removeItem("autoAbToken")}
+function clearAccess(){invalidateExpenseReads();window.Expenses?.reset();state.token="public-access";state.data=null;state.syncing=false;state.stale=false;localStorage.removeItem(SESSION_KEY);localStorage.removeItem(CACHE_KEY);sessionStorage.removeItem("autoAbToken")}
 function saveParcCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({data:state.data,at:state.lastSync}))}catch{}}
 function restoreParcCache(){
   if(!state.token)return;
@@ -114,7 +112,7 @@ async function requestNetwork(action,payload={}){
     let result;try{result=JSON.parse(text)}catch{throw Error("Le service a renvoyé une réponse illisible.")}
     if(!res.ok||result.ok!==true){
       const message=result.error||result.message||"Enregistrement impossible";
-      if(message.includes("Accès requis")){clearAccess();renderLogin("Session expirée. Saisis de nouveau le code.")}
+      if(message.includes("Accès requis")){clearAccess();throw Error("L’accès libre attend la publication de la nouvelle version du serveur Google Apps Script.")}
       throw Error(message);
     }
     return result;
@@ -125,12 +123,10 @@ async function requestNetwork(action,payload={}){
   }finally{clearTimeout(timer)}
 }
 async function load({quiet=false}={}){
-  if(!state.token){renderLogin();return}
   preloadExpenses();
   if(!quiet&&!state.data)$("#app").innerHTML='<div class="loading"><span class="spinner"></span> Chargement du parc…</div>';
   try{state.data=await request("readParc");state.lastSync=Date.now();state.syncing=false;state.stale=false;saveParcCache();render()}
   catch(e){
-    if(e.message.includes("Accès requis")){clearAccess();renderLogin("Session expirée. Saisis de nouveau le code.");return}
     if(state.data){state.syncing=false;state.stale=true;render();toast(e.message,true);return}
     $("#app").innerHTML='<div class="notice error"><strong>Le parc ne peut pas être chargé</strong><p>'+escapeHtml(e.message)+'</p><button class="button primary" type="button" data-action="reload">Réessayer</button></div>';
   }
@@ -142,7 +138,7 @@ async function openExpenses(){
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
-  document.querySelector(".tabs").hidden=false;$("#refreshButton").hidden=false;$("#logoutButton").hidden=false;
+  document.querySelector(".tabs").hidden=false;$("#refreshButton").hidden=false;$("#logoutButton").hidden=true;
   $$(".tab").forEach(el=>el.classList.toggle("active",el.dataset.view===state.view));
   if(state.view==="detail"&&state.vehicle&&!vehicle(state.vehicle)){state.view="vehicles";state.vehicle=null}
   const syncNote=state.stale&&state.lastSync?'<div class="sync-note" role="status">'+(state.syncing?"Actualisation en cours… · ":"Dernière synchronisation : ")+new Date(state.lastSync).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+' · <button type="button" data-action="reload">Actualiser</button></div>':"";
@@ -151,11 +147,6 @@ function render(){
 }
 function $$(s,root=document){return [...root.querySelectorAll(s)]}
 function title(name,sub,button=""){return '<div class="page-title"><div><h1>'+escapeHtml(name)+'</h1><p>'+escapeHtml(sub)+'</p></div>'+button+'</div>'}
-function renderLogin(message=""){
-  document.querySelector(".tabs").hidden=true;$("#refreshButton").hidden=true;$("#logoutButton").hidden=true;
-  $("#app").innerHTML='<section class="panel access-card"><h1>Accès au parc</h1><p>Saisis le code pour consulter les véhicules.</p><form id="loginForm"><label for="accessPin">Code d’accès</label><input id="accessPin" type="password" inputmode="numeric" autocomplete="off" required maxlength="20"><button class="button primary" type="submit">Ouvrir le parc</button></form>'+(message?'<p class="notice error">'+escapeHtml(message)+'</p>':"")+'</section>';
-  $("#accessPin").focus();
-}
 function addressRow(kind,value=""){
   return '<div class="address-row"><input type="email" required autocomplete="email" value="'+escapeHtml(value)+'" aria-label="Adresse '+(kind==="to"?"destinataire":"en copie")+'"><button type="button" class="button quiet" data-action="removeAddress" aria-label="Retirer cette adresse">Retirer</button></div>';
 }
@@ -375,12 +366,6 @@ document.addEventListener("click",e=>{
   const tab=e.target.closest("[data-view]");if(tab){if(state.view==="expenses"&&window.Expenses&&!window.Expenses.allowLeave())return;state.vehicle=null;if(tab.dataset.view==="expenses")openExpenses();else if(tab.dataset.view==="settings")openSettings();else{state.view=tab.dataset.view;render()}scrollTo(0,0)}
 });
 document.addEventListener("submit",async e=>{
-  if(e.target.id==="loginForm"){
-    e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;button.textContent="Connexion en cours…";
-    const previous=e.target.parentElement.querySelector(".notice.error");if(previous)previous.remove();
-    try{const result=await request("loginAndReadParc",{pin:$("#accessPin").value});const {token,...data}=result;state.token=token;state.data=data;state.lastSync=Date.now();state.stale=false;localStorage.setItem(SESSION_KEY,JSON.stringify({token,expiresAt:Date.now()+5*3600000+45*60000}));saveParcCache();render();preloadExpenses()}
-    catch(error){button.disabled=false;button.textContent="Ouvrir le parc";const notice=document.createElement("p");notice.className="notice error";notice.textContent=error.message;e.target.after(notice)}
-  }
   if(e.target.id==="mailSettingsForm"){
     e.preventDefault();const to=$$("#mailTo input").map(x=>x.value.trim()),cc=$$("#mailCc input").map(x=>x.value.trim());
     const button=e.target.querySelector("button[type=submit]");button.disabled=true;
@@ -391,7 +376,6 @@ document.addEventListener("submit",async e=>{
 document.addEventListener("input",e=>{if(e.target.id==="search"){state.query=e.target.value;const pos=e.target.selectionStart;render();$("#search").focus();$("#search").setSelectionRange(pos,pos)}});
 document.addEventListener("change",e=>{if(e.target.id==="filter"){state.filter=e.target.value;render()}});
 $("#refreshButton").addEventListener("click",()=>state.view==="expenses"?window.Expenses?.open({fresh:true}):load({quiet:true}));
-$("#logoutButton").addEventListener("click",()=>{clearAccess();renderLogin()});
 $("#closeDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#cancelDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#editorForm").addEventListener("submit",submitForm);
