@@ -40,7 +40,7 @@ function depDocument_(d,requestId,index) {
   return {hash:hash,name:String(d.name||'Justificatif').slice(0,180),mime:d.mime,bytes:bytes,storageName:'dep-'+requestId+'-'+index+'-'+hash};
 }
 function depCheckLinks_(i,snapshot,ss) {
-  var vehicles=lireVehicules_(ss),maintenance=lireMaintenance_(ss),used={};
+  var vehicles=i.lines.some(function(l){return Boolean(l.plate);})?lireVehicules_(ss):[],maintenance=i.lines.some(function(l){return Boolean(l.maintenanceId);})?lireMaintenance_(ss):[],used={};
   snapshot.invoices.filter(function(x){return x.id!==i.id&&x.status!=='cancelled';}).forEach(function(x){x.lines.forEach(function(l){if(l.maintenanceId)used[l.maintenanceId]=true;});});
   i.lines.forEach(function(l){
     var person=snapshot.people.find(function(p){return p.id===l.personId;});
@@ -61,7 +61,7 @@ function depHandle_(ss,p) {
     var cached=cache.get(key);
     if(cached)return ContentService.createTextOutput(cached).setMimeType(ContentService.MimeType.JSON);
     var events=last<2?[]:sh.getRange(2,1,last-1,1).getValues().map(function(r){return JSON.parse(r[0]);});
-    var result=Object.assign({ok:true,version:1,manualEntry:true,manualMaintenanceDate:true,driverArchiving:true},depSnapshot_(events));
+    var result=depResult_(events);
     var serialized=JSON.stringify(result);
     if(serialized.length<=22000){try{cache.put(key,serialized,60);}catch(ignored){}}
     return jsonResponse_(result);
@@ -70,7 +70,7 @@ function depHandle_(ss,p) {
   var lock=LockService.getScriptLock();lock.waitLock(10000);
   try {
     var events=depEvents_(ss),prior=events.find(function(e){return e.requestId===p.requestId;});
-    if(prior)return jsonResponse_({ok:true,id:prior.value.id,replayed:true});
+    if(prior)return jsonResponse_({ok:true,id:prior.value.id,replayed:true,snapshot:depResult_(events)});
     var snap=depSnapshot_(events),value,type;
     if(p.action==='saveExpenseInvoice') {
       value=p.manual?depManual_(ss,p.manual,snap):ExpenseRules.validate(p.invoice);value.id=(p.manual?p.manual.id:p.invoice.id)||Utilities.getUuid();
@@ -131,7 +131,7 @@ function depHandle_(ss,p) {
       value={key:p.supplier+'|'+ExpenseRules.key(account)+'|'+month,supplier:p.supplier,account:account,month:month,status:p.status,note:String(p.reason||'').slice(0,1000)};type='completion';
     } else throw Error('Action dépenses inconnue');
     var event={type:type,requestId:p.requestId,at:nowIso_(),actor:'Session authentifiée du parc',reason:String(p.reason||'').slice(0,1000),value:value};
-    depAppend_(ss,event);return jsonResponse_({ok:true,id:value.id,revision:value.revision});
+    depAppend_(ss,event);events.push(event);return jsonResponse_({ok:true,id:value.id,revision:value.revision,snapshot:depResult_(events)});
   } finally {lock.releaseLock();}
 }
 
@@ -162,4 +162,9 @@ function depManual_(ss,m,snap){
  var value={supplier:'manual',account:'Saisie mensuelle',number:m.id||Utilities.getUuid(),date:operationDate||month+'-01',period:month,totals:{ht:ht,vat:null,ttc:null},note:'Saisie manuelle mensuelle HT',lines:[{id:'1',category:category,date:operationDate,month:month,amounts:{ht:ht,vat:null,ttc:null},plate:plate,personId:personId,scope:'assigned',label:label,litres:null,maintenanceId:'',card:'',externalId:'',fuelType:''}]};
  if(manualPerson)value.manualPerson=manualPerson;
  return value;
+}
+
+// Return the confirmed journal state without a second spreadsheet read.
+function depResult_(events){
+  return Object.assign({ok:true,version:1,manualEntry:true,manualMaintenanceDate:true,driverArchiving:true},depSnapshot_(events));
 }
