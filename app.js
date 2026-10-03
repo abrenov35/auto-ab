@@ -113,7 +113,7 @@ async function load({quiet=false}={}){
 let expensesLoading;
 async function openExpenses(){
  state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=1","expenses-report.js?v=1","expenses.js?v=7"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=1","expenses-report.js?v=1","expenses.js?v=8"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
