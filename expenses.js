@@ -36,6 +36,20 @@ function monthOptions(){
  }
  return choices;
 }
+
+function monthSelector(){
+ const choices=monthOptions(),current=todayParis().slice(0,7);
+ const [year,month]=current.split('-').map(Number);
+ const last=new Date(Date.UTC(year,month-1+6,1)).toISOString().slice(0,7);
+ const upcoming=choices.filter(([value])=>value>=current&&value<=last);
+ const previous=choices.filter(([value])=>value<current).reverse();
+ const later=choices.filter(([value])=>value>last);
+ return '<label class="field">Mois<select name="month">'+
+ '<optgroup label="Mois en cours et 6 suivants">'+opts(upcoming,filter.month)+'</optgroup>'+
+ '<optgroup label="Mois antérieurs">'+opts(previous,filter.month)+'</optgroup>'+
+ '<optgroup label="Mois suivants">'+opts(later,filter.month)+'</optgroup></select></label>';
+}
+
 function render(){
  if(error)return title('Dépenses',error)+btn('Réessayer','reload');
  if(!data)return '<div class="loading"><span class="spinner"></span> Chargement des dépenses…</div>';
@@ -52,7 +66,7 @@ function render(){
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
  return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions"><span id="expenseDownload" role="status"></span>'+btn('Carburant','manualFuel')+btn('Stationnement','manualParking')+btn('Entretiens','manualMaintenance')+btn('Actualiser / Tout afficher','resetFilters')+'</div></div>'+
- '<form id="expenseFilters" class="expense-filters">'+select('Mois','month',monthOptions(),filter.month)+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
+ '<form id="expenseFilters" class="expense-filters">'+monthSelector()+select('Période','annual',[['','Mois'],['yes','Cumul janvier → mois choisi']],filter.annual?'yes':'')+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
  '<nav class="toolbar" aria-label="Catégories de dépenses"><div class="row-actions">'+[['fuel','Carburant'],['parking','Stationnement'],['maintenance','Entretiens']].map(([value,label])=>'<button type="button" class="button '+(filter.category===value?'primary':'secondary')+'" data-exp="category" data-category="'+value+'" aria-pressed="'+(filter.category===value)+'">'+label+'</button>').join('')+'</div></nav>'+renderReporting()+
