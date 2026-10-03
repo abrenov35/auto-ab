@@ -115,3 +115,6 @@ dialog{width:min(96vw,560px);max-height:min(90dvh,800px);border:0;border-radius:
 @media(max-width:550px){
  #expenseFilters{grid-template-columns:minmax(0,1fr)}
 }
+
+.expense-heading [data-exp="resetFilters"]{background:#dbeafe;border-color:#b8d4f5;color:#1e3a8a;margin-left:auto}
+.expense-heading [data-exp="resetFilters"]:hover{background:#c7dffb;border-color:#93bceb}
