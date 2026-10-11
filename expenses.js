@@ -160,20 +160,22 @@ async function readInvoice(){
   toast('Lecture terminée : vérifiez les montants et les affectations avant validation.');
  }catch(e){if(!window.ExpenseReader)importModules=null;toast(controller.signal.aborted?'Lecture annulée. Aucune facture enregistrée.':e.message,true);}finally{reading=false;ocrController=null;renderApp();}
 }
+function validSnapshot(value){return value&&Array.isArray(value.invoices)&&Array.isArray(value.people)&&Array.isArray(value.mappings)&&Array.isArray(value.audit)&&value.completion&&typeof value.completion==='object'&&value.invoices.every(i=>Array.isArray(i.lines)&&Array.isArray(i.documents));}
+function requireSnapshot(value){if(!validSnapshot(value))throw Error('Le serveur Dépenses a renvoyé des données incomplètes. Vérifiez le déploiement Google Apps Script puis actualisez.');return value;}
 async function loadExpenses({fresh=false}={}){
  if(expenseLoad)return expenseLoad;
  const token=state.token,epoch=loadEpoch;error='';
- if(!data&&!fresh){try{const cached=JSON.parse(sessionStorage.getItem('autoAbExpenseDisplay')||'null');if(cached?.token===token&&Date.now()-cached.at<86400000)data=cached.data;}catch{}}
+ if(!data&&!fresh){try{const cached=JSON.parse(sessionStorage.getItem('autoAbExpenseDisplay')||'null');if(cached?.token===token&&Date.now()-cached.at<86400000&&validSnapshot(cached.data))data=cached.data;}catch{}}
  loadingExpenses=true;renderApp();
  const promise=(async()=>{
-  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch){data=result;try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token,at:Date.now(),data}));}catch{}}}
+  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch){data=requireSnapshot(result);try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token,at:Date.now(),data}));}catch{}}}
   catch(e){if(state.token!==token||loadEpoch!==epoch)return;const message=e.message.includes('Action')?'Le serveur Dépenses doit être déployé avant utilisation.':e.message;if(data)toast('Actualisation impossible. Les dernières données affichées sont conservées. '+message,true);else error=message;}
   finally{if(loadEpoch===epoch){loadingExpenses=false;expenseLoad=null;renderApp();}}
  })();
  expenseLoad=promise;return data&&!fresh?Promise.resolve():promise;
 }
 function renderApp(){if(state.view==='expenses'&&state.token!=="")window.render();}
-async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{const result=await request(action,{...payload,requestId:pending.id});loadEpoch++;expenseLoad=null;loadingExpenses=false;data=result.snapshot||await request('readExpenses',{fresh:true});try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token:state.token,at:Date.now(),data}));}catch{}pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
+async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{const result=await request(action,{...payload,requestId:pending.id});loadEpoch++;expenseLoad=null;loadingExpenses=false;data=requireSnapshot(result.snapshot||await request('readExpenses',{fresh:true}));try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token:state.token,at:Date.now(),data}));}catch{}pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
 
 function openManual(category,invoice){
  if(!data.manualEntry){toast('La mise à jour du serveur de saisie doit être publiée.',true);return;}
@@ -235,6 +237,7 @@ async function deleteManual(form){
 }
 
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
+ if(!data&&!['reload','resetFilters','closeDocumentViewer','closeDocuments'].includes(act)){toast(error||'Les dépenses sont encore en cours de chargement.',true);return;}
  if(act==='documents'){if(el?.dataset.category)documentFilter.category=el.dataset.category;documentsView=true;draft=null;selected='';renderApp();return;}
  if(act==='viewDocument'){viewDocument(el.dataset.id,el.dataset.document);return;}
  if(act==='closeDocumentViewer'){document.getElementById('expenseDocumentViewer')?.close();return;}
