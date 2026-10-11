@@ -630,6 +630,9 @@ function doPost(e) {
 
         return uploadDocument_(ss, p);
 
+      case "saveCtImport":
+        return enregistrerImportCt_(ss, p);
+
       case "uploadCtFile":
         return uploadControleTk_(ss, p);
 
@@ -2602,3 +2605,37 @@ function enregistrerParametresMail_(p) {
   return jsonResponse_({ok: true, success: true, to, cc});
 }
 
+
+// One HTTP round trip; Drive work completes before acquiring the spreadsheet lock.
+function enregistrerImportCt_(ss, p) {
+  const plaque = normaliserPlaqueSuivi_(p.immatriculation);
+  const dernier = validerDateSuivi_(p.dernierDate, "Date du contrôle");
+  const prochain = validerDateSuivi_(p.prochainDate, "Prochain contrôle");
+  if (!plaque || !dernier || !prochain || prochain <= dernier) throw Error("Véhicule et dates de contrôle invalides");
+  const sheet = ss.getSheetByName("Contrôles techniques");
+  const vehicles = ss.getSheetByName("Véhicules");
+  if (!sheet || !vehicles) throw Error("Feuille de suivi introuvable");
+  const vehicle = vehicles.getDataRange().getValues().slice(1).find(r => normaliserPlaqueSuivi_(r[1]) === plaque);
+  if (!vehicle) throw Error("Véhicule introuvable");
+  const mime = String(p.mimeType || "").toLowerCase();
+  if (!["application/pdf", "image/jpeg", "image/png"].includes(mime) || !p.fileBase64 || p.fileBase64.length > 7 * 1024 * 1024) throw Error("Justificatif PDF/JPG/PNG requis, 5 Mo maximum");
+  const result = JSON.parse(uploadDocument_(ss, Object.assign({}, p, {categorie:"Contrôle Technique", idVehicule:vehicle[0], date:dernier})).getContent());
+  if (result.ok !== true) return jsonResponse_(result);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const rows = sheet.getDataRange().getValues();
+    const index = rows.findIndex((r, i) => i > 0 && normaliserPlaqueSuivi_(r[2]) === plaque && r[8] !== "Archivé");
+    const now = nowIso_();
+    if (index >= 0 && validerDateSuivi_(rows[index][3], "Date existante") === dernier) {
+      const row = rows[index].slice();
+      row[4] = prochain; row[5] = result.lienDrive; row[7] = now;
+      sheet.getRange(index + 1, 1, 1, row.length).setValues([row]);
+    } else {
+      if (index >= 0) {const row = rows[index].slice();row[8] = "Archivé";row[7] = now;sheet.getRange(index + 1, 1, 1, row.length).setValues([row]);}
+      sheet.appendRow([Utilities.getUuid(),vehicle[0],vehicle[1],dernier,prochain,result.lienDrive,now,now,"Actif"]);
+    }
+    SpreadsheetApp.flush();
+    return jsonResponse_(Object.assign({}, result, {ok:true, success:true}));
+  } finally {lock.releaseLock();}
+}
