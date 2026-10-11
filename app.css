@@ -148,4 +148,6 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 
 .expense-document-row{display:grid;grid-template-columns:80px minmax(160px,1fr) auto auto;gap:12px;align-items:center;padding:12px 0;white-space:nowrap}.expense-document-caption{overflow:hidden;text-overflow:ellipsis;font-weight:600}.expense-document-row .row-actions{flex-wrap:nowrap}.panel:has(.expense-document-row){overflow-x:auto}.expense-document-row{min-width:580px}
 
-.detail-grid{align-items:start;gap:10px}.detail-grid .panel{padding:12px}.detail-grid .panel h2{margin-bottom:8px}.detail-grid .kv{margin:0;padding:6px 0}.detail-grid .panel>p{margin:7px 0}.detail-grid .section-actions{margin-top:8px;gap:6px}.detail-grid .button{padding:6px 10px;min-height:30px}@media(min-width:1100px){.detail-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.detail-grid{align-items:stretch;gap:10px}.detail-grid .panel{padding:12px}.detail-grid .panel h2{margin-bottom:8px}.detail-grid .kv{margin:0;padding:6px 0}.detail-grid .panel>p{margin:7px 0}.detail-grid .section-actions{margin-top:8px;gap:6px}.detail-grid .button{padding:6px 10px;min-height:30px}@media(min-width:1100px){.detail-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.detail-grid>.panel{display:flex;flex-direction:column;min-width:0}.detail-grid>.panel>.section-actions{margin-top:auto;padding-top:8px}.detail-grid>.panel>.section-actions>.button{flex:1 1 calc(50% - 6px);white-space:normal;text-align:center}.detail-grid>.panel>.section-actions>.button:only-child{flex:0 1 auto}
