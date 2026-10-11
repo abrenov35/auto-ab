@@ -141,12 +141,11 @@ function render(){
   document.querySelector(".tabs").hidden=false;$("#refreshButton").hidden=false;$("#logoutButton").hidden=true;
   $$(".tab").forEach(el=>el.classList.toggle("active",state.view==="expenses"?(el.dataset.expNav==="documents"?el.dataset.category===expenseTab:el.dataset.view==="expenses"&&!expenseTab):el.dataset.view===state.view));
   if(state.view==="detail"&&state.vehicle&&!vehicle(state.vehicle)){state.view="vehicles";state.vehicle=null}
-  const syncNote=state.stale&&state.lastSync?'<div class="sync-note" role="status">'+(state.syncing?"Actualisation en cours… · ":"Dernière synchronisation : ")+new Date(state.lastSync).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+' · <button type="button" data-action="reload">Actualiser</button></div>':"";
-  $("#app").innerHTML=syncNote+(state.view==="expenses"?(window.Expenses?window.Expenses.render():'<div class="loading">Chargement des dépenses…</div>'):state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():state.view==="settings"?renderSettings():renderDashboard());
+  $("#app").innerHTML=(state.view==="expenses"?(window.Expenses?window.Expenses.render():'<div class="loading">Chargement des dépenses…</div>'):state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():state.view==="settings"?renderSettings():renderDashboard());
   if(state.view==="vehicles"){const input=$("#search");if(input){input.value=state.query}}
 }
 function $$(s,root=document){return [...root.querySelectorAll(s)]}
-function title(name,sub,button=""){return '<div class="page-title"><div><h1>'+escapeHtml(name)+'</h1><p>'+escapeHtml(sub)+'</p></div>'+button+'</div>'}
+function title(name,sub,button=""){return '<div class="page-title"><div><h1>'+escapeHtml(name)+'</h1>'+(sub?'<p>'+escapeHtml(sub)+'</p>':'')+'</div>'+button+'</div>'}
 function addressRow(kind,value=""){
   return '<div class="address-row"><input type="email" required autocomplete="email" value="'+escapeHtml(value)+'" aria-label="Adresse '+(kind==="to"?"destinataire":"en copie")+'"><button type="button" class="button quiet" data-action="removeAddress" aria-label="Retirer cette adresse">Retirer</button></div>';
 }
@@ -240,7 +239,7 @@ function renderDashboard(){
   const vehicles=list("vehicules").filter(v=>!archived(v)),alerts=alertItems();
   const late=alerts.filter(x=>x.n<0),soon=alerts.filter(x=>x.n>=0);
   const missing=vehicles.filter(v=>!activeRevision(v.immatriculation)||!activeCt(v.immatriculation));
-  return title("À suivre","Les échéances des 30 prochains jours, sans calcul à faire.")+
+  return title("À suivre","")+
     '<div class="metrics"><div class="metric"><b>'+vehicles.length+'</b><span>Véhicules suivis</span></div><div class="metric danger"><b>'+late.length+'</b><span>Échéances dépassées</span></div><div class="metric warning"><b>'+soon.length+'</b><span>À traiter sous 30 jours</span></div><div class="metric"><b>'+missing.length+'</b><span>Fiches à compléter</span></div></div>'+
     '<section class="panel"><h2>Échéances prioritaires</h2>'+
     (alerts.length?'<div class="alert-list">'+alerts.map(({v,type,date,n,kind,id,acquit})=>
