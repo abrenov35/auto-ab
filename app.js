@@ -134,7 +134,7 @@ async function load({quiet=false}={}){
 let expensesLoading,expenseTab='',expenseNavigation=0;
 async function openExpenses(action,element){
  const navigation=++expenseNavigation;expenseTab=action==='documents'?element.dataset.category:'';state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=58"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;if(navigation!==expenseNavigation||state.view!=="expenses")return;if(action)await window.Expenses.action(action,element);else window.Expenses.home();await window.Expenses.open();}
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=59"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;if(navigation!==expenseNavigation||state.view!=="expenses")return;if(action)await window.Expenses.action(action,element);else window.Expenses.home();await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
