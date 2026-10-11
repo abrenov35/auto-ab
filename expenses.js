@@ -164,7 +164,7 @@ async function readInvoice(){
 function validSnapshot(value){return value&&Array.isArray(value.invoices)&&Array.isArray(value.people)&&Array.isArray(value.mappings)&&Array.isArray(value.audit)&&value.completion&&typeof value.completion==='object'&&value.invoices.every(i=>Array.isArray(i.lines)&&Array.isArray(i.documents));}
 function requireSnapshot(value){if(!validSnapshot(value))throw Error('Le serveur Dépenses a renvoyé des données incomplètes. Vérifiez le déploiement Google Apps Script puis actualisez.');return value;}
 async function loadExpenses({fresh=false}={}){
- if(expenseLoad)return expenseLoad;
+ if(expenseLoad)return data&&!fresh?Promise.resolve():expenseLoad;
  const token=state.token,epoch=loadEpoch;error='';
  if(!data&&!fresh){try{const cached=JSON.parse(sessionStorage.getItem('autoAbExpenseDisplay')||'null');if(cached?.token===token&&Date.now()-cached.at<86400000&&validSnapshot(cached.data))data=cached.data;}catch{}}
  loadingExpenses=true;renderApp();
@@ -238,8 +238,8 @@ async function deleteManual(form){
 }
 
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
- if(!data&&!['reload','resetFilters','closeDocumentViewer','closeDocuments'].includes(act)){toast(error||'Les dépenses sont encore en cours de chargement.',true);return;}
  if(act==='documents'){if(el?.dataset.category)documentFilter.category=el.dataset.category;documentsView=true;draft=null;selected='';renderApp();return;}
+ if(!data&&!['reload','resetFilters','closeDocumentViewer','closeDocuments'].includes(act)){toast(error||'Les dépenses sont encore en cours de chargement.',true);return;}
  if(act==='viewDocument'){viewDocument(el.dataset.id,el.dataset.document);return;}
  if(act==='closeDocumentViewer'){document.getElementById('expenseDocumentViewer')?.close();return;}
  if(act==='closeDocuments'){documentsView=false;renderApp();return;}
