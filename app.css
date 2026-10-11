@@ -145,3 +145,5 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 /* Keep expense actions and unassigned balances aligned on one row. */
 .expense-heading > .row-actions{flex:1 0 100%;min-width:0;max-width:100%;flex-wrap:nowrap;align-items:center;overflow-x:auto;padding-bottom:4px}
 .expense-heading > .row-actions > .button{flex-shrink:0;white-space:nowrap}
+
+.expense-document-row{display:grid;grid-template-columns:80px minmax(160px,1fr) auto auto;gap:12px;align-items:center;padding:12px 0;white-space:nowrap}.expense-document-caption{overflow:hidden;text-overflow:ellipsis;font-weight:600}.expense-document-row .row-actions{flex-wrap:nowrap}.panel:has(.expense-document-row){overflow-x:auto}.expense-document-row{min-width:580px}
