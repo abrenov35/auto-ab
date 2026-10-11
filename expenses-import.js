@@ -117,7 +117,18 @@ function generic(pages){
  i.totals.vat=pick(/(?:total\s*tva|montant\s*tva)\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
  const plate=(text.match(/\b([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\b/)||[])[1]||'';
  i.account=pages.join('\n').split('\n').find(row=>/garage|automobiles|auto |sarl|sas\b/i.test(row))||'';
- const work=(text.match(/(?:designation|travaux|prestation|intervention)\s*:?\s*([^\n]+)/i)||[])[1]||'Entretien / réparation';
+ const details=[],rows=pages.join('\n').split('\n');let inDetails=false;
+ for(const raw of rows){
+  const row=raw.trim(),n=norm(row);
+  if(/^(?:sous[- ]?total|total|net a payer|conditions|reglement|mode de paiement|echeance|iban|bic)\b/i.test(n)){inDetails=false;continue;}
+  const heading=n.match(/^(?:designation|description|detail des travaux|travaux|prestations?|intervention)\b\s*:?\s*(.*)/i);
+  if(heading&&!/^(?:du|le|date)\b/i.test(heading[1])){inDetails=true;const tail=row.slice(heading[0].length-heading[1].length).trim();if(tail&&!/^(?:qte|quantite|reference|prix|p\.?u\.?)\b/i.test(norm(tail)))details.push(tail);continue;}
+  const operation=/\b(?:vidange|filtre|huile|remplacement|revision|reparation|plaquettes|disques|pneus?|pneumatiques?|frein|courroie|distribution|batterie|diagnostic|controle|main d['’]oeuvre|liquide|bougies|equilibrage|parallelisme|forfait)\b/i.test(n);
+  if((inDetails||operation)&&/[a-z]{3}/i.test(n)&&! /^(?:reference|qte|quantite|prix|tva|montant|immatriculation|kilometrage|date|facture|client|adresse|telephone|siret)\b/i.test(n)){
+   const clean=row.replace(/\s+(?:\d+[,.]\d{2}\s*(?:€|EUR)?\s*)+$/i,'').trim();if(clean)details.push(clean);
+  }
+ }
+ const work=[...new Set(details)].join('\n')||'Entretien / réparation';
  const performed=labelledDate(text,"date d['’]intervention|date de (?:la )?revision|date des travaux|intervention du|intervention le|travaux effectues le")||i.date;
  i.lines=[line({category:'maintenance',date:performed,month:performed.slice(0,7)||i.period,label:work,sourcePlate:plate,amounts:{...i.totals}})];
  warnings.push('Lecture générique : vérifier le fournisseur, les dates, les montants et le véhicule. Le détail des travaux doit être complété si nécessaire.');
