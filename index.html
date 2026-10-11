@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#1e3a8a">
   <title>AB Parc Auto · AB RENOV 35</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="app.css?v=28">
+  <link rel="stylesheet" href="app.css?v=29">
   <link rel="preload" href="expenses-core.js?v=3" as="script">
   <link rel="preload" href="expenses-report.js?v=3" as="script">
   <link rel="preload" href="expenses-allocation.js?v=1" as="script">
   <link rel="preload" href="expenses.js?v=60" as="script">
-  <script src="app.js?v=91" defer></script>
+  <script src="app.js?v=92" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -20,7 +20,6 @@
     <button id="logoutButton" class="top-action" type="button" hidden>Quitter</button>
   </header>
   <nav class="tabs" aria-label="Navigation principale">
-    <button type="button" class="tab active" data-view="dashboard">À suivre</button>
     <button type="button" class="tab" data-view="vehicles">Véhicules</button>
     <button type="button" class="tab" data-view="expenses">Synthèse</button>
     <button type="button" class="tab" data-exp-nav="documents" data-category="fuel">Carburant</button>
@@ -28,6 +27,7 @@
     <button type="button" class="tab" data-exp-nav="documents" data-category="maintenance">Entretiens</button>
     <button type="button" class="tab" data-exp-nav="new">Importer une facture</button>
     <button type="button" class="tab" data-view="settings">Paramètres</button>
+    <button type="button" class="tab alert-tab active" data-view="dashboard" aria-label="Alertes">Alertes</button>
   </nav>
   <main id="app" class="shell" aria-live="polite">
     <div class="loading"><span class="spinner"></span> Chargement du parc…</div>
