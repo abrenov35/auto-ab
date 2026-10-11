@@ -59,7 +59,7 @@ function render(){
   if(!accounts.length)completeness+='<p>'+supplier(s)+' : <strong>À recevoir</strong> · compte à renseigner</p>';
   for(const a of accounts)for(const m of months){const c=data.completion[s+'|'+R.key(a)+'|'+m],has=data.invoices.some(i=>i.supplier===s&&R.key(i.account)===R.key(a)&&i.status!=='cancelled'&&(i.period===m||i.lines.some(l=>l.month===m)));completeness+='<p>'+E(supplier(s)+' · '+a+' · '+m)+' : <strong>'+E(c?.status||(has?'À vérifier':'À recevoir'))+'</strong></p>';}
  }
- return '<div class="page-title expense-heading"><h1>Dépenses suivies HT</h1><div class="row-actions">'+btn('+ Carburant','manualFuel')+btn('+ Stationnement','manualParking')+btn('+ Entretiens','manualMaintenance')+'</div></div>'+
+ return ''+
  '<form id="expenseFilters" class="expense-filters">'+monthSelector()+'<div class="field"><span>Période</span><input type="hidden" name="annual" value="'+(filter.annual?'yes':'')+'"><button type="button" class="button '+(filter.annual?'primary':'secondary')+'" data-exp="toggleAnnual" aria-pressed="'+filter.annual+'">Cumul (année en cours)</button></div>'+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  '<div class="expense-heading"><span id="expenseDownload" role="status">'+(loadingExpenses?'Actualisation…':'')+'</span></div>'+
