@@ -162,3 +162,6 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 
 .expense-documents-toolbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:16px}.expense-documents-toolbar .page-title{margin:0}.expense-documents-toolbar #expenseDocumentsFilters{display:block;flex:0 1 306px;margin:0}.expense-documents-toolbar .field{margin:0}.expense-documents-toolbar select{width:100%}
 @media(max-width:550px){.expense-documents-toolbar{gap:12px}.expense-documents-toolbar #expenseDocumentsFilters{flex-basis:48%;min-width:0}.expense-documents-toolbar .page-title{min-width:0}.expense-documents-toolbar select{font-size:13px}}
+
+/* Equal heights for the expense toolbar. */
+#expenseFilters{align-items:center}#expenseFilters>.field{align-self:center;gap:0}#expenseFilters select,#expenseFilters .expense-month-picker summary,#expenseFilters [data-exp="toggleAnnual"]{box-sizing:border-box;height:36px;min-height:36px;margin:0;font-size:13px;border-radius:4px}#expenseFilters [data-exp="toggleAnnual"]{display:flex;align-items:center;justify-content:center;width:100%;padding:0 10px;background:#e1f3e7;border:1px solid #a4cfb3;color:#235b38}#expenseFilters [data-exp="toggleAnnual"]:hover{background:#d2ebdb}#expenseFilters [data-exp="toggleAnnual"][aria-pressed="true"]{background:#c7e7d2;border-color:#72ad87;color:#194b2c}
