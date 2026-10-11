@@ -151,3 +151,5 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 .detail-grid{align-items:stretch;gap:10px}.detail-grid .panel{padding:12px}.detail-grid .panel h2{margin-bottom:8px}.detail-grid .kv{margin:0;padding:6px 0}.detail-grid .panel>p{margin:7px 0}.detail-grid .section-actions{margin-top:8px;gap:6px}.detail-grid .button{padding:6px 10px;min-height:30px}@media(min-width:1100px){.detail-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
 .detail-grid>.panel{display:flex;flex-direction:column;min-width:0}.detail-grid>.panel>.section-actions{margin-top:auto;padding-top:8px}.detail-grid>.panel>.section-actions>.button{flex:1 1 calc(50% - 6px);white-space:normal;text-align:center}.detail-grid>.panel>.section-actions>.button:only-child{flex:0 1 auto}
+
+.expense-driver-list{padding:6px 12px}.expense-driver-document-row{grid-template-columns:minmax(190px,1fr) minmax(220px,1.4fr) auto auto;padding:8px 0;border-bottom:1px solid #edf0f4}.expense-driver-document-row:last-child{border-bottom:0}.expense-driver-document-row>strong{overflow:hidden;text-overflow:ellipsis}.expense-driver-document-row .button{padding:6px 10px;min-height:30px}
