@@ -309,14 +309,14 @@ function renderDetail(){
     '<div class="section-actions">'+(c?action("Modifier la prochaine date","editCt",plate)+action("Ajouter le PV","uploadCt",plate)+(ctDate(c)&&days(ctDate(c))<=30?ackButton(plate,"ct",ctDate(c),c.id,c.alerteMailAcquittee):""):action("+ Renseigner un CT","addCt",plate,"primary"))+'</div></section>'+
     '</div>'+
     '<section class="panel" style="margin-top:14px"><h2>Documents du véhicule</h2>'+(safeLink(v.lienCarteGrise)?'<div class="history-row"><small>—</small><span class="title">Carte grise</span><span>Document du véhicule</span><a class="button secondary" href="'+escapeHtml(safeLink(v.lienCarteGrise))+'" target="_blank" rel="noopener noreferrer">Voir</a></div>':"")+(documentRows(plate)||(!safeLink(v.lienCarteGrise)?'<div class="empty">Aucun document enregistré.</div>':""))+
-    (c?'<div class="section-actions">'+action("Ajouter un PV de contrôle","uploadCt",plate,"secondary")+'</div>':"")+'</section>';
+    '<div class="section-actions">'+action("Ajouter un document","uploadDocument",plate,"secondary")+'</div>'+'</section>';
 }
 const input=(name,label,value="",type="text",extra="")=>'<div class="field"><label for="f-'+name+'">'+escapeHtml(label)+'</label><input id="f-'+name+'" name="'+name+'" type="'+type+'" value="'+escapeHtml(value)+'" '+extra+'></div>';
 const textarea=(name,label,value="")=>'<div class="field wide"><label for="f-'+name+'">'+escapeHtml(label)+'</label><textarea id="f-'+name+'" name="'+name+'">'+escapeHtml(value)+'</textarea></div>';
 const hint=text=>'<div class="field wide hint">'+escapeHtml(text)+'</div>';
 function openForm(kind,plate=""){
   const v=vehicle(plate),r=activeRevision(plate),c=activeCt(plate);
-  const titles={newVehicle:"Ajouter un véhicule",editVehicle:"Modifier le véhicule",addRevision:"Renseigner une révision",editRevision:"Modifier l’échéance de révision",newRevision:"Révision effectuée",addCt:"Renseigner un contrôle technique",editCt:"Modifier l’échéance du CT",addMaintenance:"Enregistrer une intervention",uploadCt:"Ajouter un PV de contrôle"};
+  const titles={newVehicle:"Ajouter un véhicule",editVehicle:"Modifier le véhicule",addRevision:"Renseigner une révision",editRevision:"Modifier l’échéance de révision",newRevision:"Révision effectuée",addCt:"Renseigner un contrôle technique",editCt:"Modifier l’échéance du CT",addMaintenance:"Enregistrer une intervention",uploadCt:"Ajouter un PV de contrôle",uploadDocument:"Ajouter un document"};
   let html="";
   if(kind==="newVehicle"||kind==="editVehicle"){
     html=input("immatriculation","Immatriculation *",v?.immatriculation||"","text","required autocapitalize=\"characters\"")+
@@ -340,12 +340,17 @@ function openForm(kind,plate=""){
       textarea("description","Travaux réalisés")+input("kilometrage","Kilométrage (facultatif)","","number",'min="0" step="1"')+
       input("montant","Montant € (facultatif)","","number",'min="0" step="0.01"')+
       input("prestataire","Garage / prestataire")+input("prochaineDate","Prochaine échéance (facultative)","","date");
+  }else if(kind==="uploadDocument"){
+    html=hint("Véhicule : "+plate)+'<div class="field"><label for="f-documentCategory">Type de document *</label><select id="f-documentCategory" name="documentCategory" required><option value="Révision">Révision</option><option value="Contrôle Technique">PV de contrôle</option><option value="Carte grise">Carte grise</option><option value="Photos">Photos</option><option value="Divers">Divers</option></select></div>'+
+      '<div id="documentOtherField" hidden>'+input("documentOther","Préciser le document *","","text")+'</div>'+
+      input("file","Document *","","file",'required accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"')+
+      hint("PDF ou photo · 10 Mo maximum.");
   }else if(kind==="uploadCt"){
     html=hint("Véhicule : "+plate)+input("file","Document de contrôle *","","file",'required accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"')+
       hint("PDF, JPG, JPEG ou PNG · 10 Mo maximum. Le document sera conservé dans Drive et visible depuis cette fiche.");
   }
   state.form={kind,plate};$("#dialogTitle").textContent=titles[kind]||"Saisie";
-  $("#formFields").innerHTML=html;$("#submitDialog").textContent=kind==="uploadCt"?"Ajouter le document":"Enregistrer";
+  $("#formFields").innerHTML=html;$("#submitDialog").textContent=(kind==="uploadCt"||kind==="uploadDocument")?"Ajouter le document":"Enregistrer";
   $("#formDialog").showModal();
   $("#formFields input:not([readonly]),#formFields select").focus();
 }
@@ -373,14 +378,16 @@ async function submitForm(event){
   }else if(kind==="addMaintenance"){
     action="createMaintenance";Object.assign(payload,{date:value("date"),type:value("type"),description:value("description"),
       kilometrage:value("kilometrage"),montant:value("montant"),prestataire:value("prestataire"),prochaineDate:value("prochaineDate")});
-  }else if(kind==="uploadCt"){
+  }else if(kind==="uploadCt"||kind==="uploadDocument"){
     const file=fd.get("file");
     if(!(file instanceof File))return toast("Choisis un fichier.",true);
     const allowed=["application/pdf","image/jpeg","image/png"];
     const extension=/\.(pdf|jpe?g|png)$/i.test(file.name);
     if(!extension||!allowed.includes(file.type))return toast("Formats autorisés : PDF, JPG, JPEG, PNG.",true);
     if(file.size>10*1024*1024)return toast("Le document dépasse 10 Mo.",true);
-    action="uploadCtFile";Object.assign(payload,{fileName:file.name,nom:file.name,mimeType:file.type,date:todayParis(),
+    action=kind==="uploadDocument"?"uploadDocument":"uploadCtFile";
+    if(kind==="uploadDocument"){const category=value("documentCategory");if(category==="Divers"&&!value("documentOther"))return toast("Précise le type de document.",true);Object.assign(payload,{categorie:category==="Divers"?"Divers · "+value("documentOther"):category,idVehicule:vehicle(plate)?.id||plate});}
+    Object.assign(payload,{fileName:file.name,nom:file.name,mimeType:file.type,date:todayParis(),
       fileBase64:await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(Error("Lecture du fichier impossible"));reader.onload=()=>resolve(String(reader.result).split(",")[1]);reader.readAsDataURL(file)})});
   }
   state.busy=true;$("#submitDialog").disabled=true;$("#submitDialog").textContent="Enregistrement…";
@@ -410,7 +417,7 @@ async function runAction(el){
     finally{state.busy=false}
     return;
   }
-  if(["newVehicle","editVehicle","addRevision","editRevision","newRevision","addCt","editCt","addMaintenance","uploadCt"].includes(action))return openForm(action,plate);
+  if(["newVehicle","editVehicle","addRevision","editRevision","newRevision","addCt","editCt","addMaintenance","uploadCt","uploadDocument"].includes(action))return openForm(action,plate);
   const mapping={archiveVehicle:"archiveVehicule",restoreVehicle:"restoreVehicule",archiveRevision:"archiveRevision",restoreRevision:"restoreRevision",
     archiveCt:"archiveControleTk",restoreCt:"restoreControleTk",archiveMaintenance:"archiveMaintenance",restoreMaintenance:"restoreMaintenance"};
   if(!mapping[action]||state.busy)return;
@@ -439,7 +446,7 @@ document.addEventListener("submit",async e=>{
   }
 });
 document.addEventListener("input",e=>{if(e.target.id==="search"){state.query=e.target.value;const pos=e.target.selectionStart;render();$("#search").focus();$("#search").setSelectionRange(pos,pos)}});
-document.addEventListener("change",e=>{if(e.target.id==="filter"){state.filter=e.target.value;render()}});
+document.addEventListener("change",e=>{if(e.target.id==="f-documentCategory"){const other=e.target.value==="Divers";$("#documentOtherField").hidden=!other;$("#f-documentOther").required=other;}if(e.target.id==="filter"){state.filter=e.target.value;render()}});
 $("#refreshButton").addEventListener("click",()=>state.view==="expenses"?window.Expenses?.open({fresh:true}):load({quiet:true}));
 $("#closeDialog").addEventListener("click",()=>$("#formDialog").close());
 $("#cancelDialog").addEventListener("click",()=>$("#formDialog").close());
