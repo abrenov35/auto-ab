@@ -84,6 +84,26 @@ function easypark(pages){
  return diagnostic(i,warnings,'printed_subtotals');
 }
 
+function parkingTable(pages){
+ const original=pages.join('\n'),text=norm(original),i=base('other'),warnings=[],groups=new Map();
+ const header=text.split('\n').filter(r=>/utilisateur|immatriculation|prix|montant/i.test(r)).join(' ');
+ const explicitHT=/\b(?:HT|hors taxes)\b/i.test(header),explicitTTC=/\bTTC\b/i.test(header);
+ // One row must contain a name, a French plate, two complete ISO dates and a printed price.
+ const pattern=/^\s*(.+?)\s+([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\s+(\d{4}-\d{2}-\d{2})(?:\s+\d{2}:\d{2})?\s+(\d{4}-\d{2}-\d{2})(?:\s+\d{2}:\d{2})?\s+.*?\s+(-?\d+[.,]\d{2})\s*(?:EUR|€)\s*$/i;
+ let scanned=0;
+ for(const raw of original.split('\n')){const row=raw.match(pattern);if(!row){if(/\d{4}-\d{2}-\d{2}/.test(raw)&&/[A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2}/i.test(raw)){scanned++;warnings.push('Une ligne de stationnement est illisible : vérifier et compléter son montant.');}continue;}
+  scanned++;const name=row[1].trim(),start=row[3],end=row[4],amount=money(row[5]),key=norm(name).toLowerCase().split(/\s+/).sort().join(' ')+'|'+start.slice(0,7);
+  let group=groups.get(key);if(!group){group={name,month:start.slice(0,7),start,end,total:0,rows:[]};groups.set(key,group);}group.start=start<group.start?start:group.start;group.end=end>group.end?end:group.end;group.total+=amount;group.rows.push({name,plate:row[2].toUpperCase(),start,end,amount});
+ }
+ i.account='Stationnement';i.lines=Array.from(groups.values(),g=>line({category:'parking',month:g.month,date:g.start,periodStart:g.start,periodEnd:g.end,label:'Stationnement · '+g.rows.length+' opérations',sourcePerson:g.name,amounts:{ht:explicitHT?g.total:null,vat:null,ttc:explicitTTC?g.total:null},sourceAmount:g.total,sourceAmountKind:explicitHT?'HT':explicitTTC?'TTC':'prix imprimé',sourceCount:g.rows.length,sourceRows:g.rows}));
+ i.period=i.lines[0]?.month||'';i.date=i.lines.reduce((last,l)=>l.periodEnd>last?l.periodEnd:last,'');
+ const total=i.lines.reduce((sum,l)=>sum+l.sourceAmount,0);i.totals={ht:explicitHT?total:null,vat:null,ttc:explicitTTC?total:null};
+ if(!explicitHT)warnings.push('La colonne Prix ne précise pas le HT. Les cumuls lus sont affichés ; compléter ou confirmer les montants HT.');
+ if(scanned!==i.lines.reduce((sum,l)=>sum+l.sourceCount,0))warnings.push('Certaines opérations n’ont pas été intégrées au cumul.');
+ i.note='Cumul des prix imprimés par utilisateur et par mois. '+(explicitHT?'Colonne HT reconnue.':'Nature HT/TTC à vérifier sur le justificatif.')+' '+i.lines.map(l=>l.sourcePerson+' : '+(l.sourceAmount/100).toFixed(2)+' EUR, '+l.sourceCount+' opérations ('+l.month+')').join(' ; ');
+ return diagnostic(i,warnings,'printed_table');
+}
+
 function generic(pages){
  const text=norm(pages.join('\n')),i=base('other'),warnings=[];
  const pick=pattern=>{const m=text.match(pattern);return m?money(m[1]):null;};
@@ -100,9 +120,16 @@ function generic(pages){
  warnings.push('Lecture générique : vérifier le fournisseur, les dates, les montants et le véhicule. Le détail des travaux doit être complété si nécessaire.');
  return diagnostic(i,warnings,i.totals.ht);
 }
-function control(pages){const text=norm(pages.join('\n'));const plate=(text.match(/\b([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\b/)||[])[1]||'';const last=date((text.match(/(?:date du controle|date de controle|controle effectue le)\s*:?\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[])[1]||'');const next=date((text.match(/(?:prochain controle|valable jusqu'au|date limite|validite)\s*:?\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[])[1]||'');return {plate,last,next,warnings:['Vérifier les dates et le véhicule avec le procès-verbal ; aucune échéance n’est calculée automatiquement.']};}
+function control(pages){
+ const text=norm(pages.join('\n')),plate=(text.match(/\b([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\b/i)||[])[1]||'';
+ // PDF table headings and values can be separated by other column headings.
+ const readDate=label=>{const hit=label.exec(text);if(!hit)return '';const after=text.slice(hit.index+hit[0].length,hit.index+hit[0].length+240);return date((after.match(/\b\d{2}[./]\d{2}[./]\d{4}\b/)||[])[0]||'');};
+ const last=readDate(/(?:date du controle|date de controle|controle effectue le)/i);
+ const next=readDate(/(?:limite de validite du controle(?: realise)?|valable jusqu['’]au|date limite(?: de validite)?|prochain controle(?:[^\n\d]*)|validite)/i);
+ return {plate,last,next,warnings:['Vérifier les dates et le véhicule avec le procès-verbal ; aucune échéance n’est calculée automatiquement.']};
+}
 
-function parse(supplier,pages){if(!Array.isArray(pages)||!pages.length)throw Error('Document vide');const full=norm(pages.join('\n'));const ids=[...full.matchAll(supplier==='intermarche'?/Numero\s+de\s+facture\s+(\d+)/gi:/Reference facture:\s*(\d+)/gi)].map(m=>m[1]);if(new Set(ids).size>1)throw Error('Plusieurs factures différentes détectées. Importez une facture à la fois.');return supplier==='intermarche'?intermarche(pages):supplier==='easypark'?easypark(pages):generic(pages);}
+function parse(supplier,pages){if(!Array.isArray(pages)||!pages.length)throw Error('Document vide');const full=norm(pages.join('\n'));if(/utilisateur/i.test(full)&&/immatricul/i.test(full)&&/\d{4}-\d{2}-\d{2}/.test(full))return parkingTable(pages);const ids=[...full.matchAll(supplier==='intermarche'?/Numero\s+de\s+facture\s+(\d+)/gi:/Reference facture:\s*(\d+)/gi)].map(m=>m[1]);if(new Set(ids).size>1)throw Error('Plusieurs factures différentes détectées. Importez une facture à la fois.');return supplier==='intermarche'?intermarche(pages):supplier==='easypark'?easypark(pages):generic(pages);}
 return {parse,control};
 })();
 if(typeof module!=='undefined')module.exports=ExpenseImport;
