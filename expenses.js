@@ -82,7 +82,7 @@ function renderDocuments(){
   }
  }
  entries.sort((a,b)=>String(b.invoice.date).localeCompare(String(a.invoice.date))||String(a.doc.name).localeCompare(String(b.doc.name),'fr'));
- const row=x=>{const url=safeLink(x.doc.url),total=R.summary(x.lines,'ht');return '<article class="history-row"><small>'+E(dateView(x.invoice.date))+'</small><span class="title">'+E(x.doc.name)+'<small>'+E(x.invoice.number||'Sans numéro')+' · '+E(x.lines.map(l=>l.label||assignmentLabel(l)).join(' · '))+'</small></span><span>'+E(euro(total.total))+' HT'+(total.missing?' · partiel':'')+'</span><span class="row-actions">'+(url?'<a class="button secondary" href="'+E(url)+'" target="_blank" rel="noopener noreferrer">Voir</a>':'<span>Document indisponible</span>')+btn('Supprimer','deleteDocument','data-id="'+E(x.invoice.id)+'"')+'</span></article>';};
+ const row=x=>{const url=safeLink(x.doc.url),total=R.summary(x.lines,'ht');return '<article class="history-row"><small>'+E(dateView(x.invoice.date))+'</small><span class="title">'+E(x.doc.name)+'<small>'+E(x.invoice.number||'Sans numéro')+' · '+E(x.lines.map(l=>l.label||assignmentLabel(l)).join(' · '))+'</small></span><span>'+E(euro(total.total))+' HT'+(total.missing?' · partiel':'')+'</span><span class="row-actions">'+(url?btn('Voir','viewDocument','data-id="'+E(x.invoice.id)+'" data-document="'+E(x.doc.id||x.doc.url)+'"'):'<span>Document indisponible</span>')+btn('Supprimer','deleteDocument','data-id="'+E(x.invoice.id)+'"')+'</span></article>';};
  let body='';
  if(maintenance){
   const groups=[...new Set(entries.map(x=>x.plate))].sort((a,b)=>a.localeCompare(b,'fr'));
@@ -91,6 +91,15 @@ function renderDocuments(){
  return title('Documents','Justificatifs et dépenses liées · HT','')+
  '<form id="expenseDocumentsFilters" class="expense-filters">'+select('Catégorie','category',[['fuel','Carburant'],['parking','Stationnement'],['maintenance','Entretiens / réparations']],f.category)+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):input('Mois (vide : tous)','month',f.month,'month'))+input('Rechercher','query',f.query)+'</form>'+
  '<p class="hint">Supprimer retire le justificatif de cette liste et toutes les opérations de sa facture des KPI. L’historique est conservé.</p>'+(entries.length?body:'<section class="panel"><p class="empty">Aucun justificatif pour cette recherche.</p></section>');
+}
+function viewDocument(invoiceId,documentId){
+ const invoice=data.invoices.find(i=>i.id===invoiceId),doc=invoice?.documents.find(d=>(d.id||d.url)===documentId);
+ const url=doc&&safeLink(doc.url);if(!url)throw Error('Document indisponible');
+ const match=/\/file\/d\/([a-zA-Z0-9_-]+)/.exec(url);if(!match)throw Error('Lien du justificatif non reconnu');
+ document.getElementById('expenseDocumentViewer')?.remove();
+ const dialog=document.createElement('dialog');dialog.id='expenseDocumentViewer';dialog.setAttribute('aria-label','Justificatif');dialog.style.cssText='width:min(1100px,96vw);max-width:96vw;height:90vh;max-height:90vh;padding:12px;border:1px solid #ccd6e4;border-radius:12px';
+ dialog.innerHTML='<div class="row-actions" style="justify-content:space-between;margin-bottom:10px"><strong>'+E(doc.name)+'</strong>'+btn('Fermer','closeDocumentViewer')+'</div><iframe title="'+E(doc.name)+'" src="https://drive.google.com/file/d/'+match[1]+'/preview" style="width:100%;height:calc(100% - 55px);border:0" allow="fullscreen"></iframe>';
+ dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();
 }
 async function deleteDocument(id){
  const invoice=data.invoices.find(i=>i.id===id&&i.status!=='cancelled');if(!invoice)return;
@@ -223,6 +232,8 @@ async function deleteManual(form){
 
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
  if(act==='documents'){documentsView=true;draft=null;selected='';renderApp();return;}
+ if(act==='viewDocument'){viewDocument(el.dataset.id,el.dataset.document);return;}
+ if(act==='closeDocumentViewer'){document.getElementById('expenseDocumentViewer')?.close();return;}
  if(act==='closeDocuments'){documentsView=false;renderApp();return;}
  if(act==='deleteDocument')return deleteDocument(el.dataset.id);
  if(act==='chooseMonth'){filter.month=el.dataset.month;renderApp();document.querySelector('.expense-month-picker summary')?.focus();return;}
