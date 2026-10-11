@@ -74,7 +74,7 @@ function renderDocuments(){
  const f=documentFilter,maintenance=f.category==='maintenance',q=R.key(f.query);
  const entries=[];
  for(const invoice of data.invoices.filter(i=>i.status!=='cancelled')){
-  const lines=invoice.lines.filter(l=>(!f.category||l.category===f.category)&&(maintenance?(!f.plate||R.plate(l.plate)===f.plate):(!f.month||l.month===f.month)));
+  const lines=invoice.lines.filter(l=>(!f.category||l.category===f.category)&&(!maintenance||!f.plate||R.plate(l.plate)===f.plate));
   if(!lines.length)continue;
   for(const doc of invoice.documents||[]){
    const search=R.key([doc.name,invoice.number,invoice.account,invoice.note,...lines.flatMap(l=>[l.label,l.plate,assignmentLabel(l)])].join(' '));
@@ -83,15 +83,16 @@ function renderDocuments(){
    for(const plate of plates)entries.push({invoice,doc,plate,lines:maintenance?lines.filter(l=>(l.plate||'')===plate):lines});
   }
  }
- entries.sort((a,b)=>String(b.invoice.date).localeCompare(String(a.invoice.date))||String(a.doc.name).localeCompare(String(b.doc.name),'fr'));
+ const entryMonth=x=>x.invoice.period||x.lines[0]?.month||String(x.invoice.date).slice(0,7);
+ entries.sort((a,b)=>entryMonth(b).localeCompare(entryMonth(a))||String(b.invoice.date).localeCompare(String(a.invoice.date))||String(a.doc.name).localeCompare(String(b.doc.name),'fr'));
  const row=x=>{const url=safeLink(x.doc.url),total=R.summary(x.lines,'ht'),labels=[...new Set(x.lines.map(l=>l.label||assignmentLabel(l)))],summary=maintenance?labels.join(' · '):R.categories[f.category]+' · '+x.lines.length+' opération'+(x.lines.length>1?'s':'');const caption=(x.invoice.number?'Facture '+x.invoice.number:x.doc.name)+' · '+summary;return '<article class="expense-document-row"><small>'+E(dateView(x.invoice.date))+'</small><span class="expense-document-caption" title="'+E(x.doc.name+' · '+labels.join(' · '))+'">'+E(caption)+'</span><span>'+E(euro(total.total))+' HT'+(total.missing?' · partiel':'')+'</span><span class="row-actions">'+(url?btn('Voir','viewDocument','data-id="'+E(x.invoice.id)+'" data-document="'+E(x.doc.id||x.doc.url)+'"'):'<span>Document indisponible</span>')+btn('Supprimer','deleteDocument','data-id="'+E(x.invoice.id)+'"')+'</span></article>';};
  let body='';
  if(maintenance){
   const groups=[...new Set(entries.map(x=>x.plate))].sort((a,b)=>a.localeCompare(b,'fr'));
   body=groups.map(plate=>{const v=list('vehicules').find(v=>R.plate(v.immatriculation)===R.plate(plate));return '<section class="panel"><h2>'+E(plate?(v?[v.marque,v.modele,v.immatriculation].filter(Boolean).join(' · '):plate):'Non défini')+'</h2>'+entries.filter(x=>x.plate===plate).map(row).join('')+'</section>';}).join('');
- }else body='<section class="panel"><h2>Justificatifs · '+entries.length+'</h2>'+entries.map(row).join('')+'</section>';
+ }else{const months=[...new Set(entries.map(entryMonth))].sort((a,b)=>b.localeCompare(a));body=months.map(month=>'<section class="panel"><h2>'+E(new Date(month+'-01T12:00:00').toLocaleDateString('fr-FR',{month:'long',year:'numeric'}))+'</h2>'+entries.filter(x=>entryMonth(x)===month).map(row).join('')+'</section>').join('');}
  return title({fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[f.category]||'Documents','Justificatifs et dépenses liées · HT','')+
- '<form id="expenseDocumentsFilters" class="expense-filters">'+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):input('Mois (vide : tous)','month',f.month,'month'))+input('Rechercher','query',f.query)+'</form>'+
+ '<form id="expenseDocumentsFilters" class="expense-filters">'+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):'')+input('Rechercher','query',f.query)+'</form>'+
  '<p class="hint">Supprimer retire le justificatif de cette liste et toutes les opérations de sa facture des KPI. L’historique est conservé.</p>'+(entries.length?body:'<section class="panel"><p class="empty">Aucun justificatif pour cette recherche.</p></section>');
 }
 function viewDocument(invoiceId,documentId){
