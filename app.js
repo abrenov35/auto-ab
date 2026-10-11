@@ -134,7 +134,7 @@ async function load({quiet=false}={}){
 let expensesLoading,expenseTab='',expenseNavigation=0;
 async function openExpenses(action,element){
  const navigation=++expenseNavigation;expenseTab=action==='documents'?element.dataset.category:'';state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=64"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;if(navigation!==expenseNavigation||state.view!=="expenses")return;if(action)await window.Expenses.action(action,element);else window.Expenses.home();await window.Expenses.open();}
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=65"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;if(navigation!==expenseNavigation||state.view!=="expenses")return;if(action)await window.Expenses.action(action,element);else window.Expenses.home();await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
@@ -271,8 +271,9 @@ function renderVehicles(){
       '<div>'+escapeHtml(km(v.kilometrage))+'</div><div class="next">'+(isOld?"Archivé":nextSummary(v))+'</div>'+
       '<div class="row-actions">'+(isOld?action("Restaurer","restoreVehicle",v.immatriculation,"quiet"):action("Voir la fiche","detail",v.immatriculation,"secondary"))+'</div></div>';
   };
-  return title("Les véhicules",all.length+" véhicules dans le parc.",action("+ Ajouter","newVehicle","","primary"))+
+  return '<div class="vehicle-toolbar">'+title("Les véhicules",all.length+" véhicules dans le parc.",action("+ Ajouter","newVehicle","","primary"))+
     '<div class="toolbar"><input id="search" type="search" placeholder="Rechercher une plaque, un modèle, un conducteur" aria-label="Rechercher un véhicule"><select id="filter" class="select-filter" aria-label="Afficher"><option value="active"'+(state.filter==="active"?" selected":"")+'>Véhicules actifs</option><option value="archived"'+(state.filter==="archived"?" selected":"")+'>Archives</option></select></div>'+
+    '</div>'+
     (state.filter==="archived"?'<section class="panel"><h2>Véhicules archivés ('+old.length+')</h2><div class="vehicle-list">'+(old.length?old.map(v=>row(v,true)).join(""):'<div class="empty">Aucun véhicule archivé.</div>')+'</div></section>':
     '<div class="vehicle-list">'+(active.length?active.map(v=>row(v)).join(""):'<div class="empty">Aucun véhicule trouvé.</div>')+'</div>');
 }
