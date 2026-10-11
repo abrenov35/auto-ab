@@ -139,6 +139,7 @@ async function openExpenses(action,element){
 }
 function render(){
   document.querySelector(".tabs").hidden=false;$("#refreshButton").hidden=false;$("#logoutButton").hidden=true;
+  const alertTab=document.querySelector(".alert-tab");if(alertTab){const items=alertItems(),late=items.filter(x=>x.n<0).length,soon=items.length-late;alertTab.textContent="Alertes · "+items.length;alertTab.title=late+" en retard · "+soon+" à venir sous 30 jours";alertTab.setAttribute("aria-label","Alertes : "+alertTab.title);}
   $$(".tab").forEach(el=>el.classList.toggle("active",state.view==="expenses"?(el.dataset.expNav==="documents"?el.dataset.category===expenseTab:el.dataset.view==="expenses"&&!expenseTab):el.dataset.view===state.view));
   if(state.view==="detail"&&state.vehicle&&!vehicle(state.vehicle)){state.view="vehicles";state.vehicle=null}
   $("#app").innerHTML=(state.view==="expenses"?(window.Expenses?window.Expenses.render():'<div class="loading">Chargement des dépenses…</div>'):state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():state.view==="settings"?renderSettings():renderDashboard());
