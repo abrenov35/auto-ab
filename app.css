@@ -141,3 +141,7 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 .expense-delete-actions{display:flex;gap:10px;padding:16px 24px 22px;border-top:1px solid #edf1f6}
 .expense-delete-actions .button{flex:1;min-width:0;min-height:42px;border-radius:8px}
 .expense-delete-submit{background:#b83d46;color:#fff;border-color:#b83d46}
+
+/* Keep expense actions and unassigned balances aligned on one row. */
+.expense-heading > .row-actions{flex:1 0 100%;min-width:0;max-width:100%;flex-wrap:nowrap;align-items:center;overflow-x:auto;padding-bottom:4px}
+.expense-heading > .row-actions > .button{flex-shrink:0;white-space:nowrap}
