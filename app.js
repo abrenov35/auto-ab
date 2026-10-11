@@ -239,7 +239,7 @@ function renderDashboard(){
   const vehicles=list("vehicules").filter(v=>!archived(v)),alerts=alertItems();
   const late=alerts.filter(x=>x.n<0),soon=alerts.filter(x=>x.n>=0);
   const missing=vehicles.filter(v=>!activeRevision(v.immatriculation)||!activeCt(v.immatriculation));
-  return title("À suivre","")+
+  return ''+
     '<div class="metrics"><div class="metric"><b>'+vehicles.length+'</b><span>Véhicules suivis</span></div><div class="metric danger"><b>'+late.length+'</b><span>Échéances dépassées</span></div><div class="metric warning"><b>'+soon.length+'</b><span>À traiter sous 30 jours</span></div><div class="metric"><b>'+missing.length+'</b><span>Fiches à compléter</span></div></div>'+
     '<section class="panel"><h2>Échéances prioritaires</h2>'+
     (alerts.length?'<div class="alert-list">'+alerts.map(({v,type,date,n,kind,id,acquit})=>
