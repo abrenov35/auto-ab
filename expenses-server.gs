@@ -86,7 +86,7 @@ function depHandle_(ss,p) {
       if(p.manual&&docs.length)throw Error('Pièce non attendue pour la saisie simple');
       if(!old&&!p.manual&&(docs.length<1||docs.length>2))throw Error('Joindre la facture et éventuellement son relevé');
       value.documents=old?old.documents:docs.map(function(d){return {hash:d.hash,name:d.name};});
-      // Reimporting the same document is allowed at the user's request.
+      if(ExpenseRules.duplicate(value,snap.invoices))throw Error('Doublon possible : document, numéro ou justificatif sans numéro déjà enregistré, même annulé');
       depCheckLinks_(value,snap,ss);
       value.revision=old?old.revision+1:1;value.status='active';
       // Reject oversized events before creating files. The invoice is one atomic journal row.
