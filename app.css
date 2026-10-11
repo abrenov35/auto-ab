@@ -172,3 +172,30 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 .tabs .alert-tab{background:#fde5e5;color:#9a2525;border-radius:5px 5px 0 0;border-bottom-color:#df9d9d}.tabs .alert-tab:hover{background:#fbd5d5}.tabs .alert-tab.active{background:#f6c3c3;color:#821e1e;border-bottom-color:#b42318}
 
 .expense-operation-groups{display:grid;gap:10px;margin-bottom:16px}.expense-category-group.panel{margin:0;padding:0;overflow:hidden}.expense-category-group>summary,.expense-assignment-group>summary{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 14px;cursor:pointer;list-style:none}.expense-category-group>summary{background:#eaf1fb}.expense-category-group summary::-webkit-details-marker{display:none}.expense-category-group summary:before{content:"▸";flex:none}.expense-category-group details[open]>summary:before,.expense-category-group[open]>summary:before{content:"▾"}.expense-category-group summary>span{flex:1}.expense-category-group summary>small{font-weight:400;color:#42536b}.expense-category-group summary>strong{white-space:nowrap}.expense-assignment-groups{padding:8px 14px}.expense-assignment-group{border-bottom:1px solid #dce2e9}.expense-assignment-group:last-child{border:0}.expense-assignment-group>summary{padding:8px 0}.expense-assignment-group .expense-lines{padding:0 8px 10px}@media(max-width:550px){.expense-category-group summary{gap:7px;font-size:13px}.expense-category-group summary>small{font-size:11px}.expense-assignment-groups{padding:6px 10px}}
+
+/* Clear, touch-friendly document import. */
+#expenseImportDialog{width:min(820px,calc(100vw - 32px));border-radius:18px;border:1px solid #dbe3ef;box-shadow:0 24px 80px #10265350}
+#expenseImportDialog::backdrop{background:#17243b99;backdrop-filter:blur(3px)}
+#expenseImportDialog .dialog-header{padding:18px 22px;background:#203c86;gap:16px}
+#expenseImportDialog .dialog-header h2{font-size:21px;line-height:1.3;font-weight:750}
+#expenseImportDialog .dialog-header .button{min-height:40px;padding:8px 16px;border-radius:9px;font-size:14px}
+#expenseImportDialog .unified-import-content{padding:22px;background:#f8faff;max-height:calc(92dvh - 78px);font-size:15px}
+#expenseImportDialog .import-types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+#expenseImportDialog .import-types label{display:flex;align-items:center;gap:9px;min-height:62px;padding:12px;background:#fff;border:1px solid #d3deec;border-radius:10px;font-size:14px;font-weight:600;line-height:1.35;cursor:pointer}
+#expenseImportDialog .import-types label:has(input:checked){background:#eaf1ff;border:2px solid #3159b5;padding:11px;color:#173e91;box-shadow:0 2px 6px #25478312}
+#expenseImportDialog .import-types label:has(input:focus-visible){outline:3px solid #94b8ff;outline-offset:3px}
+#expenseImportDialog .import-types input{width:17px;height:17px;flex:none;margin:0}
+#expenseImportDialog .import-upload{padding:24px;margin:0;background:#fff;border:1px dashed #9eb4d5;border-radius:12px;box-shadow:none}
+#expenseImportDialog .import-upload h3{margin:0 0 6px;font-size:19px;color:#203556}
+#expenseImportDialog .import-format{margin:0 0 18px;color:#52647f;font-size:14px}
+#expenseImportDialog .import-file-label{font-weight:650;color:#243853;margin-bottom:3px}
+#expenseImportDialog input[type=file]{width:100%;padding:8px;min-height:54px;border-radius:9px;background:#f8faff;border:1px solid #ccd8e9;font-size:14px;color:#384d69}
+#expenseImportDialog input[type=file]::file-selector-button{border:0;border-radius:7px;padding:10px 15px;margin-right:12px;background:#244991;color:#fff;font:inherit;font-weight:650;cursor:pointer}
+#expenseImportDialog .hint{font-size:14px;line-height:1.6;color:#4e607b;margin:16px 0 0}
+#expenseImportDialog .field{font-size:15px;line-height:1.4;gap:7px}
+#expenseImportDialog .field input:not([type=file]),#expenseImportDialog .field select{min-height:44px;border-radius:8px;font-size:16px}
+#expenseImportDialog .expense-grid{gap:14px}
+#expenseImportDialog .expense-source{font-size:14px;padding:10px 12px;background:#edf4ff;border-radius:8px;color:#24436c;line-height:1.5}
+#expenseImportDialog #expenseDraft>p.hint{margin:0 0 18px}
+#expenseImportDialog #expenseDraft>.button{min-height:44px;border-radius:9px;font-size:15px}
+@media(max-width:620px){#expenseImportDialog .import-types{grid-template-columns:repeat(2,minmax(0,1fr))}#expenseImportDialog .unified-import-content{padding:16px}#expenseImportDialog .dialog-header{padding:16px}#expenseImportDialog .import-upload{padding:18px}#expenseImportDialog input[type=file]::file-selector-button{padding:10px;margin-right:7px}}

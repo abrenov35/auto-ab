@@ -352,12 +352,12 @@ function syncImportDialog(){
  let dialog=document.getElementById('expenseImportDialog');
  if(!dialog){dialog=document.createElement('dialog');dialog.id='expenseImportDialog';dialog.setAttribute('aria-label','Importer une pièce');dialog.addEventListener('cancel',e=>{e.preventDefault();handle('closeImport');});document.body.append(dialog);}
  const types=[['ct','Contrôle technique'],['maintenance','Révision / entretien'],['fuel','Carburant'],['parking','Stationnement']];
- const choices='<div class="import-types">'+types.map(([value,label])=>'<label><input type="radio" name="importType" value="'+value+'" '+(draft.importType===value?'checked':'')+' '+(reading||busy||draft.step==='review'?'disabled':'')+'> '+E(label)+'</label>').join('')+'</div>';
+ const choices='<div class="import-types">'+types.map(([value,label])=>'<label><input type="radio" name="importType" value="'+value+'" '+(draft.importType===value?'checked':'')+' '+(reading||busy||draft.step==='review'?'disabled':'')+'><span>'+E(label)+'</span></label>').join('')+'</div>';
  const content=draft.uploadReady?(draft.importType==='ct'?renderControlDraft():renderDraft()):renderUploadFirst();
  dialog.innerHTML='<div class="dialog-header"><h2>Importer une pièce</h2>'+btn('Fermer','closeImport')+'</div><div class="unified-import-content">'+choices+content+'</div>';
  if(!dialog.open)dialog.showModal();
 }
-function renderUploadFirst(){return '<section class="panel"><label class="field">Importer le document · PDF, JPG ou PNG · 5 Mo maximum<input type="file" name="initialImportFile" accept="application/pdf,image/jpeg,image/png" '+(reading?'disabled':'')+'></label><p class="hint">La lecture démarre dès le choix du fichier. Vous pourrez ensuite vérifier les données et compléter les champs manquants.</p><p id="expenseOcrProgress" role="status"></p></section>';}
+function renderUploadFirst(){return '<section class="panel import-upload"><h3>Ajouter votre justificatif</h3><p class="import-format">PDF ou photo (JPG, PNG) · 5 Mo maximum</p><label class="field"><span class="import-file-label">Choisir le document</span><input type="file" name="initialImportFile" accept="application/pdf,image/jpeg,image/png" '+(reading?'disabled':'')+'></label><p class="hint">La lecture démarre dès le choix du fichier. Vous pourrez ensuite vérifier les données et compléter les champs manquants.</p><p id="expenseOcrProgress" role="status"></p></section>';}
 document.addEventListener('change',async e=>{
  if(e.target.name!=='initialImportFile'||!draft?.unified||reading||busy)return;
  const file=e.target.files?.[0];if(!file)return;
