@@ -117,18 +117,21 @@ function generic(pages){
  i.totals.vat=pick(/(?:total\s*tva|montant\s*tva)\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
  const plate=(text.match(/\b([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\b/)||[])[1]||'';
  i.account=pages.join('\n').split('\n').find(row=>/garage|automobiles|auto |sarl|sas\b/i.test(row))||'';
- const details=[],rows=pages.join('\n').split('\n');let inDetails=false;
+ const details=[],priced=[],rows=pages.join('\n').split('\n');let inDetails=false;
+ function addDetail(row){const values=[...row.matchAll(/(?<![\d.,])(-?\d+(?:[ \u00a0]\d{3})*[,.]\d{2})(?!\d)\s*(%|€|EUR)?/gi)].filter(m=>m[2]!=='%');const first=values[0];const label=(first?row.slice(0,first.index):row).replace(/\s+\d+(?:[,.]\d+)?\s*$/,'').trim();if(!label)return;details.push(label);if(values.length)priced.push({label,amount:money(values[values.length-1][1])});}
  for(const raw of rows){
   const row=raw.trim(),n=norm(row);
   if(/^(?:sous[- ]?total|total|net a payer|conditions|reglement|mode de paiement|echeance|iban|bic)\b/i.test(n)){inDetails=false;continue;}
   const heading=n.match(/^(?:designation|description|detail des travaux|travaux|prestations?|intervention)\b\s*:?\s*(.*)/i);
-  if(heading&&!/^(?:du|le|date)\b/i.test(heading[1])){inDetails=true;const tail=row.slice(heading[0].length-heading[1].length).trim();if(tail&&!/^(?:qte|quantite|reference|prix|p\.?u\.?)\b/i.test(norm(tail)))details.push(tail);continue;}
+  if(heading&&!/^(?:du|le|date)\b/i.test(heading[1])){inDetails=true;const tail=row.slice(heading[0].length-heading[1].length).trim();if(tail&&!/^(?:qte|quantite|reference|prix|p\.?u\.?)\b/i.test(norm(tail)))addDetail(tail);continue;}
   const operation=/\b(?:vidange|filtre|huile|remplacement|revision|reparation|plaquettes|disques|pneus?|pneumatiques?|frein|courroie|distribution|batterie|diagnostic|controle|main d['’]oeuvre|liquide|bougies|equilibrage|parallelisme|forfait)\b/i.test(n);
   if((inDetails||operation)&&/[a-z]{3}/i.test(n)&&! /^(?:reference|qte|quantite|prix|tva|montant|immatriculation|kilometrage|date|facture|client|adresse|telephone|siret)\b/i.test(n)){
-   const clean=row.replace(/\s+(?:\d+[,.]\d{2}\s*(?:€|EUR)?\s*)+$/i,'').trim();if(clean)details.push(clean);
+   addDetail(row);
   }
  }
- const work=[...new Set(details)].join('\n')||'Entretien / réparation';
+ const ranked=priced.filter(item=>item.amount!==null).sort((a,b)=>b.amount-a.amount);
+ const work=ranked[0]?.label||details[0]||'Entretien / réparation';
+ if(!ranked.length)warnings.push('Montants des prestations non reconnus : désignation à vérifier.');
  const performed=labelledDate(text,"date d['’]intervention|date de (?:la )?revision|date des travaux|intervention du|intervention le|travaux effectues le")||i.date;
  i.lines=[line({category:'maintenance',date:performed,month:performed.slice(0,7)||i.period,label:work,sourcePlate:plate,amounts:{...i.totals}})];
  warnings.push('Lecture générique : vérifier le fournisseur, les dates, les montants et le véhicule. Le détail des travaux doit être complété si nécessaire.');
