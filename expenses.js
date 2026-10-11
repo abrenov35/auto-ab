@@ -84,7 +84,7 @@ function renderDocuments(){
  const entryMonth=x=>x.invoice.period||x.lines[0]?.month||String(x.invoice.date).slice(0,7);
  for(let i=entries.length-1;i>=0;i--){const amount=R.summary(entries[i].lines,'ht');if(amount.total===0&&!amount.missing)entries.splice(i,1);}
  entries.sort((a,b)=>entryMonth(b).localeCompare(entryMonth(a))||String(b.invoice.date).localeCompare(String(a.invoice.date))||String(a.doc.name).localeCompare(String(b.doc.name),'fr'));
- const row=x=>{const url=safeLink(x.doc.url),total=R.summary(x.lines,'ht'),labels=[...new Set(x.lines.map(l=>l.label||assignmentLabel(l)))],summary=maintenance?labels.join(' · '):R.categories[f.category]+' · '+x.lines.length+' opération'+(x.lines.length>1?'s':'');const caption=(x.invoice.number?'Facture '+x.invoice.number:x.doc.name)+' · '+summary;return '<article class="expense-document-row"><small>'+E(dateView(x.invoice.date))+'</small><span class="expense-document-caption" title="'+E(x.doc.name+' · '+labels.join(' · '))+'">'+E(caption)+'</span><span>'+E(euro(total.total))+' HT'+(total.missing?' · partiel':'')+'</span><span class="row-actions">'+(url?btn('Voir','viewDocument','data-id="'+E(x.invoice.id)+'" data-document="'+E(x.doc.id||x.doc.url)+'"'):'<span>Document indisponible</span>')+btn('Supprimer','deleteDocument','data-id="'+E(x.invoice.id)+'"')+'</span></article>';};
+ const row=x=>{const url=safeLink(x.doc.url),total=R.summary(x.lines,'ht'),labels=[...new Set(x.lines.map(l=>l.label||assignmentLabel(l)))],summary=maintenance?labels.join(' · '):R.categories[f.category]+' · '+x.lines.length+' opération'+(x.lines.length>1?'s':'');const caption=(x.invoice.number?'Facture '+x.invoice.number:x.doc.name)+' · '+summary;return '<article class="expense-document-row"><small>'+E(dateView(x.invoice.date))+'</small><span class="expense-document-caption" title="'+E(x.doc.name+' · '+labels.join(' · '))+'">'+E(caption)+'</span><span>'+E(euro(total.total))+' HT'+(total.missing?' · partiel':'')+'</span><span class="row-actions">'+(url?btn('Voir','viewDocument','data-id="'+E(x.invoice.id)+'" data-document="'+E(x.doc.id||x.doc.url)+'"'):'<span>Document indisponible</span>')+'</span></article>';};
  let body='';
  if(maintenance){
   const groups=[...new Set(entries.map(x=>x.plate))].sort((a,b)=>a.localeCompare(b,'fr'));
@@ -93,7 +93,7 @@ function renderDocuments(){
 
  return title({fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[f.category]||'Documents','Justificatifs et dépenses liées · HT','')+
  '<form id="expenseDocumentsFilters" class="expense-filters">'+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):select('Conducteur','personId',[['','Tous les conducteurs'],...data.people.map(p=>[p.id,p.name]).sort((a,b)=>a[1].localeCompare(b[1],'fr')),['unassigned','Non défini'],['common','Frais communs']],f.personId||''))+'</form>'+
- '<p class="hint">Supprimer retire le justificatif de cette liste et toutes les opérations de sa facture des KPI. L’historique est conservé.</p>'+(entries.length?body:'<section class="panel"><p class="empty">Aucun justificatif pour cette sélection.</p></section>');
+ (entries.length?body:'<section class="panel"><p class="empty">Aucun justificatif pour cette sélection.</p></section>');
 }
 function viewDocument(invoiceId,documentId){
  const invoice=data.invoices.find(i=>i.id===invoiceId),doc=invoice?.documents.find(d=>(d.id||d.url)===documentId);
