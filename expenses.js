@@ -63,7 +63,7 @@ function render(){
  '<form id="expenseFilters" class="expense-filters">'+monthSelector()+'<div class="field"><span>Période</span><input type="hidden" name="annual" value="'+(filter.annual?'yes':'')+'"><button type="button" class="button '+(filter.annual?'primary':'secondary')+'" data-exp="toggleAnnual" aria-pressed="'+filter.annual+'">Cumul (année en cours)</button></div>'+select('Véhicule · entretien','plate',[['','Tout le parc'],...vehicles().slice(1)],filter.plate)+select('Conducteur · carburant / stationnement','personId',[['','Tous les conducteurs'],...filterPersons()],filter.personId)+'</form>'+
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
- '<nav class="toolbar" aria-label="Catégories de dépenses"><div class="row-actions">'+[['fuel','Carburant'],['parking','Stationnement'],['maintenance','Entretiens']].map(([value,label])=>'<button type="button" class="button '+(filter.category===value?'primary':'secondary')+'" data-exp="category" data-category="'+value+'" aria-pressed="'+(filter.category===value)+'">'+label+'</button>').join('')+'</div></nav>'+renderReporting()+
+ renderReporting()+
  '<section class="panel"><h2>Opérations · '+lines.length+'</h2>'+renderLines(lines)+'</section>'+
 
  (old.length?'<section class="panel"><h2>Entretiens existants · montant HT à vérifier</h2><p>Ces '+old.length+' montants ne sont pas additionnés au total '+'HT'+'. Lors de l’import, liez la ligne à l’entretien existant pour éviter une double saisie.</p>'+old.map(m=>'<p>'+E(dateView(m.date)+' · '+m.immatriculation+' · '+m.type)+' : '+E(String(m.montant))+' € · base à vérifier '+(safeLink(m.lienFacture)?'<a href="'+E(safeLink(m.lienFacture))+'" target="_blank" rel="noopener">Facture</a>':'')+'</p>').join('')+'</section>':'')+
@@ -89,8 +89,8 @@ function renderDocuments(){
   const groups=[...new Set(entries.map(x=>x.plate))].sort((a,b)=>a.localeCompare(b,'fr'));
   body=groups.map(plate=>{const v=list('vehicules').find(v=>R.plate(v.immatriculation)===R.plate(plate));return '<section class="panel"><h2>'+E(plate?(v?[v.marque,v.modele,v.immatriculation].filter(Boolean).join(' · '):plate):'Non défini')+'</h2>'+entries.filter(x=>x.plate===plate).map(row).join('')+'</section>';}).join('');
  }else body='<section class="panel"><h2>Justificatifs · '+entries.length+'</h2>'+entries.map(row).join('')+'</section>';
- return title('Documents','Justificatifs et dépenses liées · HT','')+
- '<form id="expenseDocumentsFilters" class="expense-filters">'+select('Catégorie','category',[['fuel','Carburant'],['parking','Stationnement'],['maintenance','Entretiens / réparations']],f.category)+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):input('Mois (vide : tous)','month',f.month,'month'))+input('Rechercher','query',f.query)+'</form>'+
+ return title({fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[f.category]||'Documents','Justificatifs et dépenses liées · HT','')+
+ '<form id="expenseDocumentsFilters" class="expense-filters">'+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):input('Mois (vide : tous)','month',f.month,'month'))+input('Rechercher','query',f.query)+'</form>'+
  '<p class="hint">Supprimer retire le justificatif de cette liste et toutes les opérations de sa facture des KPI. L’historique est conservé.</p>'+(entries.length?body:'<section class="panel"><p class="empty">Aucun justificatif pour cette recherche.</p></section>');
 }
 function viewDocument(invoiceId,documentId){
@@ -232,7 +232,7 @@ async function deleteManual(form){
 }
 
 async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
- if(act==='documents'){documentsView=true;draft=null;selected='';renderApp();return;}
+ if(act==='documents'){if(el?.dataset.category)documentFilter.category=el.dataset.category;documentsView=true;draft=null;selected='';renderApp();return;}
  if(act==='viewDocument'){viewDocument(el.dataset.id,el.dataset.document);return;}
  if(act==='closeDocumentViewer'){document.getElementById('expenseDocumentViewer')?.close();return;}
  if(act==='closeDocuments'){documentsView=false;renderApp();return;}
