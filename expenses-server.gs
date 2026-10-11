@@ -28,6 +28,7 @@ function depAppend_(ss,event) {
     sh=ss.insertSheet('Dépenses journal');sh.getRange(1,1).setValue('Événement JSON v1');
   }
   sh.getRange(sh.getLastRow()+1,1).setValue(payload);SpreadsheetApp.flush();
+  CacheService.getScriptCache().remove('AUTO_AB_DEP_FAST_V1_'+CONFIG.SHEET_ID);
 }
 function depDocument_(d,requestId,index) {
   if(!d||!d.base64||!['application/pdf','image/jpeg','image/png'].includes(d.mime))throw Error('Justificatif PDF/JPG/PNG requis');
@@ -63,7 +64,7 @@ function depHandle_(ss,p) {
     var events=last<2?[]:sh.getRange(2,1,last-1,1).getValues().map(function(r){return JSON.parse(r[0]);});
     var result=depResult_(events);
     var serialized=JSON.stringify(result);
-    if(serialized.length<=22000){try{cache.put(key,serialized,60);}catch(ignored){}}
+    if(serialized.length<=90000){try{cache.put(key,serialized,60);cache.put('AUTO_AB_DEP_FAST_V1_'+CONFIG.SHEET_ID,serialized,60);}catch(ignored){}}
     return jsonResponse_(result);
   }
   if(!/^[a-zA-Z0-9-]{16,80}$/.test(String(p.requestId||'')))throw Error('Identifiant de requête requis');
