@@ -4,7 +4,7 @@ window.Expenses=(function(){
 const R=ExpenseRules,P=ExpenseReport,E=escapeHtml;
 let data=null,error='',busy=false,reading=false,draft=null,selected='',filter={month:todayParis().slice(0,7),annual:false,plate:'',personId:'',category:'',unassigned:false},pending=null;
 let documentsView=false,documentFilter={category:'fuel',month:todayParis().slice(0,7),plate:'',personId:''};
-let importModules,ocrController,loadingExpenses=false,expenseLoad=null,loadEpoch=0;
+let importModules,ocrController,loadingExpenses=false,expenseLoad=null,loadEpoch=0,defaultMonthChosen=false;
 const euro=n=>(n/100).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
 const supplier=s=>s==='manual'?'Saisie manuelle':s==='intermarche'?'Intermarché':s==='easypark'?'EasyPark':'Autre fournisseur';
 const btn=(label,act,extra='')=>'<button type="button" class="button secondary" data-exp="'+act+'" '+extra+'>'+E(label)+'</button>';
@@ -163,13 +163,14 @@ async function readInvoice(){
 }
 function validSnapshot(value){return value&&Array.isArray(value.invoices)&&Array.isArray(value.people)&&Array.isArray(value.mappings)&&Array.isArray(value.audit)&&value.completion&&typeof value.completion==='object'&&value.invoices.every(i=>Array.isArray(i.lines)&&Array.isArray(i.documents));}
 function requireSnapshot(value){if(!validSnapshot(value))throw Error('Le serveur Dépenses a renvoyé des données incomplètes. Vérifiez le déploiement Google Apps Script puis actualisez.');return value;}
+function chooseDefaultMonth(){if(defaultMonthChosen||!data||filter.annual)return;const months=[...new Set(data.invoices.filter(i=>i.status!=='cancelled').flatMap(i=>i.lines.map(l=>l.month)))].sort((a,b)=>b.localeCompare(a));const latest=months.find(month=>{const sum=R.summary(P.select(data,{...filter,month}),'ht');return sum.total!==0||sum.missing;});if(latest)filter.month=latest;defaultMonthChosen=true;}
 async function loadExpenses({fresh=false}={}){
  if(expenseLoad)return data&&!fresh?Promise.resolve():expenseLoad;
  const token=state.token,epoch=loadEpoch;error='';
  if(!data&&!fresh){try{const cached=JSON.parse(sessionStorage.getItem('autoAbExpenseDisplay')||'null');if(cached?.token===token&&Date.now()-cached.at<86400000&&validSnapshot(cached.data))data=cached.data;}catch{}}
- loadingExpenses=true;renderApp();
+ chooseDefaultMonth();loadingExpenses=true;renderApp();
  const promise=(async()=>{
-  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch){const firstLoad=!data;data=requireSnapshot(result);if(firstLoad&&!filter.annual){const months=[...new Set(data.invoices.filter(i=>i.status!=='cancelled').flatMap(i=>i.lines.map(l=>l.month)))].sort((a,b)=>b.localeCompare(a));const latest=months.find(month=>{const sum=R.summary(P.select(data,{...filter,month}),'ht');return sum.total!==0||sum.missing;});if(latest)filter.month=latest;}try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token,at:Date.now(),data}));}catch{}}}
+  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch){data=requireSnapshot(result);chooseDefaultMonth();try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token,at:Date.now(),data}));}catch{}}}
   catch(e){if(state.token!==token||loadEpoch!==epoch)return;const message=e.message.includes('Action')?'Le serveur Dépenses doit être déployé avant utilisation.':e.message;if(data)toast('Actualisation impossible. Les dernières données affichées sont conservées. '+message,true);else error=message;}
   finally{if(loadEpoch===epoch){loadingExpenses=false;expenseLoad=null;renderApp();}}
  })();
@@ -321,6 +322,6 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{const el=e.target.closest('[data-exp]');if(el){e.preventDefault();handle(el.dataset.exp,el).catch(e=>toast(e.message,true));}});
 document.addEventListener('submit',e=>{if(e.target.id.startsWith('expense')){e.preventDefault();if(e.target.reportValidity())submit(e.target).catch(e=>toast(e.message,true));}});
 document.addEventListener('change',e=>{if(e.target.closest('#expenseDocumentsFilters')){documentFilter={...documentFilter,...Object.fromEntries(new FormData(e.target.closest('form')))};renderApp();}else if(e.target.closest('#expenseFilters')){filter={...filter,...Object.fromEntries(new FormData($('#expenseFilters')))};filter.annual=filter.annual==='yes';if(e.target.name==='plate'&&filter.plate)filter.personId='';if(e.target.name==='personId'&&filter.personId)filter.plate='';renderApp();}else if(e.target.name==='category'&&e.target.closest('#expenseDraft')){collect();renderApp();}else if(e.target.name==='category'&&!e.target.closest('#expenseDraft')){filter.category=e.target.value;renderApp();}});
-return {render,open:loadExpenses,action:handle,home(){draft=null;selected='';documentsView=false;renderApp();},allowLeave(){if(busy||reading){toast('Enregistrement en cours. Attendez la réponse du serveur.',true);return false;}if(draft?.kind==='invoice'){if(!confirm('Quitter la saisie non enregistrée ?'))return false;draft=null;}return true;},reset(){sessionStorage.removeItem('autoAbExpenseDisplay');loadEpoch++;expenseLoad=null;loadingExpenses=false;ocrController?.abort();data=null;draft=null;selected='';documentsView=false;pending=null;error='';}};
+return {render,open:loadExpenses,action:handle,home(){draft=null;selected='';documentsView=false;renderApp();},allowLeave(){if(busy||reading){toast('Enregistrement en cours. Attendez la réponse du serveur.',true);return false;}if(draft?.kind==='invoice'){if(!confirm('Quitter la saisie non enregistrée ?'))return false;draft=null;}return true;},reset(){defaultMonthChosen=false;sessionStorage.removeItem('autoAbExpenseDisplay');loadEpoch++;expenseLoad=null;loadingExpenses=false;ocrController?.abort();data=null;draft=null;selected='';documentsView=false;pending=null;error='';}};
 })();
 
