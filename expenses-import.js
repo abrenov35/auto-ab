@@ -4,7 +4,9 @@ var ExpenseImport=(function(){
 'use strict';
 const money=s=>{const n=String(s||'').replace(/\s/g,'').replace(',','.');return /^-?\d+\.\d{2}$/.test(n)?Math.round(Number(n)*100):null;};
 const decimal=s=>Number(String(s).replace(',','.'));
-const date=s=>{const m=String(s).match(/(\d{2})[./](\d{2})[./](\d{4})/);return m?m[3]+'-'+m[2]+'-'+m[1]:'';};
+const date=s=>{const value=norm(s);let m=value.match(/\b(\d{4})-(\d{2})-(\d{2})\b/),year,month,day;if(m){[,year,month,day]=m;}else{m=value.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{4}|\d{2})\b/);if(m){day=m[1];month=m[2];year=m[3].length===2?'20'+m[3]:m[3];}else{m=value.match(/\b(\d{1,2})\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\s+(\d{4})\b/i);if(!m)return '';day=m[1];month=String(['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'].indexOf(m[2].toLowerCase())+1);year=m[3];}}const result=year+'-'+month.padStart(2,'0')+'-'+day.padStart(2,'0'),check=new Date(result+'T00:00:00Z');return Number.isFinite(check.getTime())&&check.toISOString().slice(0,10)===result?result:'';};
+function labelledDate(text,labels){const pattern=new RegExp('(?:'+labels+')\\s*[:=]?\\s*','gi');let hit;while((hit=pattern.exec(text))){const tail=text.slice(hit.index+hit[0].length,hit.index+hit[0].length+100);if(/^(?:d['’]echeance|echeance|limite|de paiement)/i.test(tail))continue;const match=tail.match(/^(?:[^\n\d]{0,35}\n\s*)?((?:\d{4}-\d{2}-\d{2})|(?:\d{1,2}[./-]\d{1,2}[./-](?:\d{4}|\d{2}))|(?:\d{1,2}\s+[a-z]+\s+\d{4}))\b/i);if(match&&date(match[1]))return date(match[1]);}return '';}
+
 const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[−–—]/g,'-').replace(/~(?=\d)/g,'-').replace(/%\s*=\s*/g,'% ');
 function base(supplier){return {supplier,account:'',number:'',date:'',period:'',totals:{ht:null,vat:null,ttc:null},note:'',lines:[]};}
 function line(extra){return Object.assign({category:'other',date:'',month:'',label:'',plate:'',personId:'',scope:'unassigned',externalId:'',card:'',fuelType:'',litres:null,maintenanceId:'',amounts:{ht:null,vat:null,ttc:null},sourcePerson:'',sourcePlate:'',transactionId:'',periodStart:'',periodEnd:'',amountOrigin:'printed',sourceKm:''},extra);}
@@ -108,7 +110,7 @@ function generic(pages){
  const text=norm(pages.join('\n')),i=base('other'),warnings=[];
  const pick=pattern=>{const m=text.match(pattern);return m?money(m[1]):null;};
  i.number=(text.match(/(?:facture|invoice)\s*(?:n[o°]?|numero|#)?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-]{3,})/i)||[])[1]||'';
- i.date=date((text.match(/(?:date\s*(?:de\s*)?(?:facture)?|le)\s*:?\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[])[1]||'');
+ i.date=labelledDate(text,"date de (?:la )?facture|date facture|facture du|facture en date du|date d['’]emission|emis le|etabli le|date|le");
  i.period=i.date.slice(0,7);
  i.totals.ht=pick(/(?:total\s*(?:net\s*)?(?:h\.?\s*t\.?|hors taxes))\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
  i.totals.ttc=pick(/(?:total\s*t\.?\s*t\.?\s*c\.?|net a payer)\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
@@ -116,7 +118,8 @@ function generic(pages){
  const plate=(text.match(/\b([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\b/)||[])[1]||'';
  i.account=pages.join('\n').split('\n').find(row=>/garage|automobiles|auto |sarl|sas\b/i.test(row))||'';
  const work=(text.match(/(?:designation|travaux|prestation|intervention)\s*:?\s*([^\n]+)/i)||[])[1]||'Entretien / réparation';
- i.lines=[line({category:'maintenance',date:i.date,month:i.period,label:work,sourcePlate:plate,amounts:{...i.totals}})];
+ const performed=labelledDate(text,"date d['’]intervention|date de (?:la )?revision|date des travaux|intervention du|intervention le|travaux effectues le")||i.date;
+ i.lines=[line({category:'maintenance',date:performed,month:performed.slice(0,7)||i.period,label:work,sourcePlate:plate,amounts:{...i.totals}})];
  warnings.push('Lecture générique : vérifier le fournisseur, les dates, les montants et le véhicule. Le détail des travaux doit être complété si nécessaire.');
  return diagnostic(i,warnings,i.totals.ht);
 }
