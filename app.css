@@ -165,3 +165,6 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 
 /* Equal heights for the expense toolbar. */
 #expenseFilters{align-items:center}#expenseFilters>.field{align-self:center;gap:0}#expenseFilters select,#expenseFilters .expense-month-picker summary,#expenseFilters [data-exp="toggleAnnual"]{box-sizing:border-box;height:36px;min-height:36px;margin:0;font-size:13px;border-radius:4px}#expenseFilters [data-exp="toggleAnnual"]{display:flex;align-items:center;justify-content:center;width:100%;padding:0 10px;background:#e1f3e7;border:1px solid #a4cfb3;color:#235b38}#expenseFilters [data-exp="toggleAnnual"]:hover{background:#d2ebdb}#expenseFilters [data-exp="toggleAnnual"][aria-pressed="true"]{background:#c7e7d2;border-color:#72ad87;color:#194b2c}
+
+/* Pastel backgrounds show vehicle deadline status. */
+.vehicle-row.alert{background:#fff0da;border-color:#e9c99e;border-left-color:#d57c10}.vehicle-row.alert:hover{background:#ffe7c3;border-color:#d9ab6d}.vehicle-row.overdue{background:#fde5e5;border-color:#e7b4b4;border-left-color:#bb352a}.vehicle-row.overdue:hover{background:#fbd7d7;border-color:#d99595}
