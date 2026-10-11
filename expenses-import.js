@@ -83,7 +83,26 @@ function easypark(pages){
  const knownIds=i.lines.map(l=>l.transactionId).filter(Boolean);if(new Set(knownIds).size!==knownIds.length)warnings.push('Identifiants de transaction répétés : vérifier les pages jointes.');
  return diagnostic(i,warnings,'printed_subtotals');
 }
-function parse(supplier,pages){if(!Array.isArray(pages)||!pages.length)throw Error('Document vide');const full=norm(pages.join('\n'));const ids=[...full.matchAll(supplier==='intermarche'?/Numero\s+de\s+facture\s+(\d+)/gi:/Reference facture:\s*(\d+)/gi)].map(m=>m[1]);if(new Set(ids).size>1)throw Error('Plusieurs factures différentes détectées. Importez une facture à la fois.');return supplier==='intermarche'?intermarche(pages):supplier==='easypark'?easypark(pages):(()=>{throw Error('Fournisseur non pris en charge');})();}
-return {parse};
+
+function generic(pages){
+ const text=norm(pages.join('\n')),i=base('other'),warnings=[];
+ const pick=pattern=>{const m=text.match(pattern);return m?money(m[1]):null;};
+ i.number=(text.match(/(?:facture|invoice)\s*(?:n[o°]?|numero|#)?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-]{3,})/i)||[])[1]||'';
+ i.date=date((text.match(/(?:date\s*(?:de\s*)?(?:facture)?|le)\s*:?\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[])[1]||'');
+ i.period=i.date.slice(0,7);
+ i.totals.ht=pick(/(?:total\s*(?:net\s*)?(?:h\.?\s*t\.?|hors taxes))\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
+ i.totals.ttc=pick(/(?:total\s*t\.?\s*t\.?\s*c\.?|net a payer)\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
+ i.totals.vat=pick(/(?:total\s*tva|montant\s*tva)\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
+ const plate=(text.match(/\b([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\b/)||[])[1]||'';
+ i.account=pages.join('\n').split('\n').find(row=>/garage|automobiles|auto |sarl|sas\b/i.test(row))||'';
+ const work=(text.match(/(?:designation|travaux|prestation|intervention)\s*:?\s*([^\n]+)/i)||[])[1]||'Entretien / réparation';
+ i.lines=[line({category:'maintenance',date:i.date,month:i.period,label:work,sourcePlate:plate,amounts:{...i.totals}})];
+ warnings.push('Lecture générique : vérifier le fournisseur, les dates, les montants et le véhicule. Le détail des travaux doit être complété si nécessaire.');
+ return diagnostic(i,warnings,i.totals.ht);
+}
+function control(pages){const text=norm(pages.join('\n'));const plate=(text.match(/\b([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})\b/)||[])[1]||'';const last=date((text.match(/(?:date du controle|date de controle|controle effectue le)\s*:?\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[])[1]||'');const next=date((text.match(/(?:prochain controle|valable jusqu'au|date limite|validite)\s*:?\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[])[1]||'');return {plate,last,next,warnings:['Vérifier les dates et le véhicule avec le procès-verbal ; aucune échéance n’est calculée automatiquement.']};}
+
+function parse(supplier,pages){if(!Array.isArray(pages)||!pages.length)throw Error('Document vide');const full=norm(pages.join('\n'));const ids=[...full.matchAll(supplier==='intermarche'?/Numero\s+de\s+facture\s+(\d+)/gi:/Reference facture:\s*(\d+)/gi)].map(m=>m[1]);if(new Set(ids).size>1)throw Error('Plusieurs factures différentes détectées. Importez une facture à la fois.');return supplier==='intermarche'?intermarche(pages):supplier==='easypark'?easypark(pages):generic(pages);}
+return {parse,control};
 })();
 if(typeof module!=='undefined')module.exports=ExpenseImport;
