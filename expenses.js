@@ -24,7 +24,7 @@ const filterPersons=(activeOnly=false,selectedId='')=>{
  return people.sort((a,b)=>a[1].localeCompare(b[1],'fr',{sensitivity:'base'}));
 };
 const vehicles=()=>[['','Non défini'],...list('vehicules').map(v=>[R.plate(v.immatriculation),v.immatriculation+' · '+v.marque+' '+v.modele+(archived(v)?' (archivé)':'')])];
-const assignmentLabel=l=>{const p=data.people.find(p=>p.id===l.personId);return l.scope==='common'?'Frais communs':R.assignmentKind(l)==='driver'?(p?p.name+' ('+p.reference+')':'Non défini'):R.assignmentKind(l)==='vehicle'?(l.plate||'Non défini'):[l.plate,p?.name].filter(Boolean).join(' · ')||'À affecter';};
+const assignmentLabel=l=>{const p=data.people.find(p=>p.id===l.personId);return l.scope==='common'?'Frais communs':R.assignmentKind(l)==='driver'?(p?p.name:'Non défini'):R.assignmentKind(l)==='vehicle'?(l.plate||'Non défini'):[l.plate,p?.name].filter(Boolean).join(' · ')||'À affecter';};
 const number=n=>n===null||n===undefined?'':(n/100).toFixed(2);
 function blankLine(){return {category:'fuel',date:'',month:filter.month,label:'',plate:'',personId:'',scope:'unassigned',externalId:'',card:'',litres:null,fuelType:'',maintenanceId:'',amounts:{ht:null,vat:null,ttc:null}};}
 function monthOptions(){
@@ -65,7 +65,7 @@ function render(){
  '<div class="expense-heading"><span id="expenseDownload" role="status">'+(loadingExpenses?'Actualisation…':'')+'</span></div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
  renderReporting()+
- '<section class="panel"><h2>Opérations · '+lines.length+'</h2>'+renderLines(lines)+'</section>'+
+ renderGroupedOperations(lines)+
 
  (old.length?'<section class="panel"><h2>Entretiens existants · montant HT à vérifier</h2><p>Ces '+old.length+' montants ne sont pas additionnés au total '+'HT'+'. Lors de l’import, liez la ligne à l’entretien existant pour éviter une double saisie.</p>'+old.map(m=>'<p>'+E(dateView(m.date)+' · '+m.immatriculation+' · '+m.type)+' : '+E(String(m.montant))+' € · base à vérifier '+(safeLink(m.lienFacture)?'<a href="'+E(safeLink(m.lienFacture))+'" target="_blank" rel="noopener">Facture</a>':'')+'</p>').join('')+'</section>':'')+
  '';
@@ -123,6 +123,21 @@ function exportView(kind){
  const content=kind==='csv'?P.csv([...meta.map(s=>[s]),[],header,...rows]):P.pdf([...meta,'',...c.lines.flatMap(l=>{const p=data.people.find(p=>p.id===l.personId);return [(l.date||l.month+' (période déclarée)')+' | '+supplier(l.supplier)+' '+(l.number||'Sans numéro')+' | '+R.categories[l.category]+' | '+(l.amounts.ht===null?'HT manquant':euro(l.amounts.ht)+' HT'),(assignmentLabel(l))+' | '+l.label+(l.litres===null?'':' | '+l.litres+' litres'),''];})]);
  const url=URL.createObjectURL(new Blob([content],{type:kind==='csv'?'text/csv;charset=utf-8':'application/pdf'})),a=document.createElement('a');a.href=url;a.download='ab-auto-depenses-ht-'+filter.month+'.'+kind;a.textContent='Télécharger le fichier '+kind.toUpperCase();a.className='button secondary';let box=document.getElementById('expenseDownload');if(!box){box=document.createElement('p');box.id='expenseDownload';box.setAttribute('role','status');document.getElementById('expenseFilters').after(box);}box.replaceChildren(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);if(a.isConnected)a.remove();},300000);
 }
+
+function renderGroupedOperations(lines){
+ if(!lines.length)return '<section class="panel"><p class="empty">Aucune opération pour cette sélection.</p></section>';
+ const totalLabel=rows=>{const sum=R.summary(rows,'ht');return euro(sum.total)+' HT'+(sum.missing?' · à compléter':'');};
+ const summary=(label,rows)=>'<summary><span>'+E(label)+'</span><small>'+rows.length+' opération'+(rows.length>1?'s':'')+'</small><strong>'+E(totalLabel(rows))+'</strong></summary>';
+ const categories=[['fuel','Carburant'],['parking','Stationnement'],['maintenance','Entretiens']];
+ return '<div class="expense-operation-groups">'+categories.map(([category,label])=>{
+  const rows=lines.filter(l=>l.category===category);if(!rows.length)return '';
+  const groups=new Map();for(const l of rows){const key=l.scope==='common'?'common':category==='maintenance'?(R.plate(l.plate)||'unassigned'):(l.personId||'unassigned');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(l);}
+  const groupLabel=(key,items)=>key==='common'?'Frais communs':key==='unassigned'?'Non défini':category==='maintenance'?(items[0].plate||key):(data.people.find(p=>p.id===key)?.name||'Non défini');
+  const grouped=[...groups].sort(([ka,ra],[kb,rb])=>{const tail=k=>k==='common'?2:k==='unassigned'?1:0;return tail(ka)-tail(kb)||groupLabel(ka,ra).localeCompare(groupLabel(kb,rb),'fr');});
+  return '<details class="panel expense-category-group">'+summary(label,rows)+'<div class="expense-assignment-groups">'+grouped.map(([key,items])=>'<details class="expense-assignment-group">'+summary(groupLabel(key,items),items)+renderLines(items.slice().sort((a,b)=>String(b.date||b.month).localeCompare(String(a.date||a.month))))+'</details>').join('')+'</div></details>';
+ }).join('')+'</div>';
+}
+
 function renderLines(lines){return lines.length?'<div class="expense-lines">'+lines.map(l=>{const p=data.people.find(p=>p.id===l.personId);return '<article class="expense-row"><div><strong>'+E(l.date?dateView(l.date):l.month+' · période déclarée')+'</strong><small>'+E(l.category==='maintenance'?R.categories[l.category]+(l.plate?' · '+l.plate:''):R.categories[l.category]+' · '+l.label)+'</small></div><div>'+E(l.category==='maintenance'?(l.label||'Entretien'):assignmentLabel(l))+'</div><div class="row-actions">'+btn(l.amounts.ht===null?'HT à vérifier':euro(l.amounts.ht)+' HT','invoice','data-id="'+E(l.invoiceId)+'"')+'</div></article>';}).join('')+'</div>':'<p class="empty">Aucune opération enregistrée pour ce filtre. Vérifiez la complétude des imports.</p>';}
 function renderInvoice(){const i=data.invoices.find(x=>x.id===selected);if(!i){selected='';return render();}if(i.supplier==='manual')return title(R.categories[i.lines[0].category],'Saisie mensuelle · '+i.period,'')+'<section class="panel">'+renderLines(i.lines.map(l=>({...l,invoiceId:i.id})))+(i.status==='cancelled'?'<p>Saisie annulée</p>':'<div class="section-actions">'+btn('Modifier','edit')+btn('Annuler cette saisie','void')+'</div>')+'</section>';return title(supplier(i.supplier)+' · '+(i.number||'Sans numéro'),'Facture du '+dateView(i.date)+' · '+i.account+' · version '+i.revision,'')+'<section class="panel">'+i.documents.map(d=>'<p><a href="'+E(safeLink(d.url))+'" target="_blank" rel="noopener">'+E(d.name)+'</a></p>').join('')+'<p>'+E(i.note)+'</p><p>'+E(i.status==='cancelled'?'Import annulé, conservé dans l’historique':'Import enregistré')+'</p>'+renderLines(i.lines.map(l=>({...l,invoiceId:i.id})))+'<details><summary>Historique des modifications</summary>'+data.audit.filter(a=>a.id===i.id).map(a=>'<p>'+E(a.at+' · version '+a.revision+' · '+(a.reason||'Création')+' · '+a.actor)+'</p>').join('')+'</details>'+(i.status!=='cancelled'?'<div class="section-actions">'+btn('Supprimer cet import','deleteDocument','data-id="'+E(i.id)+'"')+'</div>':'')+'</section>';}
 function renderDraft(){
