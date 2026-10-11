@@ -601,6 +601,10 @@ function doPost(e) {
 
 
 
+    if(action==="readExpenses"){
+      var fast=CacheService.getScriptCache().get('AUTO_AB_DEP_FAST_V1_'+CONFIG.SHEET_ID);
+      if(fast)return ContentService.createTextOutput(fast).setMimeType(ContentService.MimeType.JSON);
+    }
     console.log("ACTION:", action);
 
 
