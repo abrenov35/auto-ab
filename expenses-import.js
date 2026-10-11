@@ -30,7 +30,7 @@ function intermarche(pages){
   }
   if(/^\d{7}\s+\d{2}\/\d{2}\/\d{4}/.test(r))warnings.push('Opération carburant non reconnue : compléter depuis le justificatif.');
   const card=r.match(/^Sous Total Carte\s+(\d+)\s+.*?\s+([\d.,]+)$/i);if(card)printedCards.set(card[1],money(card[2]));
-  const name=r.match(/^Sous Total\s+(?!Carte)(.+?)\s+\d+[.,]\d{2}$/i);if(name){group.forEach(l=>l.sourcePerson=name[1]);group=[];}
+  const name=r.match(/^Sous[- ]?Total\s+(?!Carte)(.+?)\s+(?:-?\d[\d .,]*[.,]\d{2})(?:\s*(?:EUR|€))?$/i);if(name){group.forEach(l=>l.sourcePerson=name[1]);group=[];}
   const fee=r.match(/^(Frais de Gestion|Pack services et assurance vol)\s+(?:\d+\s+)?(\d+[.,]\d{2})\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})$/i);
   if(fee){const ht=money(fee[2]),ttc=money(fee[4]);i.lines.push(line({category:'service',month:i.period,scope:'common',label:fee[1],amounts:{ht,vat:ttc-ht,ttc}}));}
   const summary=r.match(/^B7\s+gazole\s+[\d.,]+\s+([\d.,]+)\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})$/i);if(summary)fuelCheck={litres:decimal(summary[1]),ht:money(summary[2]),ttc:money(summary[4])};
@@ -48,16 +48,16 @@ function easypark(pages){
  const cleaned=pages.map(p=>norm(p).split('\n').filter((r,index,rows)=>{const footer=rows.findIndex(x=>/^Adresse\s+Numero de TVA/i.test(x.trim()));return footer<0||index<footer;}).join('\n'));
  const text=cleaned.join('\n'),i=base('easypark'),warnings=[];
  i.number=(text.match(/Reference facture:\s*(\d+)/i)||[])[1]||'';i.account=(text.match(/Numero client:\s*(\d+)/i)||[])[1]||'';
- i.date=date((text.match(/Date:\s*(\d{2}\.\d{2}\.\d{4})/i)||[])[1]);
- const period=(text.match(/Periode:\s*(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})/i)||[]);i.period=date(period[1]).slice(0,7);
+ i.date=date((text.match(/Date:\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[])[1]);
+ const period=(text.match(/Periode:\s*(\d{2}[./]\d{2}[./]\d{4})\s*-\s*(\d{2}[./]\d{2}[./]\d{4})/i)||[]);i.period=date(period[1]).slice(0,7);
  let person='',phone='',current=null,printedTotal=0,subtotalCount=0;
- const flush=()=>{if(!current)return;const raw=current.rows.join(' '),kind=current.kind,amount=raw.match(/(-?\d+[,.]\d{2})\s*EUR\s+(\d+(?:[,.]\d+)?)%\s+(-?\d+[,.]\d{2})\s*EUR\s+(-?\d+(?:[,.]\d{2})?)/);
-   const dates=[...raw.matchAll(/\d{2}\.\d{2}\.\d{4}/g)].map(m=>date(m[0]));
+ const flush=()=>{if(!current)return;const raw=current.rows.join(' '),kind=current.kind,amount=raw.match(/(-?\d+[,.]\d{2})\s*(?:EUR|€)\s+(\d+(?:[,.]\d+)?)\s*%\s+(-?\d+[,.]\d{2})\s*(?:EUR|€)\s+(-?\d+(?:[,.]\d{2})?)/);
+   const dates=[...raw.matchAll(/\d{2}[./]\d{2}[./]\d{4}/g)].map(m=>date(m[0]));
    const phoneId=current.phone,tx=raw.match(/Transaction ID:\s*([01O])-FR-(EP|\d+)-\s*(\d*)/i);let transactionId=tx?[tx[1].toUpperCase()==='O'?'0':tx[1],'FR',tx[2],tx[3]].join('-'):'';
    // Service transaction numbers can wrap into the next visual line, after amounts.
-   if(tx&&!tx[3]){const continuation=raw.match(/(?:-?\d+(?:[,.]\d{2})?)\s+(\d{8})\s+(?:Premium|\d{2}\.\d{2}\.\d{4})/);if(continuation)transactionId+=continuation[1];}
+   if(tx&&!tx[3]){const continuation=raw.match(/(?:-?\d+(?:[,.]\d{2})?)\s+(\d{8})\s+(?:Premium|\d{2}[./]\d{2}[./]\d{4})/);if(continuation)transactionId+=continuation[1];}
    if(tx&&!tx[3]&&kind==='parking'){const wrapped=current.rows.join('\n').match(/Transaction ID:[^\n]*\n\s*(\d{6,})/);if(wrapped)transactionId+=wrapped[1];}
-   const plate=(raw.match(/Plaque d'immatriculation:\s*(?:Code de zone:\s*\d+\s*)?([A-Z]{2}\d{3}[A-Z]{2})/i)||[])[1]||current.rows.map(x=>x.trim()).find(x=>/^[A-Z]{2}\d{3}[A-Z]{2}$/.test(x))||'';
+   const plate=(raw.match(/Plaque d'immatriculation:\s*(?:Code de zone:\s*\d+\s*)?([A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2})/i)||[])[1]||current.rows.map(x=>x.trim()).find(x=>/^[A-Z]{2}[ -]?\d{3}[ -]?[A-Z]{2}$/.test(x))||'';
    const ht=amount?money(amount[1]):null,vat=amount?money(amount[3]):null,ttc=amount?money(amount[4]):null;
    if(!amount)warnings.push('Une opération ne comporte pas de montant HT lisible.');
    if(!transactionId||transactionId.endsWith('-'))warnings.push('Identifiant de transaction incomplet.');
@@ -67,9 +67,9 @@ function easypark(pages){
    i.lines.push(l);current=null;
  };
  for(const raw of text.split('\n')){const r=raw.trim();
-  const user=r.match(/^([^:]+?),\s*(\+33\d{9}),?\s*$/);if(user){flush();person=user[1];phone=user[2];continue;}
-  const total=r.match(/^Total\s+.+?,\s*\+33\d{9}:\s*(-?\d+[,.]\d{2})\s*EUR/);if(total){flush();printedTotal+=money(total[1]);subtotalCount++;continue;}
-  const start=r.match(/^\d+[.,]\s*(Debut\s*:|Transaction ID:)/i);if(start){flush();current={kind:/Debut/i.test(start[1])?'parking':'service',rows:[r],person,phone};continue;}
+  const user=r.match(/^([^:]+?),\s*((?:\+33|0)[\d .()-]{8,}),?\s*$/);if(user){flush();person=user[1];phone=user[2].replace(/[^+\d]/g,'');continue;}
+  const total=r.match(/^Total\s+.+?,\s*(?:\+33|0)[\d .()-]{8,}:\s*(-?\d+[,.]\d{2})\s*EUR/);if(total){flush();printedTotal+=money(total[1]);subtotalCount++;continue;}
+  const start=r.match(/^(?:\d+\s*[.,)]?\s*)?(Debut\s*:|Transaction\s+ID\s*:)/i);if(start&&!(current&&/^Transaction\s+ID/i.test(r))){flush();current={kind:/Debut/i.test(start[1])?'parking':'service',rows:[r],person,phone};continue;}
   if(/^Montant (service|des stationnements)/i.test(r)){flush();continue;}
   if(current)current.rows.push(r);
  }
