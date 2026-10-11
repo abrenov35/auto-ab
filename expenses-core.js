@@ -11,7 +11,7 @@ var ExpenseRules = (function () {
   function amounts(v) { var out={}; ['ht','vat','ttc'].forEach(function(k){var n=v[k]; if(n!==null&&(!Number.isSafeInteger(n)||Math.abs(n)>1e11))throw Error('Montant en centimes invalide');out[k]=n;}); if(out.ht===null&&out.ttc===null)throw Error('Renseigner au moins HT ou TTC'); if(out.ht!==null&&out.vat!==null&&out.ttc!==null&&out.ht+out.vat!==out.ttc)throw Error('HT + TVA différent du TTC'); return out; }
   function validate(input) {
     var inv={supplier:text(input.supplier),account:text(input.account),number:text(input.number),date:date(input.date),period:month(input.period),totals:amounts(input.totals||{}),note:text(input.note)};
-    if(!['intermarche','easypark'].includes(inv.supplier)||!inv.account)throw Error('Fournisseur et compte client requis');
+    if(!['intermarche','easypark','other'].includes(inv.supplier)||!inv.account)throw Error('Fournisseur et compte client requis');
     if(!Array.isArray(input.lines)||!input.lines.length||input.lines.length>100)throw Error('De 1 à 100 opérations par facture');
     inv.lines=input.lines.map(function(l,i){
       if(!categories[l.category])throw Error('Catégorie inconnue');

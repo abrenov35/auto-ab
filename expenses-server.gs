@@ -57,7 +57,7 @@ function depHandle_(ss,p) {
   if(p.action==='readExpenses'){
     var sh=ss.getSheetByName('Dépenses journal'),last=sh?sh.getLastRow():0;
     // The journal is append-only: every mutation changes the cache key.
-    var cache=CacheService.getScriptCache(),key='AUTO_AB_DEP_READ_V2_'+CONFIG.SHEET_ID+'_'+last;
+    var cache=CacheService.getScriptCache(),key='AUTO_AB_DEP_READ_V3_'+CONFIG.SHEET_ID+'_'+last;
     var cached=cache.get(key);
     if(cached)return ContentService.createTextOutput(cached).setMimeType(ContentService.MimeType.JSON);
     var events=last<2?[]:sh.getRange(2,1,last-1,1).getValues().map(function(r){return JSON.parse(r[0]);});
@@ -166,5 +166,5 @@ function depManual_(ss,m,snap){
 
 // Return the confirmed journal state without a second spreadsheet read.
 function depResult_(events){
-  return Object.assign({ok:true,version:1,manualEntry:true,manualMaintenanceDate:true,driverArchiving:true},depSnapshot_(events));
+  return Object.assign({ok:true,version:1,manualEntry:true,manualMaintenanceDate:true,driverArchiving:true,genericInvoices:true},depSnapshot_(events));
 }
