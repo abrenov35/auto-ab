@@ -47,7 +47,7 @@ function monthSelector(){
 function render(){
  if(error)return title('Dépenses',error)+btn('Réessayer','reload');
  if(!data)return '<div class="loading"><span class="spinner"></span> Chargement des dépenses…</div>';
- if(draft)return renderDraft();if(selected)return renderInvoice();if(documentsView)return renderDocuments();
+ if(draft?.kind==='invoice'&&draft.unified){queueMicrotask(syncImportDialog);return title('Importer un justificatif','Lecture, vérification et classement');}if(draft)return renderDraft();if(selected)return renderInvoice();if(documentsView)return renderDocuments();
  const lines=P.select(data,filter),sum=R.summary(lines,'ht'),coverage=P.status(data,filter,todayParis());
  const linked=new Set(data.invoices.filter(i=>i.status!=='cancelled').flatMap(i=>i.lines.map(l=>l.maintenanceId).filter(Boolean)));
  const old=list('maintenance').filter(m=>!linked.has(String(m.id))&&m.montant!==''&&m.montant!==null&&m.montant!==undefined&&(filter.annual?(iso(m.date).startsWith(filter.month.slice(0,4))):iso(m.date).startsWith(filter.month))&&(!filter.plate||R.plate(m.immatriculation)===filter.plate)&&!filter.personId);
@@ -153,7 +153,7 @@ async function readInvoice(){
  const show=message=>{if(progress){progress.textContent=message;progress.append(document.createTextNode(' '));const cancel=document.createElement('button');cancel.type='button';cancel.dataset.exp='cancelOcr';cancel.className='button secondary';cancel.textContent='Annuler la lecture';progress.append(cancel);}};
  try{
   show('Préparation de la lecture…');
-  if(!importModules)importModules=(async()=>{for(const src of ['expenses-import.js?v=1','expenses-reader.js?v=1'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error('Module de lecture indisponible'));};document.head.append(s);});})();
+  if(!importModules)importModules=(async()=>{for(const src of ['expenses-import.js?v=2','expenses-reader.js?v=1'])await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error('Module de lecture indisponible'));};document.head.append(s);});})();
   await importModules;const pages=await window.ExpenseReader.read(draft.files,show,ocrController.signal);if(draft!==targetDraft||state.token!==sessionToken)return;const parsed=ExpenseImport.parse(draft.invoice.supplier,pages);
   parsed.invoice.lines=parsed.invoice.lines.map(l=>{const known=list('vehicules').find(v=>R.plate(v.immatriculation)===l.sourcePlate);if(known)l.plate=R.plate(known.immatriculation);const person=data.people.find(p=>p.reference===l.externalId&&l.externalId);if(person)l.personId=person.id;return R.mapped(l,parsed.invoice,data.mappings);});
   if(!parsed.invoice.lines.length)throw Error('Aucune opération reconnue. La saisie actuelle est conservée ; complétez-la depuis le justificatif.');
@@ -176,7 +176,7 @@ async function loadExpenses({fresh=false}={}){
  })();
  expenseLoad=promise;return data&&!fresh?Promise.resolve():promise;
 }
-function renderApp(){if(state.view==='expenses'&&state.token!=="")window.render();}
+function renderApp(){if(!draft?.unified)document.getElementById('expenseImportDialog')?.remove();if(state.view==='expenses'&&state.token!=="")window.render();}
 async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{const result=await request(action,{...payload,requestId:pending.id});loadEpoch++;expenseLoad=null;loadingExpenses=false;data=requireSnapshot(result.snapshot||await request('readExpenses',{fresh:true}));try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token:state.token,at:Date.now(),data}));}catch{}pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
 
 function openManual(category,invoice){
@@ -238,7 +238,7 @@ async function deleteManual(form){
  }finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
 }
 
-async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
+async function handle(act,el){if(act==='closeImport'){if(busy||reading)return;draft=null;renderApp();return;}if(act==='cancelOcr'){ocrController?.abort();return;}if(busy||reading)return;
  if(act==='documents'){if(el?.dataset.category)documentFilter.category=el.dataset.category;documentsView=true;draft=null;selected='';renderApp();return;}
  if(!data&&!['reload','resetFilters','closeDocumentViewer','closeDocuments'].includes(act)){toast(error||'Les dépenses sont encore en cours de chargement.',true);return;}
  if(act==='viewDocument'){viewDocument(el.dataset.id,el.dataset.document);return;}
@@ -264,13 +264,13 @@ async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();retur
  if(act==='closeManual'){document.getElementById('expenseManualDialog')?.close();return;}
  if(['manualFuel','manualParking','manualMaintenance'].includes(act)){openManual({manualFuel:'fuel',manualParking:'parking',manualMaintenance:'maintenance'}[act]);return;}
  if(act==='edit'&&data.invoices.find(i=>i.id===selected)?.supplier==='manual'){const i=data.invoices.find(i=>i.id===selected);openManual(i.lines[0].category,i);return;}
- if(act==='readInvoice'){collect();if(draft.invoice.supplier==='other'){toast('Renseignez les données extraites du justificatif, puis vérifiez les montants.');return;}return readInvoice();}
+ if(act==='readInvoice'){if(draft.importType==='ct')return readControl();collect();return readInvoice();}
  if(act==='csv'||act==='pdf'){exportView(act);return;}
  if(act==='createReadPerson'){collect();const l=draft.invoice.lines[Number(el.dataset.index)];if(!l?.sourcePerson||!l.externalId)return;if(!confirm('Ajouter '+l.sourcePerson+' avec la référence '+l.externalId+' ?'))return;const existing=data.people.find(p=>p.reference===l.externalId);if(existing)l.personId=existing.id;else if(await mutate('saveExpensePerson',{name:l.sourcePerson,reference:l.externalId})){const person=data.people.find(p=>p.reference===l.externalId);if(person)draft.invoice.lines.forEach(x=>{if(x.externalId===l.externalId&&!x.personId)x.personId=person.id;});}renderApp();return;}
  if(act==='resetFilters'){filter={month:todayParis().slice(0,7),annual:false,plate:'',personId:'',category:'',unassigned:false};return loadExpenses({fresh:true});}
  if(act==='reload')return loadExpenses();
  if(act==='back'){if(draft?.kind==='invoice'&&!confirm('Quitter cette saisie non enregistrée ?'))return;draft=null;selected='';}
- if(act==='new'){draft={kind:'invoice',step:'edit',invoice:{supplier:'intermarche',account:'',number:'',date:todayParis(),period:filter.month,totals:{ht:null,vat:null,ttc:null},note:'',lines:[blankLine()]},files:[],reason:''};selected='';}
+ if(act==='new'){draft={kind:'invoice',unified:true,importType:'fuel',step:'edit',invoice:{supplier:'intermarche',account:'',number:'',date:todayParis(),period:filter.month,totals:{ht:null,vat:null,ttc:null},note:'',lines:[blankLine()]},files:[],reason:''};selected='';}
  if(act==='references'||act==='completion')draft={kind:act};
  if(act==='invoice'){if(!el.dataset.id)return;selected=el.dataset.id;}
  if(act==='category')filter.category=el.dataset.category;
@@ -289,6 +289,7 @@ async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();retur
 }
 async function submit(form){
  if(busy||reading)return;
+ if(form.id==='expenseControl')return submitControl();
  if(form.id==='expenseManual')return submitManual(form);
  if(form.id==='expenseDraft'){collect();const validated=R.validate(draft.invoice);draft.invoice={...draft.invoice,...validated};if(!draft.invoice.id&&!draft.files.length)throw Error('Joindre la facture');for(const f of draft.files)if(f.size>5*1024*1024||(!draft.invoice.id&&!['application/pdf','image/jpeg','image/png'].includes(f.type)))throw Error('Justificatif PDF/JPG/PNG, 5 Mo maximum');draft.step='review';renderApp();return;}
  if(form.id==='expenseCommit'){
@@ -322,6 +323,27 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{const el=e.target.closest('[data-exp]');if(el){e.preventDefault();handle(el.dataset.exp,el).catch(e=>toast(e.message,true));}});
 document.addEventListener('submit',e=>{if(e.target.id.startsWith('expense')){e.preventDefault();if(e.target.reportValidity())submit(e.target).catch(e=>toast(e.message,true));}});
 document.addEventListener('change',e=>{if(e.target.closest('#expenseDocumentsFilters')){documentFilter={...documentFilter,...Object.fromEntries(new FormData(e.target.closest('form')))};renderApp();}else if(e.target.closest('#expenseFilters')){filter={...filter,...Object.fromEntries(new FormData($('#expenseFilters')))};filter.annual=filter.annual==='yes';if(e.target.name==='plate'&&filter.plate)filter.personId='';if(e.target.name==='personId'&&filter.personId)filter.plate='';renderApp();}else if(e.target.name==='category'&&e.target.closest('#expenseDraft')){collect();renderApp();}else if(e.target.name==='category'&&!e.target.closest('#expenseDraft')){filter.category=e.target.value;renderApp();}});
+
+function syncImportDialog(){
+ if(!draft?.unified||state.view!=='expenses')return;
+ let dialog=document.getElementById('expenseImportDialog');
+ if(!dialog){dialog=document.createElement('dialog');dialog.id='expenseImportDialog';dialog.setAttribute('aria-label','Importer un justificatif');dialog.addEventListener('cancel',e=>{e.preventDefault();handle('closeImport');});document.body.append(dialog);}
+ const types=[['ct','Contrôle technique'],['maintenance','Révision / entretien'],['fuel','Carburant'],['parking','Stationnement']];
+ const choices='<div class="import-types">'+types.map(([value,label])=>'<label><input type="radio" name="importType" value="'+value+'" '+(draft.importType===value?'checked':'')+' '+(reading||busy||draft.step==='review'?'disabled':'')+'> '+E(label)+'</label>').join('')+'</div>';
+ const content=draft.importType==='ct'?renderControlDraft():renderDraft();
+ dialog.innerHTML='<div class="dialog-header"><h2>Importer un justificatif</h2>'+btn('Fermer','closeImport')+'</div><div class="unified-import-content">'+choices+content+'</div>';
+ if(!dialog.open)dialog.showModal();
+}
+function renderControlDraft(){const c=draft.control||{};return '<form id="expenseControl" class="expense-grid"><label class="field">Procès-verbal · PDF, JPG ou PNG, 5 Mo<input type="file" name="controlFile" accept="application/pdf,image/jpeg,image/png"></label><p>'+E(draft.files.map(f=>f.name).join(' · '))+'</p>'+btn('Lire le justificatif','readInvoice')+'<p id="expenseOcrProgress" role="status"></p>'+select('Véhicule','plate',vehicles(),c.plate||'')+input('Date du contrôle effectué','last',c.last||'','date',true)+input('Prochain contrôle indiqué sur le PV','next',c.next||'','date',true)+'<p class="hint">Complétez les champs non reconnus et vérifiez les dates sur le procès-verbal.</p><label><input type="checkbox" name="verified" required> J’ai vérifié le véhicule et les dates.</label><button class="button primary">Valider et classer</button></form>';}
+function collectControl(){const form=document.getElementById('expenseControl');if(!form)return;const fd=new FormData(form);draft.control={...draft.control,plate:String(fd.get('plate')||''),last:String(fd.get('last')||''),next:String(fd.get('next')||'')};const file=fd.get('controlFile');if(file?.size)draft.files=[file];}
+async function ensureImportReader(){if(!importModules)importModules=(async()=>{for(const src of ['expenses-import.js?v=2','expenses-reader.js?v=1'])await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>{importModules=null;reject(Error('Module de lecture indisponible'));};document.head.append(script);});})();return importModules;}
+async function readControl(){collectControl();if(!draft.files.length)throw Error('Joindre le procès-verbal.');const target=draft;reading=true;ocrController=new AbortController();try{await ensureImportReader();const pages=await ExpenseReader.read(draft.files,message=>{const p=document.getElementById('expenseOcrProgress');if(p)p.textContent=message;},ocrController.signal);if(draft!==target)return;const result=ExpenseImport.control(pages);const known=list('vehicules').find(v=>R.plate(v.immatriculation)===R.plate(result.plate));draft.control={plate:known?R.plate(known.immatriculation):'',last:result.last,next:result.next};toast('Lecture terminée. Complétez et vérifiez les données proposées.');}finally{reading=false;ocrController=null;renderApp();}}
+async function submitControl(){collectControl();const c=draft.control,file=draft.files[0];if(!c.plate||!c.last||!c.next||!file)throw Error('Véhicule, dates et procès-verbal requis.');if(c.next<=c.last)throw Error('La prochaine échéance doit être après le contrôle effectué.');if(file.size>5*1024*1024)throw Error('Fichier limité à 5 Mo.');busy=true;try{
+ if(!draft.controlDatesSaved){await request(activeCt(c.plate)?'updateControleTk':'createControleTk',{immatriculation:c.plate,dernierDate:c.last,prochainDate:c.next});draft.controlDatesSaved=true;}
+ await request('uploadCtFile',{immatriculation:c.plate,fileName:file.name,nom:file.name,mimeType:file.type,date:c.last,fileBase64:await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(Error('Lecture du fichier impossible'));reader.readAsDataURL(file);})});draft=null;toast('Contrôle et justificatif enregistrés dans la fiche du véhicule.');load({quiet:true});
+ }catch(e){throw Error(e.message+(draft?.controlDatesSaved?' Les dates sont enregistrées ; réessayez pour joindre le PV.':''));}finally{busy=false;renderApp();}}
+document.addEventListener('change',e=>{if(e.target.name!=='importType'||!draft?.unified)return;if(draft.importType==='ct')collectControl();else collect();draft.importType=e.target.value;draft.step='edit';if(draft.importType!=='ct'){draft.invoice.supplier={fuel:'intermarche',parking:'easypark',maintenance:'other'}[draft.importType];draft.invoice.lines.forEach(l=>l.category=draft.importType);}renderApp();});
+
 return {render,open:loadExpenses,action:handle,home(){draft=null;selected='';documentsView=false;renderApp();},allowLeave(){if(busy||reading){toast('Enregistrement en cours. Attendez la réponse du serveur.',true);return false;}if(draft?.kind==='invoice'){if(!confirm('Quitter la saisie non enregistrée ?'))return false;draft=null;}return true;},reset(){defaultMonthChosen=false;sessionStorage.removeItem('autoAbExpenseDisplay');loadEpoch++;expenseLoad=null;loadingExpenses=false;ocrController?.abort();data=null;draft=null;selected='';documentsView=false;pending=null;error='';}};
 })();
 
