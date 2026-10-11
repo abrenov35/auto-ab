@@ -1,4 +1,4 @@
-/* Loaded only when Dépenses is opened. No expenses persisted in browser storage. */
+/* Shared journal is authoritative; session snapshot is only a display cache. */
 window.Expenses=(function(){
 'use strict';
 const R=ExpenseRules,P=ExpenseReport,E=escapeHtml;
@@ -161,16 +161,18 @@ async function readInvoice(){
 }
 async function loadExpenses({fresh=false}={}){
  if(expenseLoad)return expenseLoad;
- const token=state.token,epoch=loadEpoch;error='';loadingExpenses=true;renderApp();
+ const token=state.token,epoch=loadEpoch;error='';
+ if(!data&&!fresh){try{const cached=JSON.parse(sessionStorage.getItem('autoAbExpenseDisplay')||'null');if(cached?.token===token&&Date.now()-cached.at<86400000)data=cached.data;}catch{}}
+ loadingExpenses=true;renderApp();
  const promise=(async()=>{
-  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch)data=result;}
+  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch){data=result;try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token,at:Date.now(),data}));}catch{}}}
   catch(e){if(state.token!==token||loadEpoch!==epoch)return;const message=e.message.includes('Action')?'Le serveur Dépenses doit être déployé avant utilisation.':e.message;if(data)toast('Actualisation impossible. Les dernières données affichées sont conservées. '+message,true);else error=message;}
   finally{if(loadEpoch===epoch){loadingExpenses=false;expenseLoad=null;renderApp();}}
  })();
- expenseLoad=promise;return promise;
+ expenseLoad=promise;return data&&!fresh?Promise.resolve():promise;
 }
 function renderApp(){if(state.view==='expenses'&&state.token!=="")window.render();}
-async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{const result=await request(action,{...payload,requestId:pending.id});loadEpoch++;expenseLoad=null;loadingExpenses=false;data=result.snapshot||await request('readExpenses',{fresh:true});pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
+async function mutate(action,payload){if(busy)return false;busy=true;const signature=JSON.stringify({action,payload});if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};try{const result=await request(action,{...payload,requestId:pending.id});loadEpoch++;expenseLoad=null;loadingExpenses=false;data=result.snapshot||await request('readExpenses',{fresh:true});try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token:state.token,at:Date.now(),data}));}catch{}pending=null;return true;}catch(e){toast(e.message+' Si la réponse est incertaine, réessayez sans modifier la saisie.',true);return false;}finally{busy=false;}}
 
 function openManual(category,invoice){
  if(!data.manualEntry){toast('La mise à jour du serveur de saisie doit être publiée.',true);return;}
@@ -314,6 +316,6 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{const el=e.target.closest('[data-exp]');if(el){e.preventDefault();handle(el.dataset.exp,el).catch(e=>toast(e.message,true));}});
 document.addEventListener('submit',e=>{if(e.target.id.startsWith('expense')){e.preventDefault();if(e.target.reportValidity())submit(e.target).catch(e=>toast(e.message,true));}});
 document.addEventListener('change',e=>{if(e.target.closest('#expenseDocumentsFilters')){documentFilter={...documentFilter,...Object.fromEntries(new FormData(e.target.closest('form')))};renderApp();}else if(e.target.closest('#expenseFilters')){filter={...filter,...Object.fromEntries(new FormData($('#expenseFilters')))};filter.annual=filter.annual==='yes';if(e.target.name==='plate'&&filter.plate)filter.personId='';if(e.target.name==='personId'&&filter.personId)filter.plate='';renderApp();}else if(e.target.name==='category'&&e.target.closest('#expenseDraft')){collect();renderApp();}else if(e.target.name==='category'&&!e.target.closest('#expenseDraft')){filter.category=e.target.value;renderApp();}});
-return {render,open:loadExpenses,action:handle,home(){draft=null;selected='';documentsView=false;renderApp();},allowLeave(){if(busy||reading){toast('Enregistrement en cours. Attendez la réponse du serveur.',true);return false;}if(draft?.kind==='invoice'){if(!confirm('Quitter la saisie non enregistrée ?'))return false;draft=null;}return true;},reset(){loadEpoch++;expenseLoad=null;loadingExpenses=false;ocrController?.abort();data=null;draft=null;selected='';documentsView=false;pending=null;error='';}};
+return {render,open:loadExpenses,action:handle,home(){draft=null;selected='';documentsView=false;renderApp();},allowLeave(){if(busy||reading){toast('Enregistrement en cours. Attendez la réponse du serveur.',true);return false;}if(draft?.kind==='invoice'){if(!confirm('Quitter la saisie non enregistrée ?'))return false;draft=null;}return true;},reset(){sessionStorage.removeItem('autoAbExpenseDisplay');loadEpoch++;expenseLoad=null;loadingExpenses=false;ocrController?.abort();data=null;draft=null;selected='';documentsView=false;pending=null;error='';}};
 })();
 
