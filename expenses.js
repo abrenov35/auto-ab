@@ -3,7 +3,7 @@ window.Expenses=(function(){
 'use strict';
 const R=ExpenseRules,P=ExpenseReport,E=escapeHtml;
 let data=null,error='',busy=false,reading=false,draft=null,selected='',filter={month:todayParis().slice(0,7),annual:false,plate:'',personId:'',category:'',unassigned:false},pending=null;
-let documentsView=false,documentFilter={category:'fuel',month:todayParis().slice(0,7),plate:'',query:''};
+let documentsView=false,documentFilter={category:'fuel',month:todayParis().slice(0,7),plate:'',personId:''};
 let importModules,ocrController,loadingExpenses=false,expenseLoad=null,loadEpoch=0;
 const euro=n=>(n/100).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
 const supplier=s=>s==='manual'?'Saisie manuelle':s==='intermarche'?'Intermarché':s==='easypark'?'EasyPark':'Autre fournisseur';
@@ -71,16 +71,14 @@ function render(){
  '';
 }
 function renderDocuments(){
- const f=documentFilter,maintenance=f.category==='maintenance',q=R.key(f.query);
+ const f=documentFilter,maintenance=f.category==='maintenance';
  const entries=[];
  for(const invoice of data.invoices.filter(i=>i.status!=='cancelled')){
-  const lines=invoice.lines.filter(l=>(!f.category||l.category===f.category)&&(!maintenance||!f.plate||R.plate(l.plate)===f.plate));
+  const lines=invoice.lines.filter(l=>(!f.category||l.category===f.category)&&(maintenance?(!f.plate||R.plate(l.plate)===f.plate):(!f.personId||(f.personId==='unassigned'?!l.personId&&l.scope!=='common':f.personId==='common'?l.scope==='common':l.personId===f.personId))));
   if(!lines.length)continue;
   for(const doc of invoice.documents||[]){
-   const search=R.key([doc.name,invoice.number,invoice.account,invoice.note,...lines.flatMap(l=>[l.label,l.plate,assignmentLabel(l)])].join(' '));
-   if(q&&!search.includes(q))continue;
-   const plates=maintenance?[...new Set(lines.map(l=>l.plate||''))]:[''];
-   for(const plate of plates)entries.push({invoice,doc,plate,lines:maintenance?lines.filter(l=>(l.plate||'')===plate):lines});
+   const plates=maintenance?[...new Set(lines.map(l=>l.plate||''))]:[...new Set(lines.map(l=>l.scope==='common'?'common':l.personId||'unassigned'))];
+   for(const plate of plates)entries.push({invoice,doc,plate,lines:lines.filter(l=>maintenance?(l.plate||'')===plate:(l.scope==='common'?'common':l.personId||'unassigned')===plate)});
   }
  }
  const entryMonth=x=>x.invoice.period||x.lines[0]?.month||String(x.invoice.date).slice(0,7);
@@ -90,10 +88,10 @@ function renderDocuments(){
  if(maintenance){
   const groups=[...new Set(entries.map(x=>x.plate))].sort((a,b)=>a.localeCompare(b,'fr'));
   body=groups.map(plate=>{const v=list('vehicules').find(v=>R.plate(v.immatriculation)===R.plate(plate));return '<section class="panel"><h2>'+E(plate?(v?[v.marque,v.modele,v.immatriculation].filter(Boolean).join(' · '):plate):'Non défini')+'</h2>'+entries.filter(x=>x.plate===plate).map(row).join('')+'</section>';}).join('');
- }else{const months=[...new Set(entries.map(entryMonth))].sort((a,b)=>b.localeCompare(a));body=months.map(month=>'<section class="panel"><h2>'+E(new Date(month+'-01T12:00:00').toLocaleDateString('fr-FR',{month:'long',year:'numeric'}))+'</h2>'+entries.filter(x=>entryMonth(x)===month).map(row).join('')+'</section>').join('');}
+ }else{const driverLabel=id=>id==='common'?'Frais communs':data.people.find(p=>p.id===id)?.name||'Non défini';const drivers=[...new Set(entries.map(x=>x.plate))].sort((a,b)=>driverLabel(a).localeCompare(driverLabel(b),'fr'));body=drivers.map(id=>{const rows=entries.filter(x=>x.plate===id),months=[...new Set(rows.map(entryMonth))].sort((a,b)=>b.localeCompare(a));return '<section class="panel"><h2>'+E(driverLabel(id))+'</h2>'+months.map(month=>'<h3>'+E(new Date(month+'-01T12:00:00').toLocaleDateString('fr-FR',{month:'long',year:'numeric'}))+'</h3>'+rows.filter(x=>entryMonth(x)===month).map(row).join('')).join('')+'</section>';}).join('');}
  return title({fuel:'Carburant',parking:'Stationnement',maintenance:'Entretiens'}[f.category]||'Documents','Justificatifs et dépenses liées · HT','')+
- '<form id="expenseDocumentsFilters" class="expense-filters">'+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):'')+input('Rechercher','query',f.query)+'</form>'+
- '<p class="hint">Supprimer retire le justificatif de cette liste et toutes les opérations de sa facture des KPI. L’historique est conservé.</p>'+(entries.length?body:'<section class="panel"><p class="empty">Aucun justificatif pour cette recherche.</p></section>');
+ '<form id="expenseDocumentsFilters" class="expense-filters">'+(maintenance?select('Véhicule','plate',[['','Tous les véhicules'],...vehicles().slice(1)],f.plate):select('Conducteur','personId',[['','Tous les conducteurs'],...data.people.map(p=>[p.id,p.name]).sort((a,b)=>a[1].localeCompare(b[1],'fr')),['unassigned','Non défini'],['common','Frais communs']],f.personId||''))+'</form>'+
+ '<p class="hint">Supprimer retire le justificatif de cette liste et toutes les opérations de sa facture des KPI. L’historique est conservé.</p>'+(entries.length?body:'<section class="panel"><p class="empty">Aucun justificatif pour cette sélection.</p></section>');
 }
 function viewDocument(invoiceId,documentId){
  const invoice=data.invoices.find(i=>i.id===invoiceId),doc=invoice?.documents.find(d=>(d.id||d.url)===documentId);
