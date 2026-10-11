@@ -134,7 +134,7 @@ async function load({quiet=false}={}){
 let expensesLoading;
 async function openExpenses(){
  state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=2","expenses.js?v=35"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=2","expenses.js?v=37"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
@@ -438,7 +438,7 @@ async function runAction(el){
 }
 document.addEventListener("click",e=>{
   const button=e.target.closest("[data-action]");if(button)return runAction(button);
-  const tab=e.target.closest("[data-view]");if(tab){if(state.view==="expenses"&&window.Expenses&&!window.Expenses.allowLeave())return;state.vehicle=null;if(tab.dataset.view==="expenses")openExpenses();else if(tab.dataset.view==="settings")openSettings();else{state.view=tab.dataset.view;render()}scrollTo(0,0)}
+  const tab=e.target.closest("[data-view]");if(tab){if(state.view==="expenses"&&window.Expenses&&!window.Expenses.allowLeave())return;state.vehicle=null;if(tab.dataset.view==="expenses"){window.Expenses?.home();openExpenses();}else if(tab.dataset.view==="settings")openSettings();else{state.view=tab.dataset.view;render()}scrollTo(0,0)}
 });
 document.addEventListener("submit",async e=>{
   if(e.target.id==="mailSettingsForm"){
