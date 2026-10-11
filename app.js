@@ -235,7 +235,7 @@ async function openSettings(){
   catch(e){toast(e.message,true)}
 }
 function action(label,act,plate,kind="secondary"){return '<button type="button" class="button '+kind+'" data-action="'+escapeHtml(act)+'" data-plate="'+escapeHtml(plate)+'">'+escapeHtml(label)+'</button>'}
-function ackButton(plate,type,date,id,acquit){return '<button type="button" class="button quiet" data-action="ackMail" data-plate="'+escapeHtml(plate)+'" data-type="'+escapeHtml(type)+'" data-date="'+escapeHtml(date)+'" data-id="'+escapeHtml(id||"")+'" data-acquit="'+Boolean(acquit)+'">'+(acquit?"Réactiver les mails":"J’ai pris en charge")+'</button>'}
+function ackButton(plate,type,date,id,acquit){if(!acquit)return '';return '<button type="button" class="button quiet" data-action="ackMail" data-plate="'+escapeHtml(plate)+'" data-type="'+escapeHtml(type)+'" data-date="'+escapeHtml(date)+'" data-id="'+escapeHtml(id||"")+'" data-acquit="'+Boolean(acquit)+'">'+"Réactiver les mails"+'</button>'}
 function renderDashboard(){
   const vehicles=list("vehicules").filter(v=>!archived(v)),alerts=alertItems();
   const late=alerts.filter(x=>x.n<0),soon=alerts.filter(x=>x.n>=0);
