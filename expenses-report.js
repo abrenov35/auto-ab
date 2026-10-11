@@ -3,7 +3,7 @@ var ExpenseReport=(function(){
  'use strict';
  const R=typeof ExpenseRules!=='undefined'?ExpenseRules:require('./expenses-core');
  function shift(month,offset){R.month(month);const [y,m]=month.split('-').map(Number),d=new Date(Date.UTC(y,m-1+offset,1));return d.toISOString().slice(0,7);}
- function months(f){return f.annual?Array.from({length:Number(f.month.slice(5))},(_,i)=>f.month.slice(0,4)+'-'+String(i+1).padStart(2,'0')):[f.month];}
+ function months(f){return f.annual?Array.from({length:12},(_,i)=>f.month.slice(0,4)+'-'+String(i+1).padStart(2,'0')):[f.month];}
  function select(data,f){const allowed=new Set(months(f));return R.select(data.invoices,f).filter(l=>allowed.has(l.month));}
  function status(data,f,today){
   const sources=f.category==='fuel'?['intermarche']:['parking','service','subscription'].includes(f.category)?['easypark']:['intermarche','easypark'];
@@ -22,7 +22,7 @@ var ExpenseReport=(function(){
   return {complete:!reasons.length,reasons:[...new Set(reasons)],lines,sum};
  }
  function compare(data,f,offset,today){const current=status(data,f,today),previous=status(data,{...f,month:shift(f.month,offset)},today);const eligible=current.complete&&previous.complete;const delta=current.sum.total-previous.sum.total;return {current,previous,eligible,delta:eligible?delta:null,percent:eligible&&previous.sum.total>0?delta/previous.sum.total*100:null};}
- function trend(data,f,today){return Array.from({length:12},(_,i)=>{const month=shift(f.month,i-11);return {month,...status(data,{...f,month,annual:false},today)};});}
+ function trend(data,f,today){return Array.from({length:12},(_,i)=>{const month=f.annual?f.month.slice(0,4)+'-'+String(i+1).padStart(2,'0'):shift(f.month,i-11);return {month,...status(data,{...f,month,annual:false},today)};});}
  function csvCell(v){let s=String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
  function csv(rows){return '\uFEFF'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n');}
  // Small, dependency-free PDF, A4 landscape, Helvetica with WinAnsi encoding.
