@@ -168,3 +168,5 @@ dialog.expense-delete-confirm{position:fixed;inset:0;margin:auto;width:min(420px
 
 /* Pastel backgrounds show vehicle deadline status. */
 .vehicle-row.alert{background:#fff0da;border-color:#e9c99e;border-left-color:#d57c10}.vehicle-row.alert:hover{background:#ffe7c3;border-color:#d9ab6d}.vehicle-row.overdue{background:#fde5e5;border-color:#e7b4b4;border-left-color:#bb352a}.vehicle-row.overdue:hover{background:#fbd7d7;border-color:#d99595}
+
+.tabs .alert-tab{background:#fde5e5;color:#9a2525;border-radius:5px 5px 0 0;border-bottom-color:#df9d9d}.tabs .alert-tab:hover{background:#fbd5d5}.tabs .alert-tab.active{background:#f6c3c3;color:#821e1e;border-bottom-color:#b42318}
