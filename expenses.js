@@ -82,6 +82,7 @@ function renderDocuments(){
   }
  }
  const entryMonth=x=>x.invoice.period||x.lines[0]?.month||String(x.invoice.date).slice(0,7);
+ for(let i=entries.length-1;i>=0;i--){const amount=R.summary(entries[i].lines,'ht');if(amount.total===0&&!amount.missing)entries.splice(i,1);}
  entries.sort((a,b)=>entryMonth(b).localeCompare(entryMonth(a))||String(b.invoice.date).localeCompare(String(a.invoice.date))||String(a.doc.name).localeCompare(String(b.doc.name),'fr'));
  const row=x=>{const url=safeLink(x.doc.url),total=R.summary(x.lines,'ht'),labels=[...new Set(x.lines.map(l=>l.label||assignmentLabel(l)))],summary=maintenance?labels.join(' · '):R.categories[f.category]+' · '+x.lines.length+' opération'+(x.lines.length>1?'s':'');const caption=(x.invoice.number?'Facture '+x.invoice.number:x.doc.name)+' · '+summary;return '<article class="expense-document-row"><small>'+E(dateView(x.invoice.date))+'</small><span class="expense-document-caption" title="'+E(x.doc.name+' · '+labels.join(' · '))+'">'+E(caption)+'</span><span>'+E(euro(total.total))+' HT'+(total.missing?' · partiel':'')+'</span><span class="row-actions">'+(url?btn('Voir','viewDocument','data-id="'+E(x.invoice.id)+'" data-document="'+E(x.doc.id||x.doc.url)+'"'):'<span>Document indisponible</span>')+btn('Supprimer','deleteDocument','data-id="'+E(x.invoice.id)+'"')+'</span></article>';};
  let body='';
@@ -168,7 +169,7 @@ async function loadExpenses({fresh=false}={}){
  if(!data&&!fresh){try{const cached=JSON.parse(sessionStorage.getItem('autoAbExpenseDisplay')||'null');if(cached?.token===token&&Date.now()-cached.at<86400000&&validSnapshot(cached.data))data=cached.data;}catch{}}
  loadingExpenses=true;renderApp();
  const promise=(async()=>{
-  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch){data=requireSnapshot(result);try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token,at:Date.now(),data}));}catch{}}}
+  try{const result=await request('readExpenses',{fresh});if(state.token===token&&loadEpoch===epoch){const firstLoad=!data;data=requireSnapshot(result);if(firstLoad&&!filter.annual){const months=[...new Set(data.invoices.filter(i=>i.status!=='cancelled').flatMap(i=>i.lines.map(l=>l.month)))].sort((a,b)=>b.localeCompare(a));const latest=months.find(month=>{const sum=R.summary(P.select(data,{...filter,month}),'ht');return sum.total!==0||sum.missing;});if(latest)filter.month=latest;}try{sessionStorage.setItem('autoAbExpenseDisplay',JSON.stringify({token,at:Date.now(),data}));}catch{}}}
   catch(e){if(state.token!==token||loadEpoch!==epoch)return;const message=e.message.includes('Action')?'Le serveur Dépenses doit être déployé avant utilisation.':e.message;if(data)toast('Actualisation impossible. Les dernières données affichées sont conservées. '+message,true);else error=message;}
   finally{if(loadEpoch===epoch){loadingExpenses=false;expenseLoad=null;renderApp();}}
  })();
