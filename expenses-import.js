@@ -97,10 +97,10 @@ function parkingTable(pages){
   scanned++;const name=row[1].trim(),start=row[3],end=row[4],amount=money(row[5]),key=norm(name).toLowerCase().split(/\s+/).sort().join(' ')+'|'+start.slice(0,7);
   let group=groups.get(key);if(!group){group={name,month:start.slice(0,7),start,end,total:0,rows:[]};groups.set(key,group);}group.start=start<group.start?start:group.start;group.end=end>group.end?end:group.end;group.total+=amount;group.rows.push({name,plate:row[2].toUpperCase(),start,end,amount});
  }
- i.account='Stationnement';i.lines=Array.from(groups.values(),g=>line({category:'parking',month:g.month,date:g.start,periodStart:g.start,periodEnd:g.end,label:'Stationnement · '+g.rows.length+' opérations',sourcePerson:g.name,amounts:{ht:explicitHT?g.total:null,vat:null,ttc:explicitTTC?g.total:null},sourceAmount:g.total,sourceAmountKind:explicitHT?'HT':explicitTTC?'TTC':'prix imprimé',sourceCount:g.rows.length,sourceRows:g.rows}));
+ i.account='Stationnement';i.lines=Array.from(groups.values(),g=>line({category:'parking',month:g.month,date:g.start,periodStart:g.start,periodEnd:g.end,label:'Stationnement · '+g.rows.length+' opérations',sourcePerson:g.name,amounts:{ht:explicitTTC?null:g.total,vat:null,ttc:explicitTTC?g.total:null},amountOrigin:explicitHT?'printed':'printed_price_to_verify',sourceAmount:g.total,sourceAmountKind:explicitHT?'HT':explicitTTC?'TTC':'prix imprimé',sourceCount:g.rows.length,sourceRows:g.rows}));
  i.period=i.lines[0]?.month||'';i.date=i.lines.reduce((last,l)=>l.periodEnd>last?l.periodEnd:last,'');
- const total=i.lines.reduce((sum,l)=>sum+l.sourceAmount,0);i.totals={ht:explicitHT?total:null,vat:null,ttc:explicitTTC?total:null};
- if(!explicitHT)warnings.push('La colonne Prix ne précise pas le HT. Les cumuls lus sont affichés ; compléter ou confirmer les montants HT.');
+ const total=i.lines.reduce((sum,l)=>sum+l.sourceAmount,0);i.totals={ht:explicitTTC?null:total,vat:null,ttc:explicitTTC?total:null};
+ if(!explicitHT)warnings.push('La colonne Prix ne précise pas le HT. Les cumuls sont proposés pour affectation ; vérifier leur nature HT/TTC avant validation.');
  if(scanned!==i.lines.reduce((sum,l)=>sum+l.sourceCount,0))warnings.push('Certaines opérations n’ont pas été intégrées au cumul.');
  i.note='Cumul des prix imprimés par utilisateur et par mois. '+(explicitHT?'Colonne HT reconnue.':'Nature HT/TTC à vérifier sur le justificatif.')+' '+i.lines.map(l=>l.sourcePerson+' : '+(l.sourceAmount/100).toFixed(2)+' EUR, '+l.sourceCount+' opérations ('+l.month+')').join(' ; ');
  return diagnostic(i,warnings,'printed_table');
