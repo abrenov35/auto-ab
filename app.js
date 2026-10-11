@@ -423,7 +423,7 @@ async function runAction(el){
   const mapping={archiveVehicle:"archiveVehicule",restoreVehicle:"restoreVehicule",archiveRevision:"archiveRevision",restoreRevision:"restoreRevision",
     archiveCt:"archiveControleTk",restoreCt:"restoreControleTk",archiveMaintenance:"archiveMaintenance",restoreMaintenance:"restoreMaintenance"};
   if(!mapping[action]||state.busy)return;
-  if(!confirm((action.startsWith("archive")?"Archiver":"Restaurer")+" cet élément ?"))return;
+  if(!await confirmCentered((action.startsWith("archive")?"Archiver":"Restaurer")+" cet élément ?",action.startsWith("archive")?"Archiver":"Restaurer"))return;
   state.busy=true;el.disabled=true;
   try{
     await request(mapping[action],{immatriculation:plate,id});
@@ -456,3 +456,5 @@ $("#editorForm").addEventListener("submit",submitForm);
 restoreParcCache();if(state.data)render();load({quiet:Boolean(state.data)});
 
 
+
+function confirmCentered(message,label){return new Promise(resolve=>{const dialog=document.createElement('dialog');dialog.className='expense-delete-confirm';dialog.setAttribute('aria-label',message);dialog.innerHTML='<div class="expense-delete-content"><h2>'+escapeHtml(message)+'</h2></div><div class="expense-delete-actions"><button type="button" class="button secondary" data-choice="no" autofocus>Annuler</button><button type="button" class="button primary" data-choice="yes">'+escapeHtml(label)+'</button></div>';let accepted=false;dialog.addEventListener('click',e=>{const button=e.target.closest('[data-choice]');if(button){accepted=button.dataset.choice==='yes';dialog.close();}});dialog.addEventListener('close',()=>{dialog.remove();resolve(accepted);},{once:true});document.body.append(dialog);dialog.showModal();});}
