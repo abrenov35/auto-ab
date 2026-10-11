@@ -131,15 +131,15 @@ async function load({quiet=false}={}){
     $("#app").innerHTML='<div class="notice error"><strong>Le parc ne peut pas être chargé</strong><p>'+escapeHtml(e.message)+'</p><button class="button primary" type="button" data-action="reload">Réessayer</button></div>';
   }
 }
-let expensesLoading;
-async function openExpenses(){
- state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=54"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;await window.Expenses.open();}
+let expensesLoading,expenseTab='',expenseNavigation=0;
+async function openExpenses(action,element){
+ const navigation=++expenseNavigation;expenseTab=action==='documents'?element.dataset.category:'';state.view="expenses";render();
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=55"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;if(navigation!==expenseNavigation||state.view!=="expenses")return;if(action)await window.Expenses.action(action,element);else window.Expenses.home();await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
   document.querySelector(".tabs").hidden=false;$("#refreshButton").hidden=false;$("#logoutButton").hidden=true;
-  $$(".tab").forEach(el=>el.classList.toggle("active",el.dataset.view===state.view));
+  $$(".tab").forEach(el=>el.classList.toggle("active",state.view==="expenses"?(el.dataset.expNav==="documents"?el.dataset.category===expenseTab:el.dataset.view==="expenses"&&!expenseTab):el.dataset.view===state.view));
   if(state.view==="detail"&&state.vehicle&&!vehicle(state.vehicle)){state.view="vehicles";state.vehicle=null}
   const syncNote=state.stale&&state.lastSync?'<div class="sync-note" role="status">'+(state.syncing?"Actualisation en cours… · ":"Dernière synchronisation : ")+new Date(state.lastSync).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+' · <button type="button" data-action="reload">Actualiser</button></div>':"";
   $("#app").innerHTML=syncNote+(state.view==="expenses"?(window.Expenses?window.Expenses.render():'<div class="loading">Chargement des dépenses…</div>'):state.view==="detail"?renderDetail():state.view==="vehicles"?renderVehicles():state.view==="settings"?renderSettings():renderDashboard());
@@ -438,7 +438,7 @@ async function runAction(el){
 }
 document.addEventListener("click",e=>{
   const button=e.target.closest("[data-action]");if(button)return runAction(button);
-  const expenseNav=e.target.closest("[data-exp-nav]");if(expenseNav){if(window.Expenses&&!window.Expenses.allowLeave())return;state.vehicle=null;openExpenses().then(()=>window.Expenses.action(expenseNav.dataset.expNav,expenseNav)).catch(err=>toast(err.message,true));scrollTo(0,0);return;}
+  const expenseNav=e.target.closest("[data-exp-nav]");if(expenseNav){if(window.Expenses&&!window.Expenses.allowLeave())return;state.vehicle=null;openExpenses(expenseNav.dataset.expNav,expenseNav).catch(err=>toast(err.message,true));scrollTo(0,0);return;}
   const tab=e.target.closest("[data-view]");if(tab){if(state.view==="expenses"&&window.Expenses&&!window.Expenses.allowLeave())return;state.vehicle=null;if(tab.dataset.view==="expenses"){window.Expenses?.home();openExpenses();}else if(tab.dataset.view==="settings")openSettings();else{state.view=tab.dataset.view;render()}scrollTo(0,0)}
 });
 document.addEventListener("submit",async e=>{
