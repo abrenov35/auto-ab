@@ -110,7 +110,7 @@ function generic(pages){
  const text=norm(pages.join('\n')),i=base('other'),warnings=[];
  const pick=pattern=>{const m=text.match(pattern);return m?money(m[1]):null;};
  i.number=(text.match(/(?:facture|invoice)\s*(?:n[o°]?|numero|#)?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-]{3,})/i)||[])[1]||'';
- i.date=labelledDate(text,"date de (?:la )?facture|date facture|facture du|facture en date du|date d['’]emission|emis le|etabli le|date|le");
+ i.date=labelledDate(text,"date de facturation|date de (?:la )?facture|date facture|facture du|facture en date du|date d['’]emission|emis le|etabli le|date|le");
  i.period=i.date.slice(0,7);
  i.totals.ht=pick(/(?:total\s*(?:net\s*)?(?:h\.?\s*t\.?|hors taxes))\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
  i.totals.ttc=pick(/(?:total\s*t\.?\s*t\.?\s*c\.?|net a payer)\s*[:€]?\s*([\d\s]+[,.]\d{2})/i);
