@@ -39,6 +39,8 @@ function monthOptions(){
 }
 
 function monthSelector(){
+ if(filter.annual){const years=[...new Set(monthOptions().map(([value])=>value.slice(0,4)))];return '<div class="field"><span id="expenseMonthLabel">Année</span><input type="hidden" name="month" value="'+E(filter.month)+'"><details class="expense-month-picker"><summary aria-labelledby="expenseMonthLabel expenseMonthValue"><span id="expenseMonthValue">'+E(filter.month.slice(0,4))+'</span><span aria-hidden="true">⌄</span></summary><div class="expense-month-menu"><div class="expense-month-list" aria-label="Choisir une année">'+years.map(year=>'<button type="button" data-exp="chooseYear" data-year="'+year+'"'+(year===filter.month.slice(0,4)?' aria-current="date"':'')+'>'+year+'</button>').join('')+'</div></div></details></div>';}
+
  const choices=monthOptions(),label=choices.find(([value])=>value===filter.month)?.[1]||filter.month;
  return '<div class="field"><span id="expenseMonthLabel">Mois</span><input type="hidden" name="month" value="'+E(filter.month)+'"><details class="expense-month-picker"><summary aria-labelledby="expenseMonthLabel expenseMonthValue"><span id="expenseMonthValue">'+E(label)+'</span><span aria-hidden="true">⌄</span></summary><div class="expense-month-menu"><button type="button" data-exp="scrollMonths" data-direction="-1" aria-label="Voir les mois antérieurs">▲</button><div class="expense-month-list" aria-label="Choisir un mois">'+choices.map(([value,text])=>'<button type="button" data-exp="chooseMonth" data-month="'+E(value)+'"'+(value===filter.month?' aria-current="date"':'')+'>'+E(text)+'</button>').join('')+'</div><button type="button" data-exp="scrollMonths" data-direction="1" aria-label="Voir les mois suivants">▼</button></div></details></div>';
 }
@@ -48,7 +50,7 @@ function render(){
  if(draft)return renderDraft();if(selected)return renderInvoice();if(documentsView)return renderDocuments();
  const lines=P.select(data,filter),sum=R.summary(lines,'ht'),coverage=P.status(data,filter,todayParis());
  const linked=new Set(data.invoices.filter(i=>i.status!=='cancelled').flatMap(i=>i.lines.map(l=>l.maintenanceId).filter(Boolean)));
- const old=list('maintenance').filter(m=>!linked.has(String(m.id))&&m.montant!==''&&m.montant!==null&&m.montant!==undefined&&(filter.annual?(iso(m.date).startsWith(filter.month.slice(0,4))&&iso(m.date).slice(0,7)<=filter.month):iso(m.date).startsWith(filter.month))&&(!filter.plate||R.plate(m.immatriculation)===filter.plate)&&!filter.personId);
+ const old=list('maintenance').filter(m=>!linked.has(String(m.id))&&m.montant!==''&&m.montant!==null&&m.montant!==undefined&&(filter.annual?(iso(m.date).startsWith(filter.month.slice(0,4))):iso(m.date).startsWith(filter.month))&&(!filter.plate||R.plate(m.immatriculation)===filter.plate)&&!filter.personId);
  const card=(label,category)=>{const f={...filter,category:category||filter.category},c=P.status(data,f,todayParis()),s=c.sum;const amount=!c.lines.length?euro(0):s.missing&&!c.lines.some(l=>l.amounts.ht!==null)?'HT à vérifier':euro(s.total);return '<button class="metric" type="button" data-exp="category" data-category="'+category+'"><b>'+amount+'</b><span>'+label+' · HT'+'</span></button>';};
  const months=P.months(filter);
  let completeness='';
@@ -112,7 +114,7 @@ function renderReporting(){
  return '<details class="panel"><summary>Évolution sur 12 mois et comparatifs HT</summary>'+comparisons+'<p class="hint">Cumul du 1er janvier au mois choisi. Les périodes incomplètes ne sont jamais présentées comme une baisse. Les totaux restent ceux des dépenses suivies.</p><div class="expense-trend">'+rows.map(x=>'<div class="expense-trend-row"><span>'+E(x.month)+'</span><meter min="0" max="'+maximum+'" value="'+Math.abs(x.sum.total)+'" aria-label="Amplitude du montant HT '+E(x.month)+'"></meter><strong>'+(E(euro(x.sum.total))+' HT')+'</strong><small>'+E(x.complete?'Validé':x.reasons.join(' · '))+'</small></div>').join('')+'</div></details>';
 }
 function exportView(kind){
- const c=P.status(data,filter,todayParis()),label=(filter.annual?'Janvier → ':'')+filter.month,person=data.people.find(p=>p.id===filter.personId);
+ const c=P.status(data,filter,todayParis()),label=(filter.annual?'Année '+filter.month.slice(0,4):filter.month),person=data.people.find(p=>p.id===filter.personId);
  const meta=['Dépenses suivies HT · '+label,'Véhicule : '+(filter.plate||'Tout le parc')+' · Personne : '+(person?person.name+' / '+person.reference:'Tout le monde'),'Catégorie : '+(R.categories[filter.category]||'Toutes')+' · Affectation : '+(filter.unassigned?'À affecter':'Toutes'),'État : '+(c.complete?'Imports validés':c.reasons.join(' · ')),'Total HT connu : '+euro(c.sum.total)+' · HT manquants : '+c.sum.missing,'Les montants absents ne sont pas assimilés à zéro.'];
  const header=['Date opération','Mois suivi','Fournisseur','Facture','Catégorie','Libellé','Véhicule','Personne','Référence personne','Affectation','Montant HT EUR','Litres achetés','Justificatif'];
  const rows=c.lines.map(l=>{const p=data.people.find(p=>p.id===l.personId),i=data.invoices.find(i=>i.id===l.invoiceId);return [l.date||'Période déclarée',l.month,supplier(l.supplier),l.number,R.categories[l.category],l.label,R.assignmentKind(l)==='driver'?'':l.plate,R.assignmentKind(l)==='vehicle'?'':p?.name||'',R.assignmentKind(l)==='vehicle'?'':p?.reference||'',l.scope==='common'?'Frais communs':R.needsAssignment(l)?'À affecter':'Affecté',l.amounts.ht===null?'HT manquant':(l.amounts.ht/100).toFixed(2).replace('.',','),l.litres??'',i?.documents.map(d=>safeLink(d.url)).filter(Boolean).join(' ')];});
@@ -236,6 +238,7 @@ async function handle(act,el){if(act==='cancelOcr'){ocrController?.abort();retur
  if(act==='closeDocuments'){documentsView=false;renderApp();return;}
  if(act==='deleteDocument')return deleteDocument(el.dataset.id);
  if(act==='toggleAnnual'){filter.annual=!filter.annual;renderApp();document.querySelector('[data-exp="toggleAnnual"]')?.focus();return;}
+ if(act==='chooseYear'){filter.month=el.dataset.year+'-'+filter.month.slice(5);renderApp();document.querySelector('.expense-month-picker summary')?.focus();return;}
  if(act==='chooseMonth'){filter.month=el.dataset.month;renderApp();document.querySelector('.expense-month-picker summary')?.focus();return;}
  if(act==='scrollMonths'){el.closest('.expense-month-menu').querySelector('.expense-month-list').scrollBy({top:Number(el.dataset.direction)*224,behavior:'smooth'});return;}
  if(act==='previousMonth'||act==='nextMonth'){
