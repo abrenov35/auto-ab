@@ -134,7 +134,7 @@ async function load({quiet=false}={}){
 let expensesLoading,expenseTab='',expenseNavigation=0;
 async function openExpenses(action,element){
  const navigation=++expenseNavigation;expenseTab=action==='documents'?element.dataset.category:'';state.view="expenses";render();
- try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=96"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;if(navigation!==expenseNavigation||state.view!=="expenses")return;if(action)await window.Expenses.action(action,element);else window.Expenses.home();await window.Expenses.open();}
+ try{if(!expensesLoading)expensesLoading=(async()=>{for(const src of ["expenses-core.js?v=3","expenses-report.js?v=3","expenses-allocation.js?v=1","expenses.js?v=97"]){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=()=>{s.remove();reject(Error("Chargement des dépenses impossible"))};document.head.append(s);});}})();await expensesLoading;if(navigation!==expenseNavigation||state.view!=="expenses")return;if(action)await window.Expenses.action(action,element);else window.Expenses.home();await window.Expenses.open();}
  catch(e){expensesLoading=null;toast(e.message,true);}
 }
 function render(){
@@ -328,6 +328,7 @@ function openForm(kind,plate=""){
     html=hint("Véhicule : "+plate)+
       input("dernierDate",kind==="newRevision"?"Date reportée comme effectuée":"Dernière révision effectuée",kind==="newRevision"?revDate(r):revLast(r),"date",kind==="editRevision"||kind==="newRevision"?"readonly":"")+
       input("prochainDate","Prochaine révision *",kind==="editRevision"?revDate(r):"","date","required")+
+      hint("La prochaine révision est à saisir manuellement. Les factures importées ne modifient pas cette date.")+
       (kind==="newRevision"?hint("La date prévue "+dateView(revDate(r))+" sera conservée comme dernière révision effectuée. Vérifie qu’elle correspond bien à l’intervention."):hint("La date effectuée ne se modifie plus après l’enregistrement."));
   }else if(kind==="addCt"||kind==="editCt"){
     html=hint("Véhicule : "+plate)+input("dernierDate","Dernier contrôle effectué",ctLast(c),"date",kind==="editCt"?"readonly":"")+
