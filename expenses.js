@@ -67,11 +67,29 @@ function render(){
  '<div class="metrics">'+card('Carburant','fuel')+card('Stationnement','parking')+card('Entretiens / réparations','maintenance')+card('Total des dépenses','')+'</div>'+
  '<div class="expense-heading"><span id="expenseDownload" role="status">'+(loadingExpenses?'Actualisation…':'')+'</span></div>'+
  (sum.missing?'<p>'+sum.missing+' montant(s) HT manquant(s), total partiel.</p>':'')+
+ renderAudit()+
  renderReporting()+
  renderGroupedOperations(lines)+
 
  (old.length?'<section class="panel"><h2>Entretiens existants · montant HT à vérifier</h2><p>Ces '+old.length+' montants ne sont pas additionnés au total '+'HT'+'. Lors de l’import, liez la ligne à l’entretien existant pour éviter une double saisie.</p>'+old.map(m=>'<p>'+E(dateView(m.date)+' · '+m.immatriculation+' · '+m.type)+' : '+E(String(m.montant))+' € · base à vérifier '+(safeLink(m.lienFacture)?'<a href="'+E(safeLink(m.lienFacture))+'" target="_blank" rel="noopener">Facture</a>':'')+'</p>').join('')+'</section>':'')+
  '';
+}
+function renderAudit(){
+ const findings=[
+ ['CD-799-PT','Contrôle défavorable du 16/04/2026 : validité limitée au 15/06/2026. Des réparations sont facturées ensuite, mais aucun procès-verbal de contre-visite favorable n’a été retrouvé dans les deux boîtes. À obtenir pour confirmer la situation actuelle.'],
+ ['FS-552-SF','Contrôle facturé le 20/07/2026 puis contre-visite le 28/07/2026 : le résultat favorable n’est pas établi par les factures. Le parc indiquait le 25/08/2026 à la fois comme dernier et prochain contrôle. Dates à confirmer avec le procès-verbal. La facture du 02/08 porte 115 753 km, contre 115 762 km au contrôle du 28/07 : kilométrage à vérifier.'],
+ ['HG-877-TV','Le procès-verbal du 30/09/2026 indique une échéance au 16/09/2027. La fiche indiquait auparavant un dernier contrôle postérieur à son échéance. Première circulation 2018 sur le procès-verbal, année 2020 dans la fiche : vérifier la carte grise.'],
+ ['HG-877-TV','Ordre Carglass du 11/04/2026 retrouvé : 661,21 € HT, conservé en annexe. Facture définitive à retrouver avant comptabilisation.'],
+ ['GD-344-XC','Historique reçu dans Compta : entretiens 2023/2025 et contrôle favorable du 29/12/2025, valable jusqu’au 28/12/2027. Ces dépenses anciennes sont conservées en annexe et exclues des dépenses 2026. Les factures AFG 2029062 et 2029064 semblent faire doublon : 2029062 reste en annexe, sans double comptabilisation.'],
+ ['BJ-429-XZ','Facture de démarreur Peugeot 407 du 05/07/2026 : 233,25 € HT. Immatriculation absente du parc lors du rapprochement : pièce conservée en attente d’affectation, montant exclu des totaux.'],
+ ['FG-758-GJ','Devis Carglass du 06/10/2026 : 628,23 € HT. Ordres de commande et d’acceptation du 13/10 retrouvés : 684,90 € HT, soit 56,67 € HT de balais supplémentaires. La facture définitive reste à retrouver ; ces pièces restent en annexe, hors dépenses.']
+ ];
+ const revisions=[['CD-799-PT','Vidange facturée le 30/03/2026 ; la dernière révision affichée au 26/04 correspond à des réparations.'],['HG-877-TV','Vidange facturée le 30/03/2026 ; dernière révision affichée au 03/11/2025.'],['FG-758-GJ','Vidange facturée le 19/07/2026 ; dernière révision affichée au 18/11/2025.'],['HJ-896-AW','Vidange facturée le 28/06/2026 ; dernière révision affichée au 03/07/2026.'],['GD-344-XC','Vidange facturée le 29/09/2026 ; dernière révision affichée au 01/12/2025.']];
+ const selected=rows=>rows.filter(([plate])=>!filter.plate||R.plate(plate)===R.plate(filter.plate));
+ const bullets=rows=>'<ul>'+selected(rows).map(([plate,text])=>'<li><strong>'+E(plate)+'</strong> — '+E(text)+'</li>').join('')+'</ul>';
+ const kms=selected([['CD-799-PT',211358],['HG-877-TV',155791],['FG-758-GJ',129406],['HJ-896-AW',131840],['GD-344-XC',95229],['FA-774-LB',144775],['AB-903-RJ',253622]]).filter(([plate,n])=>{const v=list('vehicules').find(v=>R.plate(v.immatriculation)===R.plate(plate));return v&&Number(v.kilometrage)<n;});
+ const docs=list('documents').filter(d=>(!filter.plate||R.plate(d.immatriculation)===R.plate(filter.plate))&&(/Historique_C3|Demarreur_Peugeot|Devis_pare_brise|AFG_2028805|AFG_2029062|Carglass_/.test(d.nom||d.nomFichier||'')));
+ return '<section class="panel" aria-label="Commentaires du rapprochement"><h2>Points à vérifier · rapprochement du 13/10/2026</h2><p><strong>Les dates des prochaines révisions doivent être saisies manuellement.</strong> L’import d’une facture ne calcule ni ne décale ces dates.</p><p class="hint">Recherche dans AB RENOV 03 et AB RENOV Compta. Constats datés, à lever après vérification des justificatifs ; cette section reste visible quelle que soit la période sélectionnée.</p><details open><summary>Contrôles techniques et pièces à rapprocher</summary>'+bullets(findings)+'</details><details><summary>Dates de dernière révision à vérifier</summary><p>Écarts relevés lors du rapprochement, sans modification automatique des prochaines échéances.</p>'+bullets(revisions)+'</details>'+(kms.length?'<details><summary>Kilométrages à actualiser · '+kms.length+' véhicule(s)</summary>'+bullets(kms.map(([plate,n])=>[plate,'La fiche est inférieure aux '+n.toLocaleString('fr-FR')+' km relevés sur un justificatif. Vérifier le compteur actuel avant saisie.']))+'</details>':'')+(docs.length?'<details><summary>Annexes conservées hors dépenses</summary><ul>'+docs.map(d=>{const url=safeLink(d.lienDrive||d.lien);return '<li>'+E(d.immatriculation||'')+' · '+(url?'<a href="'+E(url)+'" target="_blank" rel="noopener noreferrer">'+E(d.nom||d.nomFichier)+'</a>':E(d.nom||d.nomFichier))+'</li>';}).join('')+'</ul></details>':'')+'</section>';
 }
 function renderDocuments(){
  const f=documentFilter,maintenance=f.category==='maintenance';
